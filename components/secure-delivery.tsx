@@ -11,46 +11,52 @@ import {
 import { secureDeliveryServiceAvailability } from "@/services/secure-delivery";
 import styles from "./secure-delivery.module.css";
 
+const REFERENCE_PRESENTATION = {
+  dedication: "For someone unforgettable",
+  title: "The Porch Light Stayed On",
+  subtitle: "A private Honor a Life Song keepsake"
+} as const;
+
 function SafeState({ state }: { state: DeliveryResolutionState }) {
   const messages: Record<Exclude<DeliveryResolutionState, "available">, { title: string; body: string; tone: "notice" | "warning" }> = {
     invalid: {
       title: "This delivery link cannot be opened",
-      body: "The secure link is not valid. Check the original delivery message or contact Honor a Life Song for help.",
+      body: "Check the original message or contact Honor a Life Song for help opening this private keepsake.",
       tone: "warning"
     },
     expired: {
-      title: "This delivery link is no longer available",
-      body: "Protected files cannot be played or downloaded from this link. An authorized team member can help with next steps.",
+      title: "This private song link has expired",
+      body: "The song and keepsake files remain protected. An authorized team member can help create a new way to enter.",
       tone: "warning"
     },
     revoked: {
-      title: "This delivery link is no longer available",
-      body: "Protected files cannot be played or downloaded from this link. An authorized team member can help with next steps.",
+      title: "This private song link is no longer available",
+      body: "The song and keepsake files remain protected. Contact Honor a Life Song if you believe you should still have access.",
       tone: "warning"
     },
     verification_required: {
-      title: "Verify access to continue",
-      body: "This delivery requires recipient verification before any private song or keepsake material can be shown.",
+      title: "A quick verification will open this song",
+      body: "Confirm that this keepsake was shared with you before any private music, lyrics, or photographs appear.",
       tone: "notice"
     },
     access_denied: {
       title: "This delivery cannot be opened",
-      body: "Access is not available for this delivery context. No protected song or participant information has been displayed.",
+      body: "This account does not currently have access. No private song or participant information has been displayed.",
       tone: "warning"
     },
     consent_blocked: {
       title: "This delivery is currently restricted",
-      body: "Current permissions do not allow the requested private delivery use. Protected content remains unavailable.",
+      body: "The permissions for this private keepsake have changed, so the song and related materials remain unavailable.",
       tone: "warning"
     },
     asset_unavailable: {
-      title: "Approved delivery files are not available",
-      body: "The secure delivery record resolved, but there are no approved final assets available for this recipient.",
+      title: "This keepsake is still being prepared",
+      body: "Access is valid, but there are no approved final song or keepsake files ready to present yet.",
       tone: "notice"
     },
     service_unavailable: {
-      title: "Secure delivery is not connected yet",
-      body: "The production token, entitlement, media-authorization, and audit services are not connected in this chassis environment. No access decision has been simulated.",
+      title: "Private listening is not connected yet",
+      body: "This reference environment preserves the secure boundary without pretending that a private song has been authorized.",
       tone: "notice"
     }
   };
@@ -58,16 +64,16 @@ function SafeState({ state }: { state: DeliveryResolutionState }) {
   const message = messages[state as Exclude<DeliveryResolutionState, "available">];
   return (
     <section className={`${styles.stateCard} ${message.tone === "warning" ? styles.warning : ""}`} role="status" aria-live="polite">
-      <p className={styles.eyebrow}>Secure Delivery</p>
+      <div className={styles.stateMark} aria-hidden="true"><span /><span /><span /><span /><span /></div>
+      <p className={styles.eyebrow}>Honor a Life Song</p>
       <h1>{message.title}</h1>
       <p>{message.body}</p>
-      {state === "verification_required" && (
-        <div className={styles.integrationNote}>
-          <strong>Access Verification workflow</strong>
-          <span>Identity/recipient verification is a shared service boundary and is not production-connected here. Verification must be followed by fresh token, entitlement, consent, and asset checks.</span>
-        </div>
-      )}
-      <Link className={styles.secondaryAction} href="/">Return to Honor a Life Song</Link>
+      {state === "verification_required" ? <button className={styles.primaryAction} type="button" disabled>Verify access</button> : null}
+      <Link className={styles.secondaryAction} href="/">Return home</Link>
+      <details className={styles.technicalDetails}>
+        <summary>Delivery details</summary>
+        <p>Private delivery remains fail-closed until identity, entitlement, consent, and approved-asset checks all succeed.</p>
+      </details>
     </section>
   );
 }
@@ -90,114 +96,105 @@ function PrivateSongPage({ context }: { context: DeliveryAccessContext }) {
 
   return (
     <article className={styles.keepsake}>
-      <header className={styles.keepsakeHeader}>
-        <div>
-          <p className={styles.eyebrow}>Private Song Page · Reference Chassis</p>
-          <h1>Your Honor a Life Song keepsake</h1>
-          <p className={styles.lede}>A private presentation surface for approved final song and keepsake assets. This reference view contains no production participant or media data.</p>
+      <header className={styles.releaseHero}>
+        <div className={styles.albumArtwork} aria-label="Reference song artwork without participant media">
+          <div className={styles.artworkGlow} />
+          <div className={styles.artworkWave} aria-hidden="true">{Array.from({ length: 17 }, (_, index) => <span key={index} />)}</div>
+          <span className={styles.artworkLabel}>Honor a Life Song</span>
         </div>
-        <span className={styles.privateBadge}>Private delivery</span>
+
+        <div className={styles.releaseCopy}>
+          <span className={styles.privateBadge}>Private keepsake</span>
+          <p className={styles.dedication}>{REFERENCE_PRESENTATION.dedication}</p>
+          <h1>{REFERENCE_PRESENTATION.title}</h1>
+          <p className={styles.releaseSubtitle}>{REFERENCE_PRESENTATION.subtitle}</p>
+
+          <section className={styles.listenHero} id="listen" aria-labelledby="listen-heading">
+            <div className={styles.playerTopline}>
+              <button type="button" disabled aria-describedby="listen-service-note" aria-label={`Play ${REFERENCE_PRESENTATION.title}`}>
+                <span aria-hidden="true">▶</span>
+              </button>
+              <div>
+                <h2 id="listen-heading">Listen</h2>
+                <p>{audio?.label ?? "No authorized final audio is included"}</p>
+              </div>
+            </div>
+            <div className={styles.playerWave} aria-hidden="true">{Array.from({ length: 34 }, (_, index) => <span key={index} />)}</div>
+            <div className={styles.playerTime}><span>0:00</span><span>Private final recording</span><span>—:—</span></div>
+            <p className={styles.serviceNote} id="listen-service-note">Playback remains unavailable until the secure media service issues short-lived access for this recipient.</p>
+          </section>
+        </div>
       </header>
 
-      {context.entryMechanism === "qr" && (
-        <div className={styles.qrNotice} role="note">
-          <strong>QR Keepsake entry · P1 structural preview</strong>
-          <span>The QR code is only an entry mechanism. It resolves into this same secure route and never bypasses token, entitlement, consent, or asset authorization.</span>
-        </div>
-      )}
+      {context.entryMechanism === "qr" ? (
+        <div className={styles.qrNotice} role="note"><strong>Opened from a keepsake QR code</strong><span>The QR code enters this same protected experience and does not bypass any access or permission check.</span></div>
+      ) : null}
 
       <nav className={styles.sectionNav} aria-label="Private song page sections">
         {privateSongSections.map((section) => <a key={section} href={`#${section.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, "")}`}>{section}</a>)}
       </nav>
 
-      <section className={styles.featureCard} id="listen" aria-labelledby="listen-heading">
-        <div className={styles.sectionHeading}>
-          <p className={styles.step}>01</p>
-          <div><h2 id="listen-heading">Listen</h2><p>Approved final audio only.</p></div>
-        </div>
-        {audio ? (
-          <div className={styles.mediaPlaceholder}>
-            <div>
-              <strong>{audio.label}</strong>
-              <span>Final recording approval is referenced; the storage key is never exposed.</span>
+      <div className={styles.keepsakeBody}>
+        <section className={styles.lyricsFeature} id="lyrics" aria-labelledby="lyrics-heading">
+          <p className={styles.eyebrow}>The words</p>
+          <h2 id="lyrics-heading">Lyrics</h2>
+          {lyrics ? (
+            <div className={styles.lyricPaper}>
+              <span>{lyrics.label}</span>
+              <div className={styles.lyricLines} aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /></div>
+              <p>The approved lyric page is ready for this private keepsake. Working drafts and review notes remain outside the delivery experience.</p>
             </div>
-            <button type="button" disabled aria-describedby="listen-service-note">Play</button>
+          ) : <p className={styles.empty}>Approved lyrics are not included in this delivery.</p>}
+        </section>
+
+        <section className={styles.storyFeature} id="photos-approved-story" aria-labelledby="story-heading">
+          <div className={styles.storyArtwork} aria-hidden="true"><span>Story</span></div>
+          <div>
+            <p className={styles.eyebrow}>Behind the song</p>
+            <h2 id="story-heading">Photos / Approved Story</h2>
+            {approvedStoryAssets.length > 0 ? (
+              <div className={styles.assetChips}>{approvedStoryAssets.map((asset) => <span key={asset.id}>{asset.label}</span>)}</div>
+            ) : <p className={styles.empty}>No approved photo or story material is included in this delivery.</p>}
+            <p>Only the keepsake selection explicitly approved for this recipient can appear here.</p>
           </div>
-        ) : <p className={styles.empty}>No authorized final audio is included in this delivery.</p>}
-        <p className={styles.serviceNote} id="listen-service-note">Playback remains disabled until the secure media service can issue short-lived, recipient-authorized access.</p>
-      </section>
+        </section>
 
-      <section className={styles.featureCard} id="download" aria-labelledby="download-heading">
-        <div className={styles.sectionHeading}>
-          <p className={styles.step}>02</p>
-          <div><h2 id="download-heading">Download</h2><p>Each file is re-authorized against this delivery before access.</p></div>
-        </div>
-        <div className={styles.assetList}>
-          {downloadableAssets.map((asset) => {
-            const decision = authorizeDeliveryAsset(context, { deliveryId: context.deliveryId, assetId: asset.id, action: "download" });
-            return (
-              <div className={styles.assetRow} key={asset.id}>
-                <div><strong>{asset.label}</strong><span>{decision.allowed ? "Eligible for secure delivery authorization" : "Unavailable"}</span></div>
-                <button type="button" disabled>Download</button>
-              </div>
-            );
-          })}
-        </div>
-        <p className={styles.serviceNote}>No permanent public URL is generated. Download and audit persistence remain unavailable until their production adapters are connected.</p>
-      </section>
+        <section className={styles.actionsFeature} aria-label="Keepsake actions">
+          <section id="download" aria-labelledby="download-heading">
+            <p className={styles.eyebrow}>Keep it close</p>
+            <h2 id="download-heading">Download</h2>
+            <div className={styles.actionList}>
+              {downloadableAssets.map((asset) => {
+                const decision = authorizeDeliveryAsset(context, { deliveryId: context.deliveryId, assetId: asset.id, action: "download" });
+                return <button type="button" disabled key={asset.id}><span>↓</span><strong>{asset.label}</strong><small>{decision.allowed ? "Secure authorization required" : "Unavailable"}</small></button>;
+              })}
+            </div>
+          </section>
 
-      <section className={styles.featureCard} id="lyrics" aria-labelledby="lyrics-heading">
-        <div className={styles.sectionHeading}>
-          <p className={styles.step}>03</p>
-          <div><h2 id="lyrics-heading">Lyrics</h2><p>Recipient-facing approved version only.</p></div>
-        </div>
-        {lyrics ? (
-          <div className={styles.approvedPanel}>
-            <span>Approved version</span>
-            <strong>{lyrics.label}</strong>
-            <p>Drafts, review comments, comparison views, and rejected versions remain in the creator/customer workflows and are not exposed here.</p>
-          </div>
-        ) : <p className={styles.empty}>Approved lyrics are not included in this delivery package.</p>}
-      </section>
-
-      <section className={styles.featureCard} id="photos-approved-story" aria-labelledby="story-heading">
-        <div className={styles.sectionHeading}>
-          <p className={styles.step}>04</p>
-          <div><h2 id="story-heading">Photos / Approved Story</h2><p>Only the explicitly approved keepsake subset.</p></div>
-        </div>
-        {approvedStoryAssets.length > 0 ? (
-          <div className={styles.assetList}>
-            {approvedStoryAssets.map((asset) => <div className={styles.assetRow} key={asset.id}><div><strong>{asset.label}</strong><span>Approved final keepsake selection</span></div><span className={styles.included}>Included</span></div>)}
-          </div>
-        ) : <p className={styles.empty}>No approved photo or story material is included in this delivery.</p>}
-        <p className={styles.serviceNote}>Source interviews, family submissions, private notes, and other unapproved materials are intentionally excluded.</p>
-      </section>
-
-      <section className={styles.featureCard} id="share-controls" aria-labelledby="share-heading">
-        <div className={styles.sectionHeading}>
-          <p className={styles.step}>05</p>
-          <div><h2 id="share-heading">Share Controls</h2><p>Controlled sharing is separate from public marketing permission.</p></div>
-        </div>
-        <div className={styles.assetRow}>
-          <div><strong>Controlled family sharing</strong><span>{shareDecision.allowed ? "Consent/policy gate satisfied; share-link service still required." : "Not authorized for this delivery."}</span></div>
-          <button type="button" disabled>Create controlled access</button>
-        </div>
-        <p className={styles.serviceNote}>No social publishing, public embed, open forwarding, or public tribute link is created by this surface.</p>
-      </section>
+          <section id="share-controls" aria-labelledby="share-heading">
+            <p className={styles.eyebrow}>Invite someone in</p>
+            <h2 id="share-heading">Share Controls</h2>
+            <button className={styles.shareButton} type="button" disabled><span>↗</span><strong>Share privately</strong><small>{shareDecision.allowed ? "Controlled access service required" : "Not authorized for this delivery"}</small></button>
+            <p className={styles.serviceNote}>Private sharing never becomes public marketing permission.</p>
+          </section>
+        </section>
+      </div>
 
       <section className={styles.confirmation} aria-labelledby="confirmation-heading">
         <div>
           <p className={styles.eyebrow}>Delivery Confirmation</p>
-          <h2 id="confirmation-heading">Confirm receipt when authoritative persistence is connected</h2>
-          <p>Opening this page does not mark the song journey Delivered or Closed. Confirmation is a separate delivery event governed by the workflow and audit boundaries.</p>
+          <h2 id="confirmation-heading">Received with care.</h2>
+          <p>Opening this page does not mark the song journey delivered or closed. Confirmation remains a separate, auditable action.</p>
         </div>
-        <button type="button" disabled={!secureDeliveryServiceAvailability.confirmationPersistence}>Confirm delivery</button>
+        <button type="button" disabled={!secureDeliveryServiceAvailability.confirmationPersistence}>Confirm receipt</button>
       </section>
 
-      <footer className={styles.deliveryFooter}>
-        <span>Secure Delivery reference mode</span>
-        <span>Token values, storage keys, and internal authorization details are not displayed.</span>
-      </footer>
+      <details className={styles.deliveryDetails}>
+        <summary>About this reference delivery</summary>
+        <p>This visual preview uses fictional reference artwork and labels only. It exposes no production participant, recording, photograph, private link credential, or internal media location.</p>
+      </details>
+
+      <footer className={styles.deliveryFooter}><span>Honor a Life Song</span><span>Made from a story. Kept as a song.</span></footer>
     </article>
   );
 }
@@ -206,7 +203,7 @@ export function SecureDelivery({ context }: { context: DeliveryAccessContext }) 
   const resolution = resolveDeliveryAccess(context);
   return (
     <main className={styles.deliveryShell}>
-      <div className={styles.brandRow}><Link className={styles.brand} href="/">Honor a Life Song</Link><span>Secure Keepsake</span></div>
+      <div className={styles.brandRow}><Link className={styles.brand} href="/">Honor a Life Song</Link><span>Private listening</span></div>
       {resolution.state === "available" ? <PrivateSongPage context={context} /> : <SafeState state={resolution.state} />}
     </main>
   );
