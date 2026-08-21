@@ -8,6 +8,10 @@ export const referenceContext: Record<WorkspaceId, { label: string; value: strin
   admin: { label: "Environment", value: "Chassis reference mode" }
 };
 
+export const referenceCreatorContext = {
+  creativeWorkId: "reference-creative-work"
+} as const;
+
 export const referenceCustomerContext: {
   orderId: string;
   creativeWorkId: string;
