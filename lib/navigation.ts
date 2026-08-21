@@ -17,15 +17,15 @@ const structured = "The source-defined workflow hierarchy is implemented. Author
 export const workspaceNavigation: Record<WorkspaceId, NavigationItem[]> = {
   customer: [
     { id: "customer-home", label: "Dashboard", slug: "", description: "Current journey, next action, messages and recent activity.", availability: "chassis" },
-    { id: "journey", label: "My Song Journey", slug: "journey", description: "Request through story, lyrics, production and delivery.", availability: "planned", unavailableReason: planned },
-    { id: "story", label: "Story & Memories", slug: "story", description: "Guided story capture, timeline, people, places and approved uploads.", availability: "planned", unavailableReason: planned },
-    { id: "interviews", label: "Interviews", slug: "interviews", description: "Scheduling, preparation and interview status.", availability: "planned", unavailableReason: planned },
-    { id: "reviews", label: "Lyrics & Review", slug: "reviews", description: "Versioned lyric review, feedback, revisions and approvals.", availability: "planned", unavailableReason: planned },
-    { id: "family", label: "Family & Collaborators", slug: "family", description: "Invitations, contributions and scoped collaborator access.", availability: "planned", unavailableReason: planned },
-    { id: "messages", label: "Messages", slug: "messages", description: "Transactional and service communications.", availability: "planned", unavailableReason: planned },
-    { id: "files", label: "Files & Keepsakes", slug: "files", description: "Final song, lyric sheet, song card and secure delivery assets.", availability: "planned", unavailableReason: planned },
-    { id: "orders", label: "Payments & Orders", slug: "orders", description: "Order summary, deposits, balances, receipts and approved add-ons.", availability: "planned", unavailableReason: planned },
-    { id: "permissions", label: "Consent & Permissions", slug: "permissions", description: "Review authorized uses, restrictions and withdrawal paths.", availability: "planned", unavailableReason: planned }
+    { id: "journey", label: "My Song Journey", slug: "journey", description: "Request through story, lyrics, production and delivery.", availability: "structured", unavailableReason: structured },
+    { id: "story", label: "Story & Memories", slug: "story", description: "Guided story capture, timeline, people, places and approved uploads.", availability: "structured", unavailableReason: structured },
+    { id: "interviews", label: "Interviews", slug: "interviews", description: "Scheduling, preparation and interview status.", availability: "structured", unavailableReason: structured },
+    { id: "reviews", label: "Lyrics & Review", slug: "reviews", description: "Versioned lyric review, feedback, revisions and approvals.", availability: "structured", unavailableReason: structured },
+    { id: "family", label: "Family & Collaborators", slug: "family", description: "Invitations, contributions and scoped collaborator access.", availability: "structured", unavailableReason: structured },
+    { id: "messages", label: "Messages", slug: "messages", description: "Transactional and service communications.", availability: "structured", unavailableReason: structured },
+    { id: "files", label: "Files & Keepsakes", slug: "files", description: "Final song, lyric sheet, song card and secure delivery assets.", availability: "structured", unavailableReason: structured },
+    { id: "orders", label: "Payments & Orders", slug: "orders", description: "Order summary, deposits, balances, receipts and approved add-ons.", availability: "structured", unavailableReason: structured },
+    { id: "permissions", label: "Consent & Permissions", slug: "permissions", description: "Review authorized uses, restrictions and withdrawal paths.", availability: "structured", unavailableReason: structured }
   ],
   facility: [
     { id: "facility-home", label: "Program Dashboard", slug: "", description: "Program status, participants, touchpoints, songs, event readiness and action items.", availability: "chassis" },

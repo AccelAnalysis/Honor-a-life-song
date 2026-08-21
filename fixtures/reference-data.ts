@@ -1,3 +1,4 @@
+import type { SongJourneyState } from "@/domain/workflows";
 import type { WorkspaceId } from "@/lib/navigation";
 
 export const referenceContext: Record<WorkspaceId, { label: string; value: string }> = {
@@ -10,3 +11,13 @@ export const referenceContext: Record<WorkspaceId, { label: string; value: strin
 export const referenceCreatorContext = {
   creativeWorkId: "reference-creative-work"
 } as const;
+
+export const referenceCustomerContext: {
+  orderId: string;
+  creativeWorkId: string;
+  journeyState: SongJourneyState;
+} = {
+  orderId: "reference-order-001",
+  creativeWorkId: "reference-work-001",
+  journeyState: "Customer Review"
+};

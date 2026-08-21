@@ -59,7 +59,72 @@ The sibling Identity / Access destinations remain separate workflows. Login link
 
 ## Customer / Family Workspace
 
-Dashboard; My Song Journey; Story & Memories; Interviews; Lyrics & Review; Family & Collaborators; Messages; Payments & Orders; Files & Keepsakes; Consent & Permissions; Profile & Settings; Help & Support.
+The operating chassis currently registers exactly ten Customer / Family top-level destinations. The source-defined hierarchy beneath those integration points is:
+
+- Dashboard
+  - Current Song / Program
+  - Progress Timeline
+  - Next Action
+  - Messages
+  - Recent Activity
+- My Song Journey
+  - Request
+  - Interview
+  - Story Development
+  - Lyrics
+  - Production
+  - Delivery
+- Story & Memories
+  - Guided Story Questions
+  - Life Timeline
+  - People & Relationships
+  - Places
+  - Important Events
+  - Values / Personality
+  - Favorite Music / Style
+  - Uploads
+    - Photos
+    - Documents
+    - Audio
+    - Other Memories
+- Interviews
+  - Schedule Interview
+  - Upcoming Interview
+  - Reschedule
+  - Interview Preparation
+- Lyrics & Review
+  - Current Draft
+  - Previous Versions
+  - Submit Feedback
+  - Request Revision
+  - Approve Lyrics
+- Family & Collaborators
+  - Invite Family Member
+  - Manage Contributors
+  - Contributions
+  - Access Permissions
+- Messages
+- Files & Keepsakes
+  - Final Song
+  - Lyric Sheet
+  - Song Card
+  - Shareable Link
+  - Physical Keepsake Status
+- Payments & Orders
+  - Order Summary
+  - Deposit / Balance
+  - Receipts
+  - Refund Status
+  - Add-ons
+- Consent & Permissions
+  - Participation Consent
+  - Recording Consent
+  - Family Sharing
+  - Performance Permission
+  - Photo / Video Permission
+  - Public Story / Marketing Permission
+
+The full Platform Shell also defines standalone Customer destinations for **Production** (Production Status, Recording Status, Final Approval), **Profile & Settings**, and **Help & Support**. They remain intentionally outside this bounded ten-page chassis slice. Customer-facing production status is represented through `My Song Journey → Production` pending a later architecture decision on those omitted standalone destinations.
 
 ## Facility / Project Ageless Workspace
 
