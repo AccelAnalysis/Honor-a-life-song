@@ -48,8 +48,24 @@ function scheduleVoice(context: AudioContext, frequency: number, start: number, 
 export function SonicSignature({ compact = false, label = "Hear the Honor a Life Song sound", inverse = false }: SonicSignatureProps) {
   const contextRef = useRef<AudioContext | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [playing, setPlaying] = useState(false);
+  const playingRef = useRef(false);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const iconRef = useRef<HTMLSpanElement | null>(null);
+  const labelRef = useRef<HTMLSpanElement | null>(null);
+  const pulseRef = useRef<HTMLDivElement | null>(null);
   const [unsupported, setUnsupported] = useState(false);
+
+  function showPlaying(active: boolean) {
+    playingRef.current = active;
+
+    if (buttonRef.current) {
+      buttonRef.current.disabled = active;
+      buttonRef.current.setAttribute("aria-pressed", String(active));
+    }
+    if (iconRef.current) iconRef.current.textContent = active ? "♪" : "▶";
+    if (labelRef.current) labelRef.current.textContent = active ? "Listening…" : label;
+    pulseRef.current?.classList.toggle(styles.pulseActive, active);
+  }
 
   useEffect(() => () => {
     if (timerRef.current) clearTimeout(timerRef.current);
@@ -57,7 +73,7 @@ export function SonicSignature({ compact = false, label = "Hear the Honor a Life
   }, []);
 
   async function playSignature() {
-    if (playing) return;
+    if (playingRef.current) return;
 
     const AudioContextConstructor = window.AudioContext;
     if (!AudioContextConstructor) {
@@ -66,9 +82,9 @@ export function SonicSignature({ compact = false, label = "Hear the Honor a Life
     }
 
     setUnsupported(false);
-    setPlaying(true);
+    showPlaying(true);
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => setPlaying(false), 3500);
+    timerRef.current = setTimeout(() => showPlaying(false), 3500);
 
     try {
       const context = contextRef.current ?? new AudioContextConstructor();
@@ -81,18 +97,18 @@ export function SonicSignature({ compact = false, label = "Hear the Honor a Life
     } catch {
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = null;
-      setPlaying(false);
+      showPlaying(false);
       setUnsupported(true);
     }
   }
 
   return (
     <div className={`${styles.signature} ${compact ? styles.compact : ""} ${inverse ? styles.inverse : ""}`}>
-      <button type="button" onClick={playSignature} aria-pressed={playing} disabled={playing}>
-        <span className={styles.playIcon} aria-hidden="true">{playing ? "♪" : "▶"}</span>
-        <span>{playing ? "Listening…" : label}</span>
+      <button ref={buttonRef} type="button" onClick={playSignature} aria-pressed="false">
+        <span ref={iconRef} className={styles.playIcon} aria-hidden="true">▶</span>
+        <span ref={labelRef}>{label}</span>
       </button>
-      <div className={`${styles.pulse} ${playing ? styles.pulseActive : ""}`} aria-hidden="true">
+      <div ref={pulseRef} className={styles.pulse} aria-hidden="true">
         {[0.35, 0.62, 0.9, 0.5, 0.78, 0.42, 0.68, 0.3].map((height, index) => (
           <span key={index} style={{ height: `${Math.round(height * 100)}%` }} />
         ))}
