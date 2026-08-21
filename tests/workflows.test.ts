@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { canTransition, projectAgelessTransitions, songTransitions } from "@/domain/workflows";
-import { consentAllows, type ConsentRecord } from "@/domain/consent";
+import { canTransition, projectAgelessTransitions, songTransitions } from "../domain/workflows";
+import { consentAllows, type ConsentRecord } from "../domain/consent";
 
 describe("workflow contracts", () => {
   it("permits governed adjacent song transitions", () => {

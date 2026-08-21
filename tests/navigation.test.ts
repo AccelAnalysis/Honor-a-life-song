@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getNavigation, workspaceIds } from "@/lib/navigation";
+import { getNavigation, workspaceIds } from "../lib/navigation";
 
 for (const workspace of workspaceIds) {
   describe(`${workspace} navigation`, () => {
