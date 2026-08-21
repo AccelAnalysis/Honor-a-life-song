@@ -66,7 +66,7 @@ export default function HomePage() {
               <div className="processStep"><strong>02</strong><div><h3>We listen for what matters.</h3><p>A human songwriter shapes the story, verifies the details, and develops the lyrics with care.</p></div></div>
               <div className="processStep"><strong>03</strong><div><h3>Receive a song made for them.</h3><p>Review the work, hear the final recording, and open a private keepsake made to endure.</p></div></div>
             </div>
-            <Link className="button secondary inverse" href="/how-it-works">Explore the complete journey</Link>
+            <Link className="button primary" href="/how-it-works">Explore the complete journey</Link>
           </div>
         </div>
       </section>
