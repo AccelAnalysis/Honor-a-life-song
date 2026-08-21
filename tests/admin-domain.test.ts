@@ -50,10 +50,10 @@ describe("Admin operational derivation", () => {
 
   it("derives active programs from contracted through outcome measurement", () => {
     expect(isActiveProgramJourneyState("Contracted")).toBe(true);
-    expect(isActiveProgramJourneyState("Active Program")).toBe(true);
+    expect(isActiveProgramJourneyState("Active Program Touches")).toBe(true);
     expect(isActiveProgramJourneyState("Outcome Measurement")).toBe(true);
     expect(isActiveProgramJourneyState("Lead")).toBe(false);
-    expect(isActiveProgramJourneyState("Closeout")).toBe(false);
+    expect(isActiveProgramJourneyState("Program Closeout")).toBe(false);
   });
 });
 

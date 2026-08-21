@@ -128,7 +128,91 @@ The full Platform Shell also defines standalone Customer destinations for **Prod
 
 ## Facility / Project Ageless Workspace
 
-Program Dashboard; Program Overview; Participants; Schedule & Touchpoints; Stories & Interviews; Songs & Creative Works; Families; Concert & Events; Keepsakes; Sponsors & Funding; Reports & Outcomes; Facility Team; Program Settings; Help.
+The operating chassis currently registers these eleven top-level Facility destinations. This slice preserves those integration points and implements the source-defined hierarchy beneath them.
+
+- Program Dashboard
+  - Program Status
+  - Participants
+  - Active Touchpoints
+  - Stories Captured
+  - Songs in Progress
+  - Concert Countdown
+  - Action Items
+- Program Overview
+  - Scope
+  - Dates
+  - Program Team
+  - Funding
+  - Deliverables
+- Participants
+  - Participant Roster
+  - Add Participant
+  - Participant Detail
+    - Contact / Representative
+    - Participation Status
+    - Accessibility Notes
+    - Consent
+    - Story Contributions
+    - Touchpoint Attendance
+    - Song Status
+    - Family Connections
+  - Import / Export Roster
+- Schedule & Touchpoints
+  - Program Calendar
+  - Group Story Session
+  - Individual Interview
+  - Family Interview
+  - Songwriting Session
+  - Rehearsal / Listening
+  - Concert
+  - Keepsake Delivery
+- Stories & Interviews
+  - Story Capture Queue
+  - Interview Schedule
+  - Interview Notes
+  - Family Contributions
+  - Story Status
+- Songs & Creative Works
+  - Individual Songs
+  - Group / Community Song
+  - Song Status
+  - Review Readiness
+- Families
+  - Family Contacts
+  - Invitations
+  - Contributions
+  - Event Attendance
+- Concert & Events
+  - Event Details
+  - Venue
+  - Run of Show
+  - Participant List
+  - Family Invitations
+  - Accessibility
+  - Photography / Media Permissions
+  - Event Completion
+- Keepsakes
+  - Digital Deliveries
+  - Printed Song Cards
+  - Distribution Status
+- Sponsors & Funding
+  - Funding Sources
+  - Sponsor Commitments
+  - Covered Activities
+  - Sponsor Recognition
+  - Restrictions
+- Reports & Outcomes
+  - Participation
+  - Family Engagement
+  - Songs Completed
+  - Event Attendance
+  - Satisfaction
+  - Program Outcomes
+  - Export Report
+
+### Source-defined Facility destinations outside this bounded slice
+
+The broader source also names **Facility Team**, **Program Settings**, and **Help** as Facility-level destinations. They are intentionally not added to the current eleven-item chassis navigation by this hierarchy build. They remain source requirements for a future explicit chassis integration decision.
 
 ## Creator / Production Workspace
 

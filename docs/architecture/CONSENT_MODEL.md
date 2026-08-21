@@ -15,6 +15,18 @@ The chassis reserves explicit scopes for:
 9. testimonial use;
 10. extended retention.
 
-States are: not requested, pending, active, active with restrictions, withdrawn and superseded.
+States are: not requested, pending, active, active with restrictions, withdrawn, expired, and superseded.
 
-Every sensitive downstream action must satisfy both role/record authorization and the necessary active consent scope. Withdrawal handling must be enforced server-side once persistence is connected.
+Every sensitive downstream action must satisfy both role/record authorization and the necessary active consent scope:
+
+```text
+AUTHORIZATION
+      +
+CONSENT
+      ↓
+ACTION ALLOWED
+```
+
+The chassis fails closed when the consent record is absent, does not contain the requested scope, is pending, carries unresolved restrictions, has been withdrawn, has expired, or has been superseded. Restricted consent requires authoritative restriction evaluation before an action can proceed; a client component must not guess that a restriction is compatible.
+
+Withdrawal, expiration, supersession, restriction evaluation, and material consent changes must be enforced server-side and produce the appropriate audit evidence once persistence is connected.
