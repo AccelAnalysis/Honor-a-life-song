@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./public-hierarchy.css";
+import "./consumer-experience.css";
 
 export const metadata: Metadata = {
   title: "Honor a Life Song",
-  description: "Human-led story-to-song service and program-delivery platform."
+  description: "Human-created songs shaped from the stories, voices, and moments that matter most."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
