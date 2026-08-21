@@ -1,0 +1,1 @@
+self.__SSG_MANIFEST=new Set(["\u002F[workspace]\u002F[[...slug]]","\u002Fhow-it-works\u002F[step]","\u002Fservices\u002Fproject-ageless\u002F[section]","\u002Fsong\u002F[deliveryToken]"]);self.__SSG_MANIFEST_CB&&self.__SSG_MANIFEST_CB()
