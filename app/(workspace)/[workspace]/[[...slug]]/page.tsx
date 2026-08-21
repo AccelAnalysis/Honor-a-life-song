@@ -1,5 +1,10 @@
 import { WorkspaceRoute } from "@/components/workspace-route";
-import { referenceCreatorContext, referenceCustomerContext } from "@/fixtures/reference-data";
+import {
+  referenceAdminRecordIds,
+  referenceCreatorContext,
+  referenceCustomerContext
+} from "@/fixtures/reference-data";
+import { getAdminStaticRouteSlugs } from "@/lib/admin-navigation";
 import { getCreatorStaticRouteSlugs } from "@/lib/creator-navigation";
 import { getCustomerStaticRouteSlugs } from "@/lib/customer-navigation";
 import { workspaceIds, workspaceNavigation } from "@/lib/navigation";
@@ -19,6 +24,11 @@ export function generateStaticParams() {
 
   params.push(...getCustomerStaticRouteSlugs(referenceCustomerContext.orderId).map((slug) => ({
     workspace: "customer" as const,
+    slug
+  })));
+
+  params.push(...getAdminStaticRouteSlugs(referenceAdminRecordIds).map((slug) => ({
+    workspace: "admin" as const,
     slug
   })));
 
