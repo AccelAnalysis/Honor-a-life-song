@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import styles from "./sonic-signature.module.css";
 
 interface SonicSignatureProps {
@@ -53,7 +53,7 @@ export function SonicSignature({ compact = false, label = "Hear the Honor a Life
   const iconRef = useRef<HTMLSpanElement | null>(null);
   const labelRef = useRef<HTMLSpanElement | null>(null);
   const pulseRef = useRef<HTMLDivElement | null>(null);
-  const [unsupported, setUnsupported] = useState(false);
+  const statusRef = useRef<HTMLSpanElement | null>(null);
 
   function showPlaying(active: boolean) {
     playingRef.current = active;
@@ -67,6 +67,10 @@ export function SonicSignature({ compact = false, label = "Hear the Honor a Life
     pulseRef.current?.classList.toggle(styles.pulseActive, active);
   }
 
+  function announce(message = "") {
+    if (statusRef.current) statusRef.current.textContent = message;
+  }
+
   useEffect(() => () => {
     if (timerRef.current) clearTimeout(timerRef.current);
     void contextRef.current?.close();
@@ -77,11 +81,11 @@ export function SonicSignature({ compact = false, label = "Hear the Honor a Life
 
     const AudioContextConstructor = window.AudioContext;
     if (!AudioContextConstructor) {
-      setUnsupported(true);
+      announce("Audio preview could not be played in this browser.");
       return;
     }
 
-    setUnsupported(false);
+    announce();
     showPlaying(true);
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => showPlaying(false), 3500);
@@ -98,7 +102,7 @@ export function SonicSignature({ compact = false, label = "Hear the Honor a Life
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = null;
       showPlaying(false);
-      setUnsupported(true);
+      announce("Audio preview could not be played in this browser.");
     }
   }
 
@@ -113,7 +117,7 @@ export function SonicSignature({ compact = false, label = "Hear the Honor a Life
           <span key={index} style={{ height: `${Math.round(height * 100)}%` }} />
         ))}
       </div>
-      {unsupported ? <span className={styles.fallback} role="status">Audio preview could not be played in this browser.</span> : null}
+      <span ref={statusRef} className={styles.fallback} role="status" aria-live="polite" />
     </div>
   );
 }
