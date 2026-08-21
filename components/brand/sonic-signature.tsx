@@ -47,7 +47,8 @@ function scheduleVoice(context: AudioContext, frequency: number, start: number, 
 
 export function SonicSignature({ compact = false, label = "Hear the Honor a Life Song sound", inverse = false }: SonicSignatureProps) {
   const contextRef = useRef<AudioContext | null>(null);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const endTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playingRef = useRef(false);
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const iconRef = useRef<HTMLSpanElement | null>(null);
@@ -71,8 +72,15 @@ export function SonicSignature({ compact = false, label = "Hear the Honor a Life
     if (statusRef.current) statusRef.current.textContent = message;
   }
 
+  function clearTimers() {
+    if (feedbackTimerRef.current) clearTimeout(feedbackTimerRef.current);
+    if (endTimerRef.current) clearTimeout(endTimerRef.current);
+    feedbackTimerRef.current = null;
+    endTimerRef.current = null;
+  }
+
   useEffect(() => () => {
-    if (timerRef.current) clearTimeout(timerRef.current);
+    clearTimers();
     void contextRef.current?.close();
   }, []);
 
@@ -81,14 +89,17 @@ export function SonicSignature({ compact = false, label = "Hear the Honor a Life
 
     const AudioContextConstructor = window.AudioContext;
     if (!AudioContextConstructor) {
-      announce("Audio preview could not be played in this browser.");
+      setTimeout(() => announce("Audio preview could not be played in this browser."), 0);
       return;
     }
 
-    announce();
-    showPlaying(true);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => showPlaying(false), 3500);
+    playingRef.current = true;
+    clearTimers();
+    feedbackTimerRef.current = setTimeout(() => {
+      announce();
+      showPlaying(true);
+      endTimerRef.current = setTimeout(() => showPlaying(false), 3500);
+    }, 0);
 
     try {
       const context = contextRef.current ?? new AudioContextConstructor();
@@ -99,10 +110,12 @@ export function SonicSignature({ compact = false, label = "Hear the Honor a Life
       const now = context.currentTime + 0.05;
       NOTES.forEach((note) => scheduleVoice(context, note.frequency, now + note.offset, note.duration, note.gain));
     } catch {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = null;
-      showPlaying(false);
-      announce("Audio preview could not be played in this browser.");
+      clearTimers();
+      playingRef.current = false;
+      setTimeout(() => {
+        showPlaying(false);
+        announce("Audio preview could not be played in this browser.");
+      }, 0);
     }
   }
 
