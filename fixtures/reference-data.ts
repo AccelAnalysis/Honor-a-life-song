@@ -6,3 +6,7 @@ export const referenceContext: Record<WorkspaceId, { label: string; value: strin
   creator: { label: "Reference assignment", value: "Sample creative work" },
   admin: { label: "Environment", value: "Chassis reference mode" }
 };
+
+export const referenceCreatorContext = {
+  creativeWorkId: "reference-creative-work"
+} as const;

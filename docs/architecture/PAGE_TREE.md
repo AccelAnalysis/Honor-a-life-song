@@ -67,7 +67,56 @@ Program Dashboard; Program Overview; Participants; Schedule & Touchpoints; Stori
 
 ## Creator / Production Workspace
 
-Creator Dashboard; My Work; Story Workspace; Song Workspace; Production; Media; Calendar; Messages; Resources / Templates.
+The currently registered eight Creator destinations remain the chassis integration points. Their source-defined hierarchy is:
+
+- Creator Dashboard
+  - Assigned Work
+  - Due Soon
+  - Awaiting Review
+  - Revision Requests
+  - Production Queue
+- My Work
+  - New Assignments
+  - In Progress
+  - Awaiting Customer
+  - Revision
+  - Completed
+- Story Workspace
+  - Interview Notes
+  - Source Materials
+  - Story Themes
+  - Timeline
+  - Important People
+  - Facts to Verify
+  - Pronunciations
+  - Sensitive Content Flags
+- Song Workspace
+  - Song Overview
+  - Lyrics
+    - Draft
+    - Version History
+    - Comparison
+  - Customer Feedback
+  - Internal Notes
+  - Approvals
+  - Files
+- Production
+  - Composition
+  - Arrangement
+  - Recording
+  - Editing
+  - Mixing
+  - Mastering / Finalization
+  - Quality Review
+- Media
+  - Working Files
+  - Final Audio
+  - Lyric PDF
+  - Delivery Assets
+- Calendar
+- Messages
+
+`Resources / Templates` remains source-defined in the broader platform shell but is intentionally outside the bounded eight-page Creator chassis slice until a ninth top-level integration point is explicitly established.
 
 ## Admin / Operations Workspace
 
