@@ -1,6 +1,6 @@
-import { isPlausibleDeliveryToken, type DeliveryAccessContext } from "@/domain/delivery";
-import { getReferenceDelivery } from "@/fixtures/secure-delivery-reference";
-import { unresolvedProductionDelivery } from "@/services/secure-delivery";
+import { isPlausibleDeliveryToken, type DeliveryAccessContext } from "../domain/delivery";
+import { getReferenceDelivery } from "../fixtures/secure-delivery-reference";
+import { unresolvedProductionDelivery } from "../services/secure-delivery";
 
 function invalidDelivery(): DeliveryAccessContext {
   return {

@@ -1,5 +1,5 @@
-import type { DeliveryAccessContext, DeliveryAssetAction } from "@/domain/delivery";
-import type { AuditEvent } from "@/domain/types";
+import type { DeliveryAccessContext, DeliveryAssetAction } from "../domain/delivery";
+import type { AuditEvent } from "../domain/types";
 
 export interface ShortLivedAssetAccess {
   url: string;

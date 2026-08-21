@@ -1,5 +1,5 @@
-import type { ConsentRecord } from "@/domain/consent";
-import type { DeliveryAccessContext } from "@/domain/delivery";
+import type { ConsentRecord } from "../domain/consent";
+import type { DeliveryAccessContext } from "../domain/delivery";
 
 const activeReferenceConsent: ConsentRecord = {
   id: "reference-consent-active",
