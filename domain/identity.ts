@@ -1,5 +1,5 @@
 import type { EntityId, Membership, PersonRole } from "./types";
-import type { WorkspaceId } from "@/lib/navigation";
+import type { WorkspaceId } from "../lib/navigation";
 
 export type LoginAccessState =
   | "signed_out"
