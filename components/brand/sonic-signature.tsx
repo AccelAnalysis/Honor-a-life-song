@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import styles from "./sonic-signature.module.css";
 
 interface SonicSignatureProps {
@@ -51,6 +51,11 @@ export function SonicSignature({ compact = false, label = "Hear the Honor a Life
   const [playing, setPlaying] = useState(false);
   const [unsupported, setUnsupported] = useState(false);
 
+  useEffect(() => () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    void contextRef.current?.close();
+  }, []);
+
   async function playSignature() {
     if (playing) return;
 
@@ -60,17 +65,25 @@ export function SonicSignature({ compact = false, label = "Hear the Honor a Life
       return;
     }
 
-    const context = contextRef.current ?? new AudioContextConstructor();
-    contextRef.current = context;
-
-    if (context.state === "suspended") await context.resume();
-
-    const now = context.currentTime + 0.05;
-    NOTES.forEach((note) => scheduleVoice(context, note.frequency, now + note.offset, note.duration, note.gain));
-
+    setUnsupported(false);
     setPlaying(true);
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => setPlaying(false), 3500);
+
+    try {
+      const context = contextRef.current ?? new AudioContextConstructor();
+      contextRef.current = context;
+
+      if (context.state === "suspended") await context.resume();
+
+      const now = context.currentTime + 0.05;
+      NOTES.forEach((note) => scheduleVoice(context, note.frequency, now + note.offset, note.duration, note.gain));
+    } catch {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = null;
+      setPlaying(false);
+      setUnsupported(true);
+    }
   }
 
   return (
@@ -84,7 +97,7 @@ export function SonicSignature({ compact = false, label = "Hear the Honor a Life
           <span key={index} style={{ height: `${Math.round(height * 100)}%` }} />
         ))}
       </div>
-      {unsupported ? <span className={styles.fallback} role="status">Audio preview is not supported in this browser.</span> : null}
+      {unsupported ? <span className={styles.fallback} role="status">Audio preview could not be played in this browser.</span> : null}
     </div>
   );
 }
