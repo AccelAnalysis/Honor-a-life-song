@@ -1,6 +1,6 @@
 export const workspaceIds = ["customer", "facility", "creator", "admin"] as const;
 export type WorkspaceId = (typeof workspaceIds)[number];
-export type Availability = "chassis" | "planned";
+export type Availability = "chassis" | "structured" | "planned";
 
 export type NavigationItem = {
   id: string;
@@ -12,6 +12,7 @@ export type NavigationItem = {
 };
 
 const planned = "Business workflow and authoritative persistence are intentionally deferred beyond the operating-chassis slice.";
+const structured = "The source-defined workflow hierarchy is implemented. Authoritative production actions remain gated until their shared services are connected.";
 
 export const workspaceNavigation: Record<WorkspaceId, NavigationItem[]> = {
   customer: [
@@ -28,16 +29,16 @@ export const workspaceNavigation: Record<WorkspaceId, NavigationItem[]> = {
   ],
   facility: [
     { id: "facility-home", label: "Program Dashboard", slug: "", description: "Program status, participants, touchpoints, songs, event readiness and action items.", availability: "chassis" },
-    { id: "program", label: "Program Overview", slug: "program", description: "Scope, dates, program team, funding and deliverables.", availability: "planned", unavailableReason: planned },
-    { id: "participants", label: "Participants", slug: "participants", description: "Roster, participant detail, accessibility, consent and family connections.", availability: "planned", unavailableReason: planned },
-    { id: "schedule", label: "Schedule & Touchpoints", slug: "schedule", description: "Flexible story sessions, interviews, songwriting, rehearsals, events and delivery.", availability: "planned", unavailableReason: planned },
-    { id: "stories", label: "Stories & Interviews", slug: "stories", description: "Story capture queue, interview notes and family contributions.", availability: "planned", unavailableReason: planned },
-    { id: "songs", label: "Songs & Creative Works", slug: "songs", description: "Individual and group works with review readiness.", availability: "planned", unavailableReason: planned },
-    { id: "families", label: "Families", slug: "families", description: "Family contacts, invitations, contributions and event attendance.", availability: "planned", unavailableReason: planned },
-    { id: "events", label: "Concert & Events", slug: "events", description: "Venue, run of show, participants, invitations, accessibility and media permissions.", availability: "planned", unavailableReason: planned },
-    { id: "keepsakes", label: "Keepsakes", slug: "keepsakes", description: "Digital and physical delivery tracking.", availability: "planned", unavailableReason: planned },
-    { id: "funding", label: "Sponsors & Funding", slug: "funding", description: "Funding sources, allocations, restrictions and approved recognition.", availability: "planned", unavailableReason: planned },
-    { id: "outcomes", label: "Reports & Outcomes", slug: "outcomes", description: "Participation, family engagement, completed works, attendance and satisfaction.", availability: "planned", unavailableReason: planned }
+    { id: "program", label: "Program Overview", slug: "program", description: "Scope, dates, program team, funding and deliverables.", availability: "structured", unavailableReason: structured },
+    { id: "participants", label: "Participants", slug: "participants", description: "Roster, participant detail, accessibility, consent and family connections.", availability: "structured", unavailableReason: structured },
+    { id: "schedule", label: "Schedule & Touchpoints", slug: "schedule", description: "Flexible story sessions, interviews, songwriting, rehearsals, events and delivery.", availability: "structured", unavailableReason: structured },
+    { id: "stories", label: "Stories & Interviews", slug: "stories", description: "Story capture queue, interview notes and family contributions.", availability: "structured", unavailableReason: structured },
+    { id: "songs", label: "Songs & Creative Works", slug: "songs", description: "Individual and group works with review readiness.", availability: "structured", unavailableReason: structured },
+    { id: "families", label: "Families", slug: "families", description: "Family contacts, invitations, contributions and event attendance.", availability: "structured", unavailableReason: structured },
+    { id: "events", label: "Concert & Events", slug: "events", description: "Venue, run of show, participants, invitations, accessibility and media permissions.", availability: "structured", unavailableReason: structured },
+    { id: "keepsakes", label: "Keepsakes", slug: "keepsakes", description: "Digital and physical delivery tracking.", availability: "structured", unavailableReason: structured },
+    { id: "funding", label: "Sponsors & Funding", slug: "funding", description: "Funding sources, allocations, restrictions and approved recognition.", availability: "structured", unavailableReason: structured },
+    { id: "outcomes", label: "Reports & Outcomes", slug: "outcomes", description: "Participation, family engagement, completed works, attendance and satisfaction.", availability: "structured", unavailableReason: structured }
   ],
   creator: [
     { id: "creator-home", label: "Creator Dashboard", slug: "", description: "Assigned work, due dates, review queues, revisions and production readiness.", availability: "chassis" },
