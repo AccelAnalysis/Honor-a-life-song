@@ -3,10 +3,29 @@
 ## Public / Acquisition
 
 - Home
+  - Hero / Value Proposition
+  - How It Works
+  - Featured Stories / Songs
+  - Program Highlights
+  - Testimonials
+  - Request a Song CTA
 - How It Works
+  - Share Your Story
+  - Interview / Story Capture
+  - Songwriting Process
+  - Review & Revisions
+  - Production
+  - Delivery / Keepsakes
 - Services
   - Individual & Family Songs
   - Project Ageless
+    - Program Overview
+    - Facility Benefits
+    - Participant Experience
+    - Family Experience
+    - Concert / Presentation
+    - Sponsorship
+    - Request a Facility Program
   - Community Programs
 - Stories
 - Sponsorship & Partnerships
@@ -19,12 +38,24 @@
 ## Identity / Access
 
 - Login
+  - Sign In
+    - Identity Provider Handoff
+    - Multi-Factor Challenge (conditional)
+  - Resolve Access
+    - Authenticated Person
+    - Memberships
+    - Roles
+    - Organization Context
+  - Enter Workspace
+    - Permitted Workspaces
 - Create Account
 - Verify Email
 - Password Recovery
 - Accept Invitation
 - Multi-Factor Authentication
 - Access / Consent Error States
+
+The sibling Identity / Access destinations remain separate workflows. Login links to them when account creation, email verification, recovery, invitation acceptance, MFA policy/enrollment, or an explicit access/error path is required.
 
 ## Customer / Family Workspace
 
