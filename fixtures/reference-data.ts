@@ -1,3 +1,4 @@
+import type { SongJourneyState } from "@/domain/workflows";
 import type { AdminRecordKind } from "@/lib/admin-navigation";
 import type { WorkspaceId } from "@/lib/navigation";
 
@@ -6,6 +7,20 @@ export const referenceContext: Record<WorkspaceId, { label: string; value: strin
   facility: { label: "Reference program", value: "Sample Project Ageless run" },
   creator: { label: "Reference assignment", value: "Sample creative work" },
   admin: { label: "Environment", value: "Chassis reference mode" }
+};
+
+export const referenceCreatorContext = {
+  creativeWorkId: "reference-creative-work"
+} as const;
+
+export const referenceCustomerContext: {
+  orderId: string;
+  creativeWorkId: string;
+  journeyState: SongJourneyState;
+} = {
+  orderId: "reference-order-001",
+  creativeWorkId: "reference-work-001",
+  journeyState: "Customer Review"
 };
 
 export const referenceAdminRecordIds: Record<AdminRecordKind, string> = {
