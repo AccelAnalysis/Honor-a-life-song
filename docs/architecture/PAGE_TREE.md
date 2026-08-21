@@ -19,12 +19,24 @@
 ## Identity / Access
 
 - Login
+  - Sign In
+    - Identity Provider Handoff
+    - Multi-Factor Challenge (conditional)
+  - Resolve Access
+    - Authenticated Person
+    - Memberships
+    - Roles
+    - Organization Context
+  - Enter Workspace
+    - Permitted Workspaces
 - Create Account
 - Verify Email
 - Password Recovery
 - Accept Invitation
 - Multi-Factor Authentication
 - Access / Consent Error States
+
+The sibling Identity / Access destinations remain separate workflows. Login links to them when account creation, email verification, recovery, invitation acceptance, MFA policy/enrollment, or an explicit access/error path is required.
 
 ## Customer / Family Workspace
 
