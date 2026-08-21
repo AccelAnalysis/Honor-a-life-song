@@ -1,6 +1,6 @@
 export const workspaceIds = ["customer", "facility", "creator", "admin"] as const;
 export type WorkspaceId = (typeof workspaceIds)[number];
-export type Availability = "chassis" | "planned";
+export type Availability = "chassis" | "structured" | "planned";
 
 export type NavigationItem = {
   id: string;
@@ -12,6 +12,7 @@ export type NavigationItem = {
 };
 
 const planned = "Business workflow and authoritative persistence are intentionally deferred beyond the operating-chassis slice.";
+const structured = "The source-defined workflow hierarchy is implemented. Authoritative production actions remain gated until their shared services are connected.";
 
 export const workspaceNavigation: Record<WorkspaceId, NavigationItem[]> = {
   customer: [
@@ -50,18 +51,18 @@ export const workspaceNavigation: Record<WorkspaceId, NavigationItem[]> = {
     { id: "messages", label: "Messages", slug: "messages", description: "Customer, family, facility and internal workflow communications.", availability: "planned", unavailableReason: planned }
   ],
   admin: [
-    { id: "admin-home", label: "Executive Dashboard", slug: "", description: "Requests, orders, programs, completed songs, revenue, capacity and alerts.", availability: "chassis" },
-    { id: "requests", label: "Requests / CRM-Lite", slug: "requests", description: "Inquiries, qualification, consultations, quotes and conversion.", availability: "planned", unavailableReason: planned },
-    { id: "programs", label: "Orders & Programs", slug: "programs", description: "Individual orders, Project Ageless runs, exceptions and closed work.", availability: "planned", unavailableReason: planned },
-    { id: "people", label: "Users & Organizations", slug: "people", description: "Customers, collaborators, facilities, creators, partners and sponsors.", availability: "planned", unavailableReason: planned },
-    { id: "catalog", label: "Catalog & Pricing", slug: "catalog", description: "Packages, program templates, add-ons, deposits, revisions and turnaround targets.", availability: "planned", unavailableReason: planned },
-    { id: "finance", label: "Payments & Finance", slug: "finance", description: "Payments, invoices, refunds, sponsor funding and reconciliation.", availability: "planned", unavailableReason: planned },
-    { id: "scheduling", label: "Scheduling", slug: "scheduling", description: "Interviews, facility visits, sessions, events and creator availability.", availability: "planned", unavailableReason: planned },
-    { id: "communications", label: "Communications", slug: "communications", description: "Templates, email, SMS, failures and communication history.", availability: "planned", unavailableReason: planned },
-    { id: "consent", label: "Consent & Compliance", slug: "consent", description: "Consent records, restrictions, withdrawals, retention and audit history.", availability: "planned", unavailableReason: planned },
-    { id: "reports", label: "Reports & Analytics", slug: "reports", description: "Commercial, operational, program and funding reporting.", availability: "planned", unavailableReason: planned },
-    { id: "monitoring", label: "Monitoring & Incidents", slug: "monitoring", description: "Operational health, failures, incidents and recovery workflows.", availability: "planned", unavailableReason: planned },
-    { id: "settings", label: "Platform Configuration", slug: "settings", description: "Roles, permissions, program templates, statuses, notifications and feature flags.", availability: "planned", unavailableReason: planned }
+    { id: "admin-home", label: "Executive Dashboard", slug: "", description: "Requests, orders, programs, completed songs, revenue, capacity and alerts.", availability: "structured", unavailableReason: structured },
+    { id: "requests", label: "Requests / CRM-Lite", slug: "requests", description: "Inquiries, qualification, consultations, quotes and conversion.", availability: "structured", unavailableReason: structured },
+    { id: "programs", label: "Orders & Programs", slug: "programs", description: "Individual orders, Project Ageless runs, exceptions and closed work.", availability: "structured", unavailableReason: structured },
+    { id: "people", label: "Users & Organizations", slug: "people", description: "Customers, collaborators, facilities, creators, partners and sponsors.", availability: "structured", unavailableReason: structured },
+    { id: "catalog", label: "Catalog & Pricing", slug: "catalog", description: "Packages, program templates, add-ons, deposits, revisions and turnaround targets.", availability: "structured", unavailableReason: structured },
+    { id: "finance", label: "Payments & Finance", slug: "finance", description: "Payments, invoices, refunds, sponsor funding and reconciliation.", availability: "structured", unavailableReason: structured },
+    { id: "scheduling", label: "Scheduling", slug: "scheduling", description: "Interviews, facility visits, sessions, events and creator availability.", availability: "structured", unavailableReason: structured },
+    { id: "communications", label: "Communications", slug: "communications", description: "Templates, email, SMS, failures and communication history.", availability: "structured", unavailableReason: structured },
+    { id: "consent", label: "Consent & Compliance", slug: "consent", description: "Consent records, restrictions, withdrawals, retention and audit history.", availability: "structured", unavailableReason: structured },
+    { id: "reports", label: "Reports & Analytics", slug: "reports", description: "Commercial, operational, program and funding reporting.", availability: "structured", unavailableReason: structured },
+    { id: "monitoring", label: "Monitoring & Incidents", slug: "monitoring", description: "Operational health, failures, incidents and recovery workflows.", availability: "structured", unavailableReason: structured },
+    { id: "settings", label: "Platform Configuration", slug: "settings", description: "Roles, permissions, program templates, statuses, notifications and feature flags.", availability: "structured", unavailableReason: structured }
   ]
 };
 
