@@ -1,0 +1,241 @@
+.stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.player {
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  border: 1px solid #ddd6cf;
+  border-radius: 18px;
+  background: #fffdf9;
+  color: #191722;
+  box-shadow: 0 14px 40px rgba(35, 24, 39, 0.08);
+}
+
+.compactPlayer {
+  padding: 0.8rem;
+  box-shadow: none;
+}
+
+.metadata {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.metadata strong {
+  font-family: var(--font-brand-serif, Georgia, "Times New Roman", serif);
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.metadata span {
+  color: #6e6878;
+  font-size: 0.82rem;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.playButton,
+.actionButton,
+.recordButton {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid #ddd6cf;
+  border-radius: 999px;
+  background: #fffdf9;
+  color: #191722;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.playButton {
+  background: #5b3d63;
+  border-color: #5b3d63;
+  color: white;
+}
+
+.playButton:disabled,
+.actionButton:disabled,
+.recordButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.playButton:focus-visible,
+.actionButton:focus-visible,
+.recordButton:focus-visible,
+.progress:focus-visible {
+  outline: 3px solid #4f7470;
+  outline-offset: 3px;
+}
+
+.progress {
+  width: 100%;
+  accent-color: #5b3d63;
+}
+
+.time {
+  color: #6e6878;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.waveform {
+  display: grid;
+  grid-template-columns: repeat(24, minmax(2px, 1fr));
+  gap: 2px;
+  height: 34px;
+  align-items: center;
+  overflow: hidden;
+}
+
+.waveBar {
+  display: block;
+  width: 100%;
+  border-radius: 999px;
+  background: #ddd6cf;
+  transform-origin: center;
+}
+
+.waveBarActive {
+  background: #4f7470;
+}
+
+.stateMessage,
+.restriction {
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.stateMessage {
+  background: #e8f0ee;
+  color: #2f5753;
+}
+
+.restriction {
+  background: #f8f2e8;
+  color: #66451b;
+}
+
+.artwork {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 75% 18%, rgba(79, 116, 112, 0.3), transparent 35%),
+    linear-gradient(145deg, #eee4ef, #f3efe9 58%, #fffdf9);
+  border: 1px solid #ddd6cf;
+}
+
+.artworkImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.artworkOverlay {
+  position: absolute;
+  inset: auto 0 0;
+  display: grid;
+  gap: 0.2rem;
+  padding: 1rem;
+  background: linear-gradient(transparent, rgba(25, 23, 34, 0.78));
+  color: white;
+}
+
+.artworkOverlay strong {
+  font-family: var(--font-brand-serif, Georgia, "Times New Roman", serif);
+  font-size: 1.1rem;
+}
+
+.recorder {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #ddd6cf;
+  border-radius: 18px;
+  background: #fffdf9;
+}
+
+.recordingIndicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #8a3d46;
+  font-weight: 700;
+}
+
+.recordingDot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.reference {
+  display: grid;
+  grid-template-columns: minmax(180px, 320px) minmax(0, 1fr);
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: center;
+  padding: clamp(1.25rem, 4vw, 3rem);
+  border: 1px solid #ddd6cf;
+  border-radius: 28px;
+  background: #fffdf9;
+}
+
+.referenceCopy {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.referenceEyebrow {
+  color: #5b3d63;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.referenceTitle {
+  margin: 0;
+  font-family: var(--font-brand-serif, Georgia, "Times New Roman", serif);
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+
+.referenceStory {
+  color: #6e6878;
+  max-width: 55ch;
+  line-height: 1.65;
+}
+
+@media (max-width: 720px) {
+  .reference {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .waveBar,
+  .waveBarActive,
+  .playButton,
+  .actionButton,
+  .recordButton {
+    transition: none;
+    animation: none;
+  }
+}
