@@ -30,6 +30,12 @@ export function canTransition<T extends string>(map: Record<T, T[]>, from: T, to
   return map[from].includes(to);
 }
 
+const creatorProductionEligibleStates: readonly SongJourneyState[] = ["Approved for Production", "Production", "Quality Review", "Final Approval"];
+
+export function creatorProductionEligible(state: SongJourneyState) {
+  return creatorProductionEligibleStates.includes(state);
+}
+
 export function getNextProgramJourneyState(state: ProgramJourneyState): ProgramJourneyState | undefined {
   return projectAgelessTransitions[state][0];
 }
