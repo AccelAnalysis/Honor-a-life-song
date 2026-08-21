@@ -1,22 +1,36 @@
 import { WorkspaceRoute } from "@/components/workspace-route";
 import { referenceFacilityContext } from "@/fixtures/reference-data";
 import { getFacilityStaticRouteSlugs } from "@/lib/facility-navigation";
-import { workspaceIds, workspaceNavigation } from "@/lib/navigation";
+import { workspaceIds, workspaceNavigation, type WorkspaceId } from "@/lib/navigation";
+
+type WorkspaceStaticParam = {
+  workspace: WorkspaceId;
+  slug: string[];
+};
 
 export function generateStaticParams() {
-  return workspaceIds.flatMap((workspace) => {
+  const params: WorkspaceStaticParam[] = [];
+
+  for (const workspace of workspaceIds) {
     if (workspace === "facility") {
-      return getFacilityStaticRouteSlugs(
-        referenceFacilityContext.programRunId,
-        referenceFacilityContext.participantId
-      ).map((slug) => ({ workspace, slug }));
+      params.push(
+        ...getFacilityStaticRouteSlugs(
+          referenceFacilityContext.programRunId,
+          referenceFacilityContext.participantId
+        ).map((slug) => ({ workspace, slug }))
+      );
+      continue;
     }
 
-    return workspaceNavigation[workspace].map((item) => ({
-      workspace,
-      slug: item.slug ? item.slug.split("/") : []
-    }));
-  });
+    params.push(
+      ...workspaceNavigation[workspace].map((item) => ({
+        workspace,
+        slug: item.slug ? item.slug.split("/") : []
+      }))
+    );
+  }
+
+  return params;
 }
 
 export default function WorkspacePage() {
