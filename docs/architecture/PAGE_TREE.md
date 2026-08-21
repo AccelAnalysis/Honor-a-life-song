@@ -75,4 +75,22 @@ Executive Dashboard; Requests / CRM-Lite; Orders & Programs; Users & Organizatio
 
 ## Secure Delivery
 
-Private Song Page; QR Keepsake Landing Page; Access Verification; Expired / Revoked Link; Delivery Confirmation.
+- Song / `[deliveryToken]`
+  - Access Resolution
+    - Token Validation
+    - Access Verification when required
+    - Entitlement Validation
+    - Consent Validation
+    - Asset Authorization
+  - Private Song Page
+    - Listen
+    - Download
+    - Lyrics
+    - Photos / Approved Story
+    - Share Controls
+  - QR Keepsake Landing Page / entry
+  - Access Verification
+  - Expired / Revoked Link
+  - Delivery Confirmation
+
+Access Resolution items are implementation/security gates rather than user-facing navigation destinations. QR entry resolves into the same secure route and does not bypass those gates.
