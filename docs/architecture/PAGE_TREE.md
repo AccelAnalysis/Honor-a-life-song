@@ -3,10 +3,29 @@
 ## Public / Acquisition
 
 - Home
+  - Hero / Value Proposition
+  - How It Works
+  - Featured Stories / Songs
+  - Program Highlights
+  - Testimonials
+  - Request a Song CTA
 - How It Works
+  - Share Your Story
+  - Interview / Story Capture
+  - Songwriting Process
+  - Review & Revisions
+  - Production
+  - Delivery / Keepsakes
 - Services
   - Individual & Family Songs
   - Project Ageless
+    - Program Overview
+    - Facility Benefits
+    - Participant Experience
+    - Family Experience
+    - Concert / Presentation
+    - Sponsorship
+    - Request a Facility Program
   - Community Programs
 - Stories
 - Sponsorship & Partnerships
