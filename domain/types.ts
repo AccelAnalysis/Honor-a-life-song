@@ -20,7 +20,15 @@ export interface Participation { id: EntityId; participantId: EntityId; touchpoi
 export interface StoryContribution { id: EntityId; subjectPersonId: EntityId; contributedByPersonId?: EntityId; type: "note" | "photo" | "audio" | "document" | "memory"; }
 export interface CreativeWork { id: EntityId; kind: "individual_song" | "group_song" | "tribute" | "arrangement" | "performance_asset"; title?: string; status: string; }
 export interface LyricVersion { id: EntityId; creativeWorkId: EntityId; version: number; createdAt: ISODateTime; }
-export interface Approval { id: EntityId; creativeWorkId: EntityId; approvedByPersonId: EntityId; approvedAt: ISODateTime; scope: "lyrics" | "final_recording"; }
+export interface Approval {
+  id: EntityId;
+  creativeWorkId: EntityId;
+  approvedByPersonId: EntityId;
+  approvedAt: ISODateTime;
+  scope: "lyrics" | "final_recording";
+  /** Required for lyric approvals so approval always identifies the exact LyricVersion reviewed. */
+  lyricVersionId?: EntityId;
+}
 
 export interface MediaAsset { id: EntityId; ownerEntityId: EntityId; kind: "photo" | "audio" | "video" | "document"; storageKey: string; }
 export interface AuditEvent { id: EntityId; actorPersonId?: EntityId; action: string; entityType: string; entityId: EntityId; occurredAt: ISODateTime; }

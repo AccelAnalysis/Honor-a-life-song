@@ -1,5 +1,18 @@
-import { songJourney } from "@/domain/workflows";
+import Link from "next/link";
+import { howItWorksSteps } from "@/lib/public-navigation";
 
 export function Journey() {
-  return <ol className="journey">{songJourney.map((step, index) => <li key={step}><span>{index + 1}</span><div><strong>{step}</strong><small>{index === 0 ? "Begin the service journey" : "Governed workflow state"}</small></div></li>)}</ol>;
+  return (
+    <ol className="journey">
+      {howItWorksSteps.map((step, index) => (
+        <li key={step.id}>
+          <span>{index + 1}</span>
+          <div>
+            <strong><Link href={step.href}>{step.label}</Link></strong>
+            <small>{step.description}</small>
+          </div>
+        </li>
+      ))}
+    </ol>
+  );
 }
