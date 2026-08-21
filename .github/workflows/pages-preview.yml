@@ -1,0 +1,80 @@
+name: pages-preview
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "pages-preview-build-${{ github.event.pull_request.number || github.ref }}"
+  cancel-in-progress: true
+
+jobs:
+  build-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Resolve preview base path
+        shell: bash
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            preview_path="pr-${{ github.event.pull_request.number }}"
+            base_path="/${{ github.event.repository.name }}/${preview_path}"
+          else
+            preview_path=""
+            base_path="/${{ github.event.repository.name }}"
+          fi
+
+          echo "HALS_PREVIEW_PATH=${preview_path}" >> "$GITHUB_ENV"
+          echo "PAGES_BASE_PATH=${base_path}" >> "$GITHUB_ENV"
+
+      - name: Build static Pages preview
+        run: npm run build
+        env:
+          HALS_PAGES_PREVIEW: "1"
+          PAGES_BASE_PATH: ${{ env.PAGES_BASE_PATH }}
+
+      - name: Upload preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pages-preview-site
+          path: ./out
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Record preview target
+        shell: bash
+        run: |
+          root="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
+          if [[ -n "${HALS_PREVIEW_PATH}" ]]; then
+            echo "### Visual preview target" >> "$GITHUB_STEP_SUMMARY"
+            echo "${root}/${HALS_PREVIEW_PATH}/" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Main Pages target" >> "$GITHUB_STEP_SUMMARY"
+            echo "${root}/" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "This is a static visual-review projection. Production identity, persistence, payments, messaging and secure delivery remain separate runtime concerns." >> "$GITHUB_STEP_SUMMARY"

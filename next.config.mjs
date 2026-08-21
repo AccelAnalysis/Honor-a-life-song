@@ -1,7 +1,19 @@
 /** @type {import('next').NextConfig} */
+const isPagesPreview = process.env.HALS_PAGES_PREVIEW === "1";
+const pagesBasePath = process.env.PAGES_BASE_PATH || "";
+
 const nextConfig = {
   reactStrictMode: true,
-  poweredByHeader: false
+  poweredByHeader: false,
+  ...(isPagesPreview
+    ? {
+        output: "export",
+        trailingSlash: true,
+        basePath: pagesBasePath,
+        assetPrefix: pagesBasePath,
+        images: { unoptimized: true }
+      }
+    : {})
 };
 
 export default nextConfig;
