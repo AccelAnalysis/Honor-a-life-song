@@ -42,13 +42,13 @@ export const workspaceNavigation: Record<WorkspaceId, NavigationItem[]> = {
   ],
   creator: [
     { id: "creator-home", label: "Creator Dashboard", slug: "", description: "Assigned work, due dates, review queues, revisions and production readiness.", availability: "chassis" },
-    { id: "work", label: "My Work", slug: "work", description: "Assignments by lifecycle state.", availability: "planned", unavailableReason: planned },
-    { id: "story", label: "Story Workspace", slug: "story", description: "Interview notes, source materials, themes, facts and sensitive-content flags.", availability: "planned", unavailableReason: planned },
-    { id: "song", label: "Song Workspace", slug: "song", description: "Lyrics, versions, feedback, notes, approvals and files.", availability: "planned", unavailableReason: planned },
-    { id: "production", label: "Production", slug: "production", description: "Composition through quality review and finalization.", availability: "planned", unavailableReason: planned },
-    { id: "media", label: "Media", slug: "media", description: "Working files, final audio, lyric documents and delivery assets.", availability: "planned", unavailableReason: planned },
-    { id: "calendar", label: "Calendar", slug: "calendar", description: "Assigned interviews, sessions and production commitments.", availability: "planned", unavailableReason: planned },
-    { id: "messages", label: "Messages", slug: "messages", description: "Customer, family, facility and internal workflow communications.", availability: "planned", unavailableReason: planned }
+    { id: "work", label: "My Work", slug: "work", description: "Assignments by lifecycle state.", availability: "structured", unavailableReason: structured },
+    { id: "story", label: "Story Workspace", slug: "story", description: "Interview notes, source materials, themes, facts and sensitive-content flags.", availability: "structured", unavailableReason: structured },
+    { id: "song", label: "Song Workspace", slug: "song", description: "Lyrics, versions, feedback, notes, approvals and files.", availability: "structured", unavailableReason: structured },
+    { id: "production", label: "Production", slug: "production", description: "Composition through quality review and finalization.", availability: "structured", unavailableReason: structured },
+    { id: "media", label: "Media", slug: "media", description: "Working files, final audio, lyric documents and delivery assets.", availability: "structured", unavailableReason: structured },
+    { id: "calendar", label: "Calendar", slug: "calendar", description: "Assigned interviews, sessions and production commitments.", availability: "structured", unavailableReason: structured },
+    { id: "messages", label: "Messages", slug: "messages", description: "Customer, family, facility and internal workflow communications.", availability: "structured", unavailableReason: structured }
   ],
   admin: [
     { id: "admin-home", label: "Executive Dashboard", slug: "", description: "Requests, orders, programs, completed songs, revenue, capacity and alerts.", availability: "chassis" },
