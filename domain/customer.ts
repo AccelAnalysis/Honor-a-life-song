@@ -66,6 +66,37 @@ export function customerActionAllowed(
   return { allowed: true };
 }
 
+export type CustomerScopedCapability = "order" | "payments" | "consent" | "approval" | "internal_creator_notes";
+
+export type CustomerAccessGrant = {
+  orderIds: readonly EntityId[];
+  paymentOrderIds?: readonly EntityId[];
+  consentOrderIds?: readonly EntityId[];
+  approvalOrderIds?: readonly EntityId[];
+  mediaAssetIds?: readonly EntityId[];
+};
+
+export function customerScopedAccessAllows(
+  grant: CustomerAccessGrant,
+  orderId: EntityId,
+  capability: CustomerScopedCapability
+) {
+  if (!grant.orderIds.includes(orderId)) return false;
+  if (capability === "internal_creator_notes") return false;
+  if (capability === "payments") return Boolean(grant.paymentOrderIds?.includes(orderId));
+  if (capability === "consent") return Boolean(grant.consentOrderIds?.includes(orderId));
+  if (capability === "approval") return Boolean(grant.approvalOrderIds?.includes(orderId));
+  return true;
+}
+
+export function customerMediaAccessAllows(
+  grant: CustomerAccessGrant,
+  orderId: EntityId,
+  mediaAssetId: EntityId
+) {
+  return grant.orderIds.includes(orderId) && Boolean(grant.mediaAssetIds?.includes(mediaAssetId));
+}
+
 export function orderContextMatches(orderId: EntityId | undefined, expectedOrderId: EntityId) {
   return Boolean(orderId && orderId === expectedOrderId);
 }
