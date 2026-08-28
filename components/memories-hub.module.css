@@ -1,1 +1,40 @@
-.shell{min-height:100vh;padding:0 clamp(22px,6vw,92px) 70px;background:radial-gradient(circle at 85% 5%,#eee3ef 0,transparent 28%),#fffdf9}.shell>header{height:76px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ded6d0}.brand{font-family:Georgia,"Times New Roman",serif;font-weight:800;font-size:1.2rem}.shell>header span{color:#6d6671;font-size:.88rem}.intro{max-width:800px;padding:clamp(55px,8vw,110px) 0 45px}.eyebrow{text-transform:uppercase;letter-spacing:.14em;font-size:.72rem;font-weight:800;color:#6b496f}.intro h1{font-size:clamp(3rem,6vw,6rem)}.intro>p:last-child{font-size:1.15rem;color:#6b6470;max-width:690px}.list{display:grid;gap:14px;max-width:1050px}.list article{padding:26px 0;border-top:1px solid #ded6d0;display:flex;align-items:center;justify-content:space-between;gap:30px}.list h2{font-size:clamp(1.5rem,3vw,2.35rem);margin:.2em 0}.list article p{margin:4px 0;color:#6b6470}.itemAction{display:flex;flex-direction:column;align-items:flex-end;gap:10px;text-align:right}.itemAction span{font-weight:800}.itemAction small{color:#786f79}.primary{display:inline-flex;padding:11px 17px;border-radius:999px;background:#5b3d63;color:#fff;font-weight:800}.empty{max-width:720px;padding:35px 0;border-top:1px solid #ded6d0}.shell>footer{margin-top:70px;padding-top:20px;border-top:1px solid #ded6d0;color:#746d77;font-size:.84rem}.error{color:#8d3131;font-weight:700}@media(max-width:700px){.list article{align-items:flex-start;flex-direction:column}.itemAction{align-items:flex-start;text-align:left}.intro h1{font-size:3rem}}
+.shell {
+  min-height: 100vh;
+  padding: 0 clamp(22px, 6vw, 92px) 70px;
+  background:
+    radial-gradient(circle at 88% 4%, rgba(28, 139, 211, 0.1), transparent 27%),
+    radial-gradient(circle at 8% 92%, rgba(213, 63, 163, 0.06), transparent 26%),
+    #fff;
+  color: #141648;
+}
+.shell > header { height: 82px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e1e4f0; }
+.brand { display: inline-flex; }
+.shell > header span { color: #62657a; font-size: 0.84rem; font-weight: 760; }
+.intro { max-width: 850px; padding: clamp(62px, 9vw, 120px) 0 50px; }
+.eyebrow { text-transform: uppercase; letter-spacing: 0.14em; font-size: 0.7rem; font-weight: 850; color: #834ab4; }
+.intro h1,
+.shell > section h1 { font-family: var(--font-brand-sans, "Avenir Next", Avenir, Inter, sans-serif); font-size: clamp(3.1rem, 6.3vw, 6.3rem); font-weight: 640; line-height: 0.92; letter-spacing: -0.06em; margin: 0.14em 0; }
+.intro > p:last-child { font-size: 1.12rem; color: #62657a; max-width: 650px; }
+.list { display: grid; gap: 0; max-width: 1080px; border-top: 1px solid #e1e4f0; }
+.list article { position: relative; padding: 28px 4px; border-bottom: 1px solid #e1e4f0; display: flex; align-items: center; justify-content: space-between; gap: 30px; }
+.list article::before { content: ""; position: absolute; left: 0; top: 16px; bottom: 16px; width: 3px; border-radius: 999px; background: transparent; }
+.list article:hover { background: linear-gradient(90deg, #f8f9fd, transparent); padding-left: 16px; padding-right: 12px; }
+.list article:hover::before { background: linear-gradient(180deg, #d53fa3, #834ab4, #1572c6); }
+.list h2 { font-family: var(--font-brand-sans, "Avenir Next", Avenir, Inter, sans-serif); font-size: clamp(1.5rem, 3vw, 2.35rem); font-weight: 650; margin: 0.2em 0; }
+.list article p { margin: 4px 0; color: #62657a; }
+.itemAction { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; text-align: right; }
+.itemAction span { font-weight: 800; color: #141648; }
+.itemAction small { color: #777a8d; }
+.primary { display: inline-flex; min-height: 44px; align-items: center; justify-content: center; padding: 10px 17px; border-radius: 12px; background: #1572c6; color: #fff; font-weight: 820; box-shadow: 0 10px 24px rgba(21, 114, 198, 0.14); }
+.primary:hover { background: #1165b1; }
+.empty { max-width: 720px; padding: 35px 0; border-top: 1px solid #e1e4f0; border-bottom: 1px solid #e1e4f0; color: #62657a; }
+.empty h2 { color: #141648; }
+.shell > footer { margin-top: 70px; padding-top: 20px; border-top: 1px solid #e1e4f0; color: #74778b; font-size: 0.82rem; }
+.error { color: #8a3d46; font-weight: 700; }
+
+@media (max-width: 700px) {
+  .shell { padding-left: 20px; padding-right: 20px; }
+  .list article { align-items: flex-start; flex-direction: column; }
+  .itemAction { align-items: flex-start; text-align: left; }
+  .intro h1 { font-size: 3.2rem; }
+}
