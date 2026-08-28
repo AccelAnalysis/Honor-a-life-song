@@ -65,15 +65,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     configurationError,
     async signIn(email, password) {
       const result = await signInWithEmailAndPassword(getFirebaseAuth(), email.trim(), password);
-      await ensureUserProfile({ uid: result.user.uid, email: result.user.email, displayName: result.user.displayName });
+      await ensureUserProfile({ uid: result.user.uid, email: result.user.email, displayName: result.user.displayName }).catch(() => undefined);
+      setUser(result.user);
+      setStatus("signed_in");
       return result.user;
     },
     async createAccount({ email, password, displayName }) {
       const result = await createUserWithEmailAndPassword(getFirebaseAuth(), email.trim(), password);
       const normalizedName = displayName.trim();
-      await updateProfile(result.user, { displayName: normalizedName });
-      await sendEmailVerification(result.user);
-      await ensureUserProfile({ uid: result.user.uid, email: result.user.email, displayName: normalizedName });
+      await updateProfile(result.user, { displayName: normalizedName }).catch(() => undefined);
+      await ensureUserProfile({ uid: result.user.uid, email: result.user.email, displayName: normalizedName }).catch(() => undefined);
+      await sendEmailVerification(result.user).catch(() => undefined);
       setUser(result.user);
       setStatus("signed_in");
       return result.user;

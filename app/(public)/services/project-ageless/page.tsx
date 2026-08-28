@@ -17,15 +17,15 @@ export default function ProjectAgelessPage() {
   return (
     <PublicShell>
       <main className="contentPage">
-        <p className="eyebrow">Stories, music, and connection</p>
-        <h1>Project Ageless</h1>
-        <p className="lede">A short-form participatory residency where residents can share stories, connect with family, help shape songs, listen together, and celebrate the finished work.</p>
+        <p className="eyebrow">The complete $2,500 experience</p>
+        <h1>Honor a Life Song Experience</h1>
+        <p className="lede">A short-form participatory residency where people can share stories, connect with family, help shape songs, listen together, and return for a follow-up concert.</p>
 
         <div className="callout"><strong>Built around the person:</strong> Participants can join the parts of the experience that feel comfortable and meaningful to them. There is no requirement that everyone take part in every activity.</div>
 
         <section className="hierarchySection" aria-labelledby="project-ageless-explore">
           <div className="sectionHeading">
-            <p className="eyebrow">Explore Project Ageless</p>
+            <p className="eyebrow">Explore the full experience</p>
             <h2 id="project-ageless-explore">See what the experience can include</h2>
           </div>
           <div className="cardGrid hierarchyCards">

@@ -60,7 +60,7 @@ export const workspaceNavigation: Record<WorkspaceId, NavigationItem[]> = {
   admin: [
     { id: "admin-home", label: "Executive Dashboard", slug: "", description: "See requests, orders, programs, completed songs, revenue, capacity, and alerts.", availability: "structured", unavailableReason: structured },
     { id: "requests", label: "Requests & Leads", slug: "requests", description: "Manage new inquiries, qualification, consultations, quotes, and conversions.", availability: "structured", unavailableReason: structured },
-    { id: "programs", label: "Orders & Programs", slug: "programs", description: "Manage individual orders, Project Ageless programs, exceptions, and closed work.", availability: "structured", unavailableReason: structured },
+    { id: "programs", label: "Orders & Experiences", slug: "programs", description: "Manage organization purchases, their resulting experiences, exceptions, and closed work.", availability: "structured", unavailableReason: structured },
     { id: "people", label: "Users & Organizations", slug: "people", description: "Manage customers, families, organization accounts, facilities, creators, partners, and sponsors.", availability: "structured", unavailableReason: structured },
     { id: "catalog", label: "Catalog & Pricing", slug: "catalog", description: "Manage packages, program options, add-ons, deposits, revision limits, and turnaround targets.", availability: "structured", unavailableReason: structured },
     { id: "finance", label: "Payments & Finance", slug: "finance", description: "Manage payments, invoices, refunds, sponsor funding, and reconciliation.", availability: "structured", unavailableReason: structured },

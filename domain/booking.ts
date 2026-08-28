@@ -1,33 +1,21 @@
 import type { ConsentScope } from "./consent";
+import {
+  experienceOfferings,
+  getExperienceOffering,
+  type ExperienceOfferingId
+} from "./experience";
 import type { EntityId, ISODateTime } from "./types";
 
-export const serviceOfferings = [
-  {
-    id: "individual-legacy-song",
-    name: "Individual Legacy Song",
-    priceCents: 20_000,
-    currency: "USD",
-    description: "A focused Honor a Life Song service centered on one individual legacy song."
-  },
-  {
-    id: "complete-honor-a-life-song-experience",
-    name: "Complete Honor-a-Life-Song Experience",
-    priceCents: 250_000,
-    currency: "USD",
-    description: "The complete Honor a Life Song experience discussed with the customer."
-  }
-] as const;
-
-export type ServiceOfferingId = (typeof serviceOfferings)[number]["id"];
+export const serviceOfferings = experienceOfferings;
+export type ServiceOfferingId = ExperienceOfferingId;
 
 export const bookingSteps = [
-  "welcome",
-  "account",
+  "experience",
+  "organization",
   "schedule",
   "agreement",
   "payment",
-  "participants",
-  "permissions",
+  "setup",
   "ready"
 ] as const;
 export type BookingStep = (typeof bookingSteps)[number];
@@ -40,7 +28,8 @@ export const bookingServiceCapabilities = {
   payments: false,
   participantPersistence: false,
   consentPersistence: false,
-  notifications: false
+  notifications: false,
+  experiencePersistence: false
 } as const;
 export type BookingServiceCapability = keyof typeof bookingServiceCapabilities;
 
@@ -49,7 +38,7 @@ export function bookingActionIsAvailable(capability: BookingServiceCapability): 
 }
 
 export function getServiceOffering(id: ServiceOfferingId) {
-  return serviceOfferings.find((offering) => offering.id === id);
+  return getExperienceOffering(id);
 }
 
 export function formatOfferingPrice(priceCents: number): string {

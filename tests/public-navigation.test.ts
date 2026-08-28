@@ -5,18 +5,18 @@ const expectedHome = [
   "Every Life Has a Song",
   "How It Works",
   "Songs & Stories",
-  "Programs",
+  "Choose an Experience",
   "What People Share",
-  "Begin a Song"
+  "Plan an Experience"
 ];
 
 const expectedHowItWorks = [
-  "Share Your Story",
-  "Interview & Story Capture",
-  "Songwriting",
-  "Review & Revisions",
-  "Production",
-  "Delivery & Keepsakes"
+  "Choose an Experience",
+  "Prepare Participants",
+  "Stories Become Songs",
+  "Review & Event Preparation",
+  "Presentation or Concert",
+  "Secure Sharing & Keepsakes"
 ];
 
 const expectedProjectAgeless = [
@@ -57,5 +57,18 @@ describe("public navigation", () => {
     expect(request?.summary).toContain("Tell us about your facility");
     expect(request?.description).not.toContain("canonical");
     expect(request?.description).not.toContain("integration");
+  });
+
+  it("offers organization-owned experiences instead of an individual purchase", () => {
+    const services = publicNavigation.find((item) => item.id === "services");
+    expect(services?.children?.[0]).toEqual(expect.objectContaining({
+      id: "single-song-group-event",
+      label: "Single-Song Group Event"
+    }));
+    expect(services?.children?.[1]).toEqual(expect.objectContaining({
+      id: "project-ageless",
+      label: "Honor a Life Song Experience"
+    }));
+    expect(JSON.stringify(publicNavigation)).not.toContain("Purchase an individual song");
   });
 });

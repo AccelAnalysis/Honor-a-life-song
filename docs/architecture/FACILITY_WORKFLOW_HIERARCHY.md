@@ -1,5 +1,7 @@
 # Facility / Project Ageless Workflow Hierarchy
 
+> **Status:** internal/deeper-workflow reference. Organization customers use the five-item Organization account navigation; applicable participant, interview, song, concert, and material depth appears inside the purchased experience. See `CUSTOMER_MODEL.md`.
+
 ## Purpose
 
 This implementation deepens the existing eleven Facility / Project Ageless operating-chassis integration points into the source-defined child and grandchild workflow hierarchy.

@@ -1,8 +1,10 @@
 # Customer / Family Workflow Hierarchy
 
+> **Status:** legacy deeper-workflow reference. The primary customer is now the organization. Participant and family access begins at `/claim`, `/memories`, or Secure Delivery, not this ten-module workspace. See `CUSTOMER_MODEL.md` for the governing model.
+
 ## Scope
 
-This slice deepens the existing ten Customer / Family chassis destinations without adding new top-level navigation or creating a second application. The Customer workspace remains a focused order/song journey on the shared Honor a Life Song meaning-to-song engine.
+This slice documents the earlier ten-destination Customer / Family chassis without adding another application. It may inform future deeper participant workflows, but it is not an acquisition surface or the default post-event claim destination.
 
 ## Governing route model
 

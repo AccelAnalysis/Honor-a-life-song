@@ -3,15 +3,24 @@ import {
   doc,
   getDoc,
   getDocs,
+  query,
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
   writeBatch,
   type DocumentData,
   type QueryDocumentSnapshot,
   type Timestamp
 } from "firebase/firestore";
 import type {
+  ExperienceAccessInvitation,
+  ExperienceAccessRecipient,
+  ExperienceAssetAudience,
+  ExperienceAssetEntitlement,
+  ExperienceConsentRecord,
+  ExperienceParticipant,
+  ExperienceParticipantStatus,
   OrganizationAccount,
   OrganizationAgreement,
   OrganizationAgreementKind,
@@ -24,6 +33,13 @@ import type {
   OrganizationMemberRole,
   OrganizationSuggestedDate
 } from "@/domain/organization-account";
+import type { ConsentScope, ConsentState } from "@/domain/consent";
+import {
+  entitlementConsentScopes,
+  getExperienceOffering,
+  normalizeExperienceOfferingId,
+  type ExperienceOfferingId
+} from "@/domain/experience";
 import type { OrganizationKind } from "@/domain/types";
 import { getFirebaseFirestore } from "./client";
 
@@ -35,7 +51,7 @@ function toIso(value: unknown): string {
   return new Date(0).toISOString();
 }
 
-function dataOf(snapshot: QueryDocumentSnapshot<DocumentData>) {
+function dataOf(snapshot: QueryDocumentSnapshot<DocumentData>): DocumentData & { id: string } {
   return { id: snapshot.id, ...snapshot.data() };
 }
 
@@ -85,11 +101,15 @@ function agreementFrom(organizationId: string, data: ReturnType<typeof dataOf>):
 }
 
 function experienceFrom(organizationId: string, data: ReturnType<typeof dataOf>): OrganizationExperience {
+  const offeringId = normalizeExperienceOfferingId(data.offeringId ?? data.experienceType) ?? "honor-a-life-song-experience";
+  const offering = getExperienceOffering(offeringId);
   return {
     id: data.id,
     organizationId,
     title: data.title ?? "Honor a Life Song experience",
-    experienceType: data.experienceType ?? "program",
+    offeringId,
+    templateKind: data.templateKind ?? offering?.templateKind ?? "full_program",
+    participantMode: data.participantMode ?? offering?.participantMode ?? "named_roster",
     status: data.status ?? "inquiry",
     startsAt: data.startsAt ? toIso(data.startsAt) : undefined,
     endsAt: data.endsAt ? toIso(data.endsAt) : undefined,
@@ -123,9 +143,87 @@ function assetFrom(organizationId: string, data: ReturnType<typeof dataOf>): Org
     title: data.title ?? "Event file",
     kind: data.kind ?? "other",
     status: data.status ?? "processing",
+    organizationVisible: data.organizationVisible === true,
+    participantId: data.participantId,
     storagePath: data.storagePath,
     downloadUrl: data.downloadUrl,
     createdAt: toIso(data.createdAt)
+  };
+}
+
+function participantFrom(organizationId: string, experienceId: string, data: ReturnType<typeof dataOf>): ExperienceParticipant {
+  return {
+    id: data.id,
+    organizationId,
+    experienceId,
+    displayName: data.displayName ?? "Participant",
+    participationStatus: data.participationStatus ?? "enrolled",
+    permissionReadiness: data.permissionReadiness ?? "not_requested",
+    familyContactName: data.familyContactName,
+    familyContactEmail: data.familyContactEmail,
+    createdAt: toIso(data.createdAt),
+    updatedAt: toIso(data.updatedAt)
+  };
+}
+
+function consentFrom(organizationId: string, experienceId: string, participantId: string, data: ReturnType<typeof dataOf>): ExperienceConsentRecord {
+  return {
+    id: data.id,
+    organizationId,
+    experienceId,
+    participantId,
+    state: data.state ?? "pending",
+    scopes: Array.isArray(data.scopes) ? data.scopes : [],
+    restrictions: Array.isArray(data.restrictions) ? data.restrictions : [],
+    authorityBasis: data.authorityBasis ?? "self",
+    signedByName: data.signedByName ?? "",
+    source: data.source ?? "paper",
+    participantDeliveryEmail: data.participantDeliveryEmail ?? undefined,
+    designatedFamilyEmails: Array.isArray(data.designatedFamilyEmails) ? data.designatedFamilyEmails : [],
+    version: typeof data.version === "number" ? data.version : 1,
+    effectiveAt: data.effectiveAt ? toIso(data.effectiveAt) : undefined,
+    withdrawnAt: data.withdrawnAt ? toIso(data.withdrawnAt) : undefined,
+    createdAt: toIso(data.createdAt)
+  };
+}
+
+function entitlementFrom(organizationId: string, experienceId: string, data: ReturnType<typeof dataOf>): ExperienceAssetEntitlement {
+  return {
+    id: data.id,
+    organizationId,
+    experienceId,
+    assetId: data.assetId ?? "",
+    participantId: data.participantId ?? "",
+    audience: data.audience ?? "participant",
+    consentRecordId: data.consentRecordId ?? "",
+    requiredConsentScopes: Array.isArray(data.requiredConsentScopes) ? data.requiredConsentScopes : [],
+    authorizedRecipientEmails: Array.isArray(data.authorizedRecipientEmails) ? data.authorizedRecipientEmails : [],
+    status: data.status ?? "pending",
+    createdAt: toIso(data.createdAt),
+    revokedAt: data.revokedAt ? toIso(data.revokedAt) : undefined
+  };
+}
+
+function accessInvitationFrom(organizationId: string, experienceId: string, data: ReturnType<typeof dataOf>): ExperienceAccessInvitation {
+  return {
+    id: data.id,
+    organizationId,
+    organizationName: data.organizationName ?? "Organization",
+    experienceId,
+    experienceTitle: data.experienceTitle ?? "Honor a Life Song experience",
+    participantId: data.participantId ?? "",
+    participantName: data.participantName ?? "Participant",
+    recipient: data.recipient ?? "participant",
+    recipientEmail: data.recipientEmail ?? "",
+    recipientName: data.recipientName,
+    entitlementIds: Array.isArray(data.entitlementIds) ? data.entitlementIds : [],
+    status: data.status ?? "pending",
+    invitedBy: data.invitedBy ?? "",
+    createdAt: toIso(data.createdAt),
+    expiresAt: data.expiresAt ? toIso(data.expiresAt) : undefined,
+    acceptedBy: data.acceptedBy,
+    acceptedAt: data.acceptedAt ? toIso(data.acceptedAt) : undefined,
+    deliveryToken: data.deliveryToken
   };
 }
 
@@ -145,7 +243,11 @@ export async function createOrganizationAccount(input: {
   organizationName: string;
   kind: OrganizationKind;
 }) {
+  if (!input.organizationName.trim()) throw new Error("Enter the organization name.");
   const db = getFirebaseFirestore();
+  const existingOrganizations = await listUserOrganizations(input.userId);
+  if (existingOrganizations[0]) return existingOrganizations[0].id;
+
   const organizationRef = doc(collection(db, "organizations"));
   const memberRef = doc(db, "organizations", organizationRef.id, "members", input.userId);
   const userOrganizationRef = doc(db, "users", input.userId, "organizations", organizationRef.id);
@@ -187,8 +289,13 @@ export async function listUserOrganizations(userId: string): Promise<Organizatio
   const pointers = await getDocs(collection(db, "users", userId, "organizations"));
   const accounts = await Promise.all(pointers.docs.map(async (pointer) => {
     const organizationId = pointer.data().organizationId ?? pointer.id;
-    const snapshot = await getDoc(doc(db, "organizations", organizationId));
-    return snapshot.exists() ? accountFrom(snapshot.id, snapshot.data()) : null;
+    try {
+      const snapshot = await getDoc(doc(db, "organizations", organizationId));
+      return snapshot.exists() ? accountFrom(snapshot.id, snapshot.data()) : null;
+    } catch {
+      // A stale discovery pointer must not prevent access to the user's valid organizations.
+      return null;
+    }
   }));
   return accounts.filter((account): account is OrganizationAccount => Boolean(account)).sort((a, b) => a.name.localeCompare(b.name));
 }
@@ -247,50 +354,6 @@ export async function getOrganizationInvitation(organizationId: string, invitati
   };
 }
 
-export async function acceptOrganizationInvitation(input: {
-  organizationId: string;
-  invitationId: string;
-  userId: string;
-  email: string;
-  displayName: string;
-}) {
-  const db = getFirebaseFirestore();
-  const invitationRef = doc(db, "organizations", input.organizationId, "invitations", input.invitationId);
-  const invitation = await getDoc(invitationRef);
-  if (!invitation.exists()) throw new Error("This invitation could not be found.");
-  const data = invitation.data();
-  if (data.status !== "pending") throw new Error("This invitation is no longer available.");
-  if ((data.email ?? "").toLowerCase() !== input.email.toLowerCase()) {
-    throw new Error("Sign in with the email address that received this invitation.");
-  }
-
-  const batch = writeBatch(db);
-  batch.set(doc(db, "organizations", input.organizationId, "members", input.userId), {
-    userId: input.userId,
-    email: input.email.toLowerCase(),
-    displayName: input.displayName,
-    role: data.role ?? "viewer",
-    status: "active",
-    joinedAt: serverTimestamp()
-  });
-  batch.set(doc(db, "users", input.userId, "organizations", input.organizationId), {
-    organizationId: input.organizationId,
-    role: data.role ?? "viewer",
-    joinedAt: serverTimestamp()
-  });
-  batch.update(invitationRef, {
-    status: "accepted",
-    acceptedBy: input.userId,
-    acceptedAt: serverTimestamp()
-  });
-  batch.set(doc(db, "users", input.userId), {
-    email: input.email.toLowerCase(),
-    displayName: input.displayName,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
-  await batch.commit();
-}
-
 export async function listOrganizationAgreements(organizationId: string): Promise<OrganizationAgreement[]> {
   const snapshots = await getDocs(collection(getFirebaseFirestore(), "organizations", organizationId, "agreements"));
   return snapshots.docs.map((snapshot) => agreementFrom(organizationId, dataOf(snapshot)))
@@ -337,9 +400,280 @@ export async function expressInterestInSuggestedDate(organizationId: string, sug
 }
 
 export async function listOrganizationAssets(organizationId: string): Promise<OrganizationAsset[]> {
+  const snapshots = await getDocs(query(
+    collection(getFirebaseFirestore(), "organizations", organizationId, "assets"),
+    where("organizationVisible", "==", true)
+  ));
+  return snapshots.docs.map((snapshot) => assetFrom(organizationId, dataOf(snapshot)))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function listAdminOrganizationAssets(organizationId: string): Promise<OrganizationAsset[]> {
   const snapshots = await getDocs(collection(getFirebaseFirestore(), "organizations", organizationId, "assets"));
   return snapshots.docs.map((snapshot) => assetFrom(organizationId, dataOf(snapshot)))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function listExperienceParticipants(organizationId: string, experienceId: string): Promise<ExperienceParticipant[]> {
+  const snapshots = await getDocs(collection(
+    getFirebaseFirestore(),
+    "organizations",
+    organizationId,
+    "experiences",
+    experienceId,
+    "participants"
+  ));
+  return snapshots.docs.map((snapshot) => participantFrom(organizationId, experienceId, dataOf(snapshot)))
+    .sort((a, b) => a.displayName.localeCompare(b.displayName));
+}
+
+export async function createExperienceParticipant(input: {
+  organizationId: string;
+  experienceId: string;
+  displayName: string;
+  participationStatus?: ExperienceParticipantStatus;
+  familyContactName?: string;
+  familyContactEmail?: string;
+}) {
+  if (!input.displayName.trim()) throw new Error("Enter the participant name.");
+  const db = getFirebaseFirestore();
+  const participantRef = doc(collection(
+    db,
+    "organizations",
+    input.organizationId,
+    "experiences",
+    input.experienceId,
+    "participants"
+  ));
+  await setDoc(participantRef, {
+    organizationId: input.organizationId,
+    experienceId: input.experienceId,
+    displayName: input.displayName.trim(),
+    participationStatus: input.participationStatus ?? "enrolled",
+    permissionReadiness: "not_requested",
+    familyContactName: input.familyContactName?.trim() || null,
+    familyContactEmail: input.familyContactEmail?.trim().toLowerCase() || null,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp()
+  });
+  return participantRef.id;
+}
+
+export async function listExperienceConsentRecords(
+  organizationId: string,
+  experienceId: string,
+  participantId: string
+): Promise<ExperienceConsentRecord[]> {
+  const snapshots = await getDocs(collection(
+    getFirebaseFirestore(),
+    "organizations",
+    organizationId,
+    "experiences",
+    experienceId,
+    "participants",
+    participantId,
+    "consents"
+  ));
+  return snapshots.docs.map((snapshot) => consentFrom(organizationId, experienceId, participantId, dataOf(snapshot)))
+    .sort((a, b) => b.version - a.version);
+}
+
+export async function createAdminParticipantConsent(input: {
+  organizationId: string;
+  experienceId: string;
+  participantId: string;
+  state: ConsentState;
+  scopes: ConsentScope[];
+  restrictions?: string[];
+  authorityBasis: "self" | "authorized_representative";
+  signedByName: string;
+  source: "electronic" | "paper";
+  participantDeliveryEmail?: string;
+  designatedFamilyEmails?: string[];
+}) {
+  const participantDeliveryEmail = input.participantDeliveryEmail?.trim().toLowerCase() || undefined;
+  const designatedFamilyEmails = [...new Set((input.designatedFamilyEmails ?? [])
+    .map((email) => email.trim().toLowerCase())
+    .filter(Boolean))];
+  if (!input.signedByName.trim()) throw new Error("Record who completed this permission form.");
+  if (["active", "active_with_restrictions"].includes(input.state) && input.scopes.length === 0) {
+    throw new Error("Choose at least one permission scope for active consent.");
+  }
+  if (input.state === "active_with_restrictions" && !input.restrictions?.some((item) => item.trim())) {
+    throw new Error("Describe the restrictions that apply to this consent.");
+  }
+  if (["active", "active_with_restrictions"].includes(input.state)
+    && input.scopes.includes("designated_family_sharing")
+    && designatedFamilyEmails.length === 0) {
+    throw new Error("Record the family email address or addresses the participant designated.");
+  }
+  const db = getFirebaseFirestore();
+  const existing = await listExperienceConsentRecords(input.organizationId, input.experienceId, input.participantId);
+  const [existingEntitlements, existingInvitations] = await Promise.all([
+    getDocs(query(
+      collection(db, "organizations", input.organizationId, "experiences", input.experienceId, "entitlements"),
+      where("participantId", "==", input.participantId)
+    )),
+    getDocs(query(
+      collection(db, "organizations", input.organizationId, "experiences", input.experienceId, "accessInvitations"),
+      where("participantId", "==", input.participantId)
+    ))
+  ]);
+  const consentRef = doc(collection(
+    db,
+    "organizations",
+    input.organizationId,
+    "experiences",
+    input.experienceId,
+    "participants",
+    input.participantId,
+    "consents"
+  ));
+  const participantRef = doc(
+    db,
+    "organizations",
+    input.organizationId,
+    "experiences",
+    input.experienceId,
+    "participants",
+    input.participantId
+  );
+  const readiness = input.state === "active"
+    ? "ready"
+    : input.state === "active_with_restrictions"
+      ? "restricted"
+      : input.state === "withdrawn"
+        ? "withdrawn"
+        : "pending";
+  const batch = writeBatch(db);
+  batch.set(consentRef, {
+    organizationId: input.organizationId,
+    experienceId: input.experienceId,
+    participantId: input.participantId,
+    state: input.state,
+    scopes: input.scopes,
+    restrictions: input.restrictions ?? [],
+    authorityBasis: input.authorityBasis,
+    signedByName: input.signedByName.trim(),
+    source: input.source,
+    participantDeliveryEmail: participantDeliveryEmail ?? null,
+    designatedFamilyEmails,
+    version: (existing[0]?.version ?? 0) + 1,
+    effectiveAt: input.state === "active" || input.state === "active_with_restrictions" ? serverTimestamp() : null,
+    withdrawnAt: input.state === "withdrawn" ? serverTimestamp() : null,
+    createdAt: serverTimestamp()
+  });
+  batch.update(participantRef, { permissionReadiness: readiness, updatedAt: serverTimestamp() });
+  // Every material permission revision invalidates earlier releases. Operations must
+  // deliberately re-release assets against the new consent record before sharing again.
+  existingEntitlements.docs.forEach((entitlement) => {
+    if (entitlement.data().status !== "revoked") {
+      batch.update(entitlement.ref, { status: "revoked", revokedAt: serverTimestamp() });
+    }
+  });
+  existingInvitations.docs.forEach((invitation) => {
+    if (invitation.data().status === "pending") {
+      batch.update(invitation.ref, { status: "revoked", revokedAt: serverTimestamp() });
+    }
+  });
+  await batch.commit();
+  return consentRef.id;
+}
+
+export async function listExperienceEntitlements(organizationId: string, experienceId: string): Promise<ExperienceAssetEntitlement[]> {
+  const snapshots = await getDocs(collection(
+    getFirebaseFirestore(),
+    "organizations",
+    organizationId,
+    "experiences",
+    experienceId,
+    "entitlements"
+  ));
+  return snapshots.docs.map((snapshot) => entitlementFrom(organizationId, experienceId, dataOf(snapshot)))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function listExperienceAccessInvitations(organizationId: string, experienceId: string): Promise<ExperienceAccessInvitation[]> {
+  const snapshots = await getDocs(collection(
+    getFirebaseFirestore(),
+    "organizations",
+    organizationId,
+    "experiences",
+    experienceId,
+    "accessInvitations"
+  ));
+  return snapshots.docs.map((snapshot) => accessInvitationFrom(organizationId, experienceId, dataOf(snapshot)))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+export async function createExperienceAccessInvitation(input: {
+  organization: OrganizationAccount;
+  experience: OrganizationExperience;
+  participant: ExperienceParticipant;
+  recipient: ExperienceAccessRecipient;
+  recipientEmail: string;
+  recipientName?: string;
+  invitedBy: string;
+}): Promise<ExperienceAccessInvitation> {
+  if (input.experience.organizationId !== input.organization.id
+    || input.participant.organizationId !== input.organization.id
+    || input.participant.experienceId !== input.experience.id) {
+    throw new Error("The participant, experience, and organization must belong together.");
+  }
+  if (!input.recipientEmail.trim()) throw new Error("Enter the recipient email address.");
+  const recipientEmail = input.recipientEmail.trim().toLowerCase();
+  const entitlements = await listExperienceEntitlements(input.organization.id, input.experience.id);
+  const audience = input.recipient === "participant" ? "participant" : "designated_family";
+  const eligibleEntitlements = entitlements.filter((entitlement) => (
+    entitlement.participantId === input.participant.id
+      && entitlement.audience === audience
+      && entitlement.status === "active"
+      && entitlement.authorizedRecipientEmails.includes(recipientEmail)
+  ));
+  if (eligibleEntitlements.length === 0) {
+    throw new Error("No permissioned materials are ready for this recipient email yet.");
+  }
+
+  const db = getFirebaseFirestore();
+  const invitationRef = doc(collection(
+    db,
+    "organizations",
+    input.organization.id,
+    "experiences",
+    input.experience.id,
+    "accessInvitations"
+  ));
+  await setDoc(invitationRef, {
+    organizationId: input.organization.id,
+    organizationName: input.organization.name,
+    experienceId: input.experience.id,
+    experienceTitle: input.experience.title,
+    participantId: input.participant.id,
+    participantName: input.participant.displayName,
+    recipient: input.recipient,
+    recipientEmail,
+    recipientName: input.recipientName?.trim() || null,
+    entitlementIds: eligibleEntitlements.map((entitlement) => entitlement.id),
+    status: "pending",
+    invitedBy: input.invitedBy,
+    createdAt: serverTimestamp()
+  });
+  return {
+    id: invitationRef.id,
+    organizationId: input.organization.id,
+    organizationName: input.organization.name,
+    experienceId: input.experience.id,
+    experienceTitle: input.experience.title,
+    participantId: input.participant.id,
+    participantName: input.participant.displayName,
+    recipient: input.recipient,
+    recipientEmail,
+    recipientName: input.recipientName?.trim() || undefined,
+    entitlementIds: eligibleEntitlements.map((entitlement) => entitlement.id),
+    status: "pending",
+    invitedBy: input.invitedBy,
+    createdAt: new Date().toISOString()
+  };
 }
 
 export async function isPlatformAdmin(userId: string): Promise<boolean> {
@@ -356,17 +690,22 @@ export async function listAdminOrganizations(): Promise<OrganizationAccount[]> {
 export async function createAdminExperience(input: {
   organizationId: string;
   title: string;
-  experienceType: string;
+  offeringId: ExperienceOfferingId;
   status: OrganizationExperienceStatus;
   startsAt?: string;
   venue?: string;
 }) {
   const db = getFirebaseFirestore();
+  if (!input.title.trim()) throw new Error("Enter an experience title.");
+  const offering = getExperienceOffering(input.offeringId);
+  if (!offering) throw new Error("Choose a supported organization experience.");
   const experienceRef = doc(collection(db, "organizations", input.organizationId, "experiences"));
   await setDoc(experienceRef, {
     organizationId: input.organizationId,
     title: input.title.trim(),
-    experienceType: input.experienceType.trim() || "program",
+    offeringId: offering.id,
+    templateKind: offering.templateKind,
+    participantMode: offering.participantMode,
     status: input.status,
     startsAt: input.startsAt ? new Date(input.startsAt) : null,
     venue: input.venue?.trim() || null,
@@ -421,20 +760,86 @@ export async function createAdminAsset(input: {
   experienceId: string;
   title: string;
   kind: OrganizationAssetKind;
+  participantId?: string;
+  audiences: ExperienceAssetAudience[];
   downloadUrl?: string;
   storagePath?: string;
 }) {
   const db = getFirebaseFirestore();
+  const audiences = [...new Set(input.audiences)];
+  if (audiences.length === 0) throw new Error("Choose at least one audience for this material.");
+  const recipientAudiences = audiences.filter(
+    (audience): audience is Exclude<ExperienceAssetAudience, "organization"> => audience !== "organization"
+  );
+  if (recipientAudiences.length > 0 && !input.participantId) {
+    throw new Error("Choose the participant whose materials are being released.");
+  }
+
+  const consentRecords = input.participantId
+    ? await listExperienceConsentRecords(input.organizationId, input.experienceId, input.participantId)
+    : [];
+  const consentByAudience = new Map<Exclude<ExperienceAssetAudience, "organization">, ExperienceConsentRecord>();
+  for (const audience of recipientAudiences) {
+    const requiredScopes = entitlementConsentScopes[audience];
+    const consent = consentRecords.find((record) => (
+      record.state === "active"
+        && requiredScopes.every((scope) => record.scopes.includes(scope))
+    ));
+    if (!consent) {
+      throw new Error(audience === "designated_family"
+        ? "Active designated-family sharing permission is required before releasing this material."
+        : "Active participant permission is required before releasing this material.");
+    }
+    if (audience === "participant" && !consent.participantDeliveryEmail) {
+      throw new Error("Record the participant delivery email on the active permission form before releasing this material.");
+    }
+    if (audience === "designated_family" && consent.designatedFamilyEmails.length === 0) {
+      throw new Error("Record the designated family recipient email on the active permission form before releasing this material.");
+    }
+    consentByAudience.set(audience, consent);
+  }
+
   const assetRef = doc(collection(db, "organizations", input.organizationId, "assets"));
-  await setDoc(assetRef, {
+  const readyForDelivery = Boolean(input.downloadUrl?.trim());
+  const batch = writeBatch(db);
+  batch.set(assetRef, {
     organizationId: input.organizationId,
     experienceId: input.experienceId,
     title: input.title.trim(),
     kind: input.kind,
-    status: input.downloadUrl || input.storagePath ? "ready" : "processing",
+    status: readyForDelivery ? "ready" : "processing",
+    organizationVisible: audiences.includes("organization"),
+    participantId: input.participantId || null,
     downloadUrl: input.downloadUrl?.trim() || null,
     storagePath: input.storagePath?.trim() || null,
     createdAt: serverTimestamp()
   });
+  for (const audience of recipientAudiences) {
+    const consent = consentByAudience.get(audience);
+    if (!consent || !input.participantId) continue;
+    const entitlementRef = doc(collection(
+      db,
+      "organizations",
+      input.organizationId,
+      "experiences",
+      input.experienceId,
+      "entitlements"
+    ));
+    batch.set(entitlementRef, {
+      organizationId: input.organizationId,
+      experienceId: input.experienceId,
+      assetId: assetRef.id,
+      participantId: input.participantId,
+      audience,
+      consentRecordId: consent.id,
+      requiredConsentScopes: entitlementConsentScopes[audience],
+      authorizedRecipientEmails: audience === "participant"
+        ? consent.participantDeliveryEmail ? [consent.participantDeliveryEmail] : []
+        : consent.designatedFamilyEmails,
+      status: readyForDelivery ? "active" : "pending",
+      createdAt: serverTimestamp()
+    });
+  }
+  await batch.commit();
   return assetRef.id;
 }

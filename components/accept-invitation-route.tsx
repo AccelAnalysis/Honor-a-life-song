@@ -19,7 +19,7 @@ export function AcceptInvitationRoute() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!organizationId || !invitationId || status !== "signed_in" || !user) return;
+    if (!organizationId || !invitationId || status !== "signed_in" || !user?.emailVerified) return;
     let cancelled = false;
     setLoading(true);
     getOrganizationInvitation(organizationId, invitationId)
@@ -41,7 +41,8 @@ export function AcceptInvitationRoute() {
         invitationId,
         userId: user.uid,
         email: user.email ?? "",
-        displayName: user.displayName ?? user.email ?? "Team member"
+        displayName: user.displayName ?? user.email ?? "Team member",
+        emailVerified: user.emailVerified
       });
       router.push(`/organization?org=${organizationId}`);
     } catch (acceptError) {
@@ -59,6 +60,10 @@ export function AcceptInvitationRoute() {
   if (status === "loading") return <main className="centeredPage"><section className="authCard"><p>Opening invitation…</p></section></main>;
   if (status === "signed_out") {
     return <main className="centeredPage"><section className="authCard"><p className="eyebrow">Organization invitation</p><h1>Sign in to join your organization.</h1><p>Use the same email address the invitation was sent to.</p><Link href={`/login?next=${encodeURIComponent(returnPath)}`}>Sign in</Link><p>New here? <Link href={`/create-account?next=${encodeURIComponent(returnPath)}`}>Create an account</Link></p></section></main>;
+  }
+
+  if (user && !user.emailVerified) {
+    return <main className="centeredPage"><section className="authCard"><p className="eyebrow">Verify your email</p><h1>Confirm this address before joining.</h1><p>Organization invitations can only be accepted after the invited email address has been verified.</p><Link href={`/verify-email?next=${encodeURIComponent(returnPath)}`}>Verify email</Link></section></main>;
   }
 
   if (loading && !invitation) return <main className="centeredPage"><section className="authCard"><p>Opening invitation…</p></section></main>;

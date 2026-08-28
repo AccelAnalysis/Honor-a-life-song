@@ -8,7 +8,7 @@ for (const workspace of workspaceIds) {
       expect(nav[0].slug).toBe("");
       expect(new Set(nav.map((item) => item.slug)).size).toBe(nav.length);
 
-      if (workspace === "admin") {
+      if (workspace === "admin" || workspace === "organization") {
         expect(nav[0].availability).toBe("structured");
         expect(nav.every((item) => item.availability === "structured")).toBe(true);
       } else {

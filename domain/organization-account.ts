@@ -1,4 +1,6 @@
 import type { EntityId, ISODateTime, OrganizationKind } from "./types";
+import type { ConsentScope, ConsentState } from "./consent";
+import type { ExperienceOfferingId, ExperienceParticipantMode, ExperienceTemplateKind } from "./experience";
 
 export type OrganizationMemberRole =
   | "organization_admin"
@@ -84,7 +86,9 @@ export interface OrganizationExperience {
   id: EntityId;
   organizationId: EntityId;
   title: string;
-  experienceType: string;
+  offeringId: ExperienceOfferingId;
+  templateKind: ExperienceTemplateKind;
+  participantMode: ExperienceParticipantMode;
   status: OrganizationExperienceStatus;
   startsAt?: ISODateTime;
   endsAt?: ISODateTime;
@@ -96,6 +100,97 @@ export interface OrganizationExperience {
   invoiceUrl?: string;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
+}
+
+export type ExperienceParticipantStatus = "invited" | "enrolled" | "active" | "completed" | "withdrawn";
+export type ExperiencePermissionReadiness = "not_requested" | "pending" | "ready" | "restricted" | "withdrawn";
+
+export interface ExperienceParticipant {
+  id: EntityId;
+  organizationId: EntityId;
+  experienceId: EntityId;
+  displayName: string;
+  participationStatus: ExperienceParticipantStatus;
+  permissionReadiness: ExperiencePermissionReadiness;
+  familyContactName?: string;
+  familyContactEmail?: string;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
+export interface ExperienceConsentRecord {
+  id: EntityId;
+  organizationId: EntityId;
+  experienceId: EntityId;
+  participantId: EntityId;
+  state: ConsentState;
+  scopes: ConsentScope[];
+  restrictions: string[];
+  authorityBasis: "self" | "authorized_representative";
+  signedByName: string;
+  source: "electronic" | "paper";
+  participantDeliveryEmail?: string;
+  designatedFamilyEmails: string[];
+  version: number;
+  effectiveAt?: ISODateTime;
+  withdrawnAt?: ISODateTime;
+  createdAt: ISODateTime;
+}
+
+export type ExperienceAssetAudience = "organization" | "participant" | "designated_family";
+export type ExperienceEntitlementStatus = "pending" | "active" | "revoked";
+
+export interface ExperienceAssetEntitlement {
+  id: EntityId;
+  organizationId: EntityId;
+  experienceId: EntityId;
+  assetId: EntityId;
+  participantId: EntityId;
+  audience: Exclude<ExperienceAssetAudience, "organization">;
+  consentRecordId: EntityId;
+  requiredConsentScopes: ConsentScope[];
+  authorizedRecipientEmails: string[];
+  status: ExperienceEntitlementStatus;
+  createdAt: ISODateTime;
+  revokedAt?: ISODateTime;
+}
+
+export type ExperienceAccessRecipient = "participant" | "designated_family";
+export type ExperienceAccessInvitationStatus = "pending" | "accepted" | "revoked" | "expired";
+
+export interface ExperienceAccessInvitation {
+  id: EntityId;
+  organizationId: EntityId;
+  organizationName: string;
+  experienceId: EntityId;
+  experienceTitle: string;
+  participantId: EntityId;
+  participantName: string;
+  recipient: ExperienceAccessRecipient;
+  recipientEmail: string;
+  recipientName?: string;
+  entitlementIds: EntityId[];
+  status: ExperienceAccessInvitationStatus;
+  invitedBy: EntityId;
+  createdAt: ISODateTime;
+  expiresAt?: ISODateTime;
+  acceptedBy?: EntityId;
+  acceptedAt?: ISODateTime;
+  deliveryToken?: string;
+}
+
+export interface UserExperienceAccess {
+  id: EntityId;
+  organizationId: EntityId;
+  organizationName: string;
+  experienceId: EntityId;
+  experienceTitle: string;
+  participantId: EntityId;
+  participantName: string;
+  recipient: ExperienceAccessRecipient;
+  entitlementIds: EntityId[];
+  acceptedAt: ISODateTime;
+  deliveryToken?: string;
 }
 
 export interface OrganizationSuggestedDate {
@@ -114,6 +209,8 @@ export interface OrganizationAsset {
   title: string;
   kind: OrganizationAssetKind;
   status: "processing" | "ready" | "restricted";
+  organizationVisible: boolean;
+  participantId?: EntityId;
   storagePath?: string;
   downloadUrl?: string;
   createdAt: ISODateTime;

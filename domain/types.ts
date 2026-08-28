@@ -19,8 +19,19 @@ export interface Person { id: EntityId; displayName: string; }
 export interface Organization { id: EntityId; name: string; kind: OrganizationKind; }
 export interface Membership { id: EntityId; personId: EntityId; organizationId?: EntityId; role: PersonRole; }
 
-export interface Inquiry { id: EntityId; createdAt: ISODateTime; kind: "individual" | "program"; }
-export interface Order { id: EntityId; requestId: EntityId; status: string; purchaserId: EntityId; }
+export interface Inquiry {
+  id: EntityId;
+  createdAt: ISODateTime;
+  kind: "organization_experience";
+  organizationId?: EntityId;
+}
+export interface Order {
+  id: EntityId;
+  requestId: EntityId;
+  status: string;
+  purchaserOrganizationId: EntityId;
+  organizationExperienceId?: EntityId;
+}
 
 export interface ProgramTemplate { id: EntityId; name: string; version: number; }
 export interface ProgramRun { id: EntityId; templateId: EntityId; organizationId: EntityId; status: string; startsOn?: string; endsOn?: string; }

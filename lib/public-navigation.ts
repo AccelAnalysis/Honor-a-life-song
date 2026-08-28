@@ -18,7 +18,7 @@ export const homeSections = [
     id: "hero-value-proposition",
     label: "Every Life Has a Song",
     href: "/#hero-value-proposition",
-    description: "Discover how meaningful life stories become human-created songs and lasting keepsakes."
+    description: "Discover how organizations bring human-created songs and lasting memories to the people they serve."
   },
   {
     id: "home-how-it-works",
@@ -34,9 +34,9 @@ export const homeSections = [
   },
   {
     id: "program-highlights",
-    label: "Programs",
+    label: "Choose an Experience",
     href: "/#program-highlights",
-    description: "Explore individual, family, facility, and community ways to create through music."
+    description: "Compare the two organization-owned experiences."
   },
   {
     id: "testimonials",
@@ -46,95 +46,95 @@ export const homeSections = [
   },
   {
     id: "request-a-song",
-    label: "Begin a Song",
+    label: "Plan an Experience",
     href: "/#request-a-song",
-    description: "Start with a person, a memory, or a moment you want to preserve."
+    description: "Start with your organization, the people you serve, and the gathering you want to create."
   }
 ] as const satisfies readonly PublicHierarchyItem[];
 
 export const howItWorksSteps = [
   {
     id: "share-your-story",
-    label: "Share Your Story",
+    label: "Choose an Experience",
     slug: "share-your-story",
     href: "/how-it-works/share-your-story",
-    description: "Begin with the person, occasion, and memories that should shape the song.",
-    summary: "The journey starts with the person at the heart of the song and the memories, relationships, places, and moments that matter most.",
+    description: "Choose the group event or the complete program for your organization.",
+    summary: "The journey starts with the organization deciding what kind of experience will best serve its community.",
     details: [
-      "Tell us who the song is for and what you are honoring.",
-      "Use guided questions to remember people, places, events, values, personality, and music preferences.",
-      "Share photographs, notes, audio, or documents that help tell the story.",
-      "Invite family members to contribute memories when appropriate."
+      "Choose the $200 Single-Song Group Event or the $2,500 Honor a Life Song Experience.",
+      "Create or return to the organization's account.",
+      "Confirm the scope, preferred date, agreements, and payment path.",
+      "Keep every purchase connected to the organization's experience history."
     ]
   },
   {
     id: "interview-story-capture",
-    label: "Interview & Story Capture",
+    label: "Prepare Participants",
     slug: "interview-story-capture",
     href: "/how-it-works/interview-story-capture",
-    description: "A human-led conversation helps uncover the details, emotions, and memories behind the song.",
-    summary: "We listen closely through guided conversation so the song can reflect the life, relationships, and meaning behind the story.",
+    description: "Prepare the group or participant roster without requiring every participant to create an account.",
+    summary: "The organization prepares the setting and participants choose the parts of the experience that feel comfortable and meaningful.",
     details: [
-      "Schedule a conversation at a time that works for you.",
-      "Share names, places, milestones, sayings, and memories in your own words.",
-      "Bring in family memories or source material when helpful.",
-      "Use more than one conversation when the story needs more time."
+      "Confirm the venue, primary contact, accessibility needs, and event information.",
+      "Add named participants only when the full experience requires a roster.",
+      "Offer electronic, assisted, or printable permission forms.",
+      "Keep participant permission separate from the organization's agreement."
     ]
   },
   {
     id: "songwriting-process",
-    label: "Songwriting",
+    label: "Stories Become Songs",
     slug: "songwriting-process",
     href: "/how-it-works/songwriting-process",
-    description: "A human songwriter shapes the story into lyrics and musical direction.",
-    summary: "The heart of Honor a Life Song is human interpretation: a songwriter listens for meaning, selects the details that matter, and begins shaping them into music.",
+    description: "Human-led story sharing and interviews become a shared song or several participant songs.",
+    summary: "The heart of Honor a Life Song is human interpretation: songwriters listen for meaning and shape approved details into music.",
     details: [
-      "Find the themes and moments that carry the story.",
-      "Shape a clear emotional narrative.",
-      "Develop lyrics and musical direction with care.",
-      "Refine the work as the song takes shape."
+      "Use shared story capture for the group event.",
+      "Use flexible resident or participant interviews for the full experience.",
+      "Shape lyrics and musical direction with care.",
+      "Keep the creative work connected to the experience that produced it."
     ]
   },
   {
     id: "review-revisions",
-    label: "Review & Revisions",
+    label: "Review & Event Preparation",
     slug: "review-revisions",
     href: "/how-it-works/review-revisions",
-    description: "Review the work, share feedback, and approve the song before final production.",
-    summary: "You have a chance to respond to the song as it develops so important details feel right before the work moves forward.",
+    description: "Complete appropriate review while the organization prepares the presentation or concert.",
+    summary: "Creative review and event preparation move together without exposing private participant material beyond the permissions that apply.",
     details: [
-      "Review the current lyric or creative draft.",
-      "Share specific feedback about details that should change.",
-      "Request revisions within the service you selected.",
-      "Approve the lyrics when they feel ready."
+      "Review the appropriate lyric or creative draft.",
+      "Prepare venue, accessibility, attendance, and run-of-show details.",
+      "Honor each participant's performance, photography, and video choices.",
+      "Move only approved work into final production."
     ]
   },
   {
     id: "production",
-    label: "Production",
+    label: "Presentation or Concert",
     slug: "production",
     href: "/how-it-works/production",
-    description: "The approved song is composed, recorded, edited, mixed, and prepared for final listening.",
-    summary: "Once the creative direction is approved, the song becomes a finished recording through composition, performance, recording, and careful final review.",
+    description: "Present the shared song or bring participants and families together for the follow-up concert.",
+    summary: "The event gives the organization and its community a moment to celebrate what was created together.",
     details: [
-      "Complete the composition and arrangement.",
-      "Record the performance and musical elements.",
-      "Edit, mix, and finalize the recording.",
-      "Complete a final quality review before delivery."
+      "Present the shared song at the group event.",
+      "Bring the full experience to its follow-up concert.",
+      "Respect accessibility and comfort throughout the gathering.",
+      "Capture only the photography or video participants have allowed."
     ]
   },
   {
     id: "delivery-keepsakes",
-    label: "Delivery & Keepsakes",
+    label: "Secure Sharing & Keepsakes",
     slug: "delivery-keepsakes",
     href: "/how-it-works/delivery-keepsakes",
-    description: "Receive the finished song and the keepsakes included with your experience.",
-    summary: "The finished work is delivered as something you can return to, share privately with the people you choose, and keep as part of the story.",
+    description: "Return to organization materials and privately connect participants and families to what was released for them.",
+    summary: "After the event, the organization remains the customer and becomes the bridge to permissioned participant and family access.",
     details: [
-      "Listen to the approved final song.",
-      "Receive included lyric sheets, song cards, private links, or other keepsakes.",
-      "Enjoy the song as part of a presentation or event when included in a program.",
-      "Choose how permitted family members receive or share the finished keepsake."
+      "Keep approved event materials in the organization's history.",
+      "Create participant or designated-family access only when an active entitlement exists.",
+      "Let recipients claim a lightweight private memories space instead of a complex workspace.",
+      "Plan another experience from the same organization account."
     ]
   }
 ] as const satisfies readonly PublicWorkflowItem[];
@@ -146,7 +146,7 @@ export const projectAgelessSections = [
     slug: "program-overview",
     href: "/services/project-ageless/program-overview",
     description: "A participatory music and storytelling experience designed for facilities and communities.",
-    summary: "Project Ageless brings residents, families, and staff together around stories, songs, shared experiences, and meaningful keepsakes.",
+    summary: "The Honor a Life Song Experience brings participants, families, and staff together around stories, songs, shared experiences, and meaningful keepsakes.",
     details: [
       "Programs are planned around the facility, participants, dates, and goals.",
       "An engagement may last approximately two weeks to one month.",
@@ -160,7 +160,7 @@ export const projectAgelessSections = [
     slug: "facility-benefits",
     href: "/services/project-ageless/facility-benefits",
     description: "Create meaningful resident engagement through story, music, family connection, and celebration.",
-    summary: "Project Ageless gives facilities a structured creative experience in which residents participate rather than only watch.",
+    summary: "The full experience gives facilities a structured creative program in which residents participate rather than only watch.",
     details: [
       "Create meaningful engagement around life stories and music.",
       "Preserve stories as songs and keepsakes for participants and families.",
@@ -219,7 +219,7 @@ export const projectAgelessSections = [
     label: "Sponsorship",
     slug: "sponsorship",
     href: "/services/project-ageless/sponsorship",
-    description: "Community partners can help make Project Ageless possible through program sponsorship and support.",
+    description: "Community partners can help make an Honor a Life Song Experience possible through program sponsorship and support.",
     summary: "Facilities, nonprofits, local businesses, community partners, and grant-funded organizations can help support an engagement while participant privacy remains protected.",
     details: [
       "Support an entire program or a specific part of the experience.",
@@ -233,8 +233,8 @@ export const projectAgelessSections = [
     label: "Request a Facility Program",
     slug: "request-facility-program",
     href: "/services/project-ageless/request-facility-program",
-    description: "Start a conversation about bringing Project Ageless to your facility or community.",
-    summary: "Tell us about your facility, community, participants, timing, and goals so we can discuss a Project Ageless experience that fits.",
+    description: "Start a conversation about bringing an Honor a Life Song Experience to your facility or community.",
+    summary: "Tell us about your facility, community, participants, timing, and goals so we can discuss an Honor a Life Song Experience that fits.",
     details: [
       "Share the facility or community you represent.",
       "Tell us what you hope participants and families will experience.",
@@ -246,23 +246,23 @@ export const projectAgelessSections = [
 
 const serviceChildren: readonly PublicHierarchyItem[] = [
   {
-    id: "individual-family-songs",
-    label: "Individual & Family Songs",
-    href: "/services#individual-family-songs",
-    description: "Create a personal song from the memories and meaning of one life or family story."
+    id: "single-song-group-event",
+    label: "Single-Song Group Event",
+    href: "/services#single-song-group-event",
+    description: "A $200 organization event with shared story capture, one shared song, and a presentation."
   },
   {
     id: "project-ageless",
-    label: "Project Ageless",
+    label: "Honor a Life Song Experience",
     href: "/services/project-ageless",
-    description: "A facility and community program built around participation, storytelling, music, and connection.",
+    description: "A $2,500 multi-touch experience with participant stories, multiple songs, and a follow-up concert.",
     children: projectAgelessSections
   },
   {
     id: "community-programs",
     label: "Community Programs",
     href: "/services#community-programs",
-    description: "Custom song experiences for cohorts, veterans, hospice, schools, nonprofits, and mission-driven communities."
+    description: "See how the two organization experiences can serve different kinds of communities."
   }
 ];
 
@@ -278,14 +278,14 @@ export const publicNavigation: readonly PublicHierarchyItem[] = [
     id: "how-it-works",
     label: "How It Works",
     href: "/how-it-works",
-    description: "Follow the story-to-song journey from first memory to finished keepsake.",
+    description: "Follow the organization journey from choosing an experience to secure post-event sharing.",
     children: howItWorksSteps
   },
   {
     id: "services",
     label: "Services",
     href: "/services",
-    description: "Explore songs and programs for individuals, families, facilities, and communities.",
+    description: "Compare experiences for facilities and community organizations.",
     children: serviceChildren
   }
 ] as const;

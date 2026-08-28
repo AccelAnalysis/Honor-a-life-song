@@ -18,9 +18,13 @@ service firebase.storage {
         && firestore.get(/databases/(default)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.status == 'active';
     }
 
-    match /organizations/{orgId}/{allPaths=**} {
+    match /organizations/{orgId}/organization/{allPaths=**} {
       allow read: if organizationMember(orgId) || platformAdmin();
       allow write: if platformAdmin();
+    }
+
+    match /organizations/{orgId}/participants/{participantId}/{allPaths=**} {
+      allow read, write: if platformAdmin();
     }
 
     match /{allPaths=**} {

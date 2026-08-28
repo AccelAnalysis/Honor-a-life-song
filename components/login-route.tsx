@@ -6,6 +6,8 @@ import { useState, type FormEvent } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { getLoginNode } from "@/lib/identity-navigation";
 import { isPlatformAdmin, listUserOrganizations } from "@/lib/firebase/organization-account";
+import { listUserExperienceAccess } from "@/lib/firebase/organization-invitations";
+import { safeReturnPath } from "@/lib/safe-return-path";
 import styles from "./login-route.module.css";
 
 interface ScreenCopy {
@@ -20,12 +22,12 @@ function copyForNode(nodeId?: string): ScreenCopy {
     return { eyebrow: "One more step", title: "Keep this song private.", body: "Complete the additional verification requested for your account.", mode: "verification" };
   }
   if (["login-resolve-access", "login-person", "login-memberships", "login-roles", "login-organization"].includes(nodeId ?? "")) {
-    return { eyebrow: "Welcome back", title: "Finding the right place for you.", body: "Your account can connect you to a personal song, an organization, a family collaboration, or the creative work you help make.", mode: "resolving" };
+    return { eyebrow: "Welcome back", title: "Finding the right place for you.", body: "Your account can connect you to an organization, the experiences it purchased, private memories shared with you, or the creative work you help make.", mode: "resolving" };
   }
   if (["login-enter-workspace", "login-permitted-workspaces"].includes(nodeId ?? "")) {
     return { eyebrow: "Almost there", title: "Opening your experience.", body: "Only the songs, stories, organizations, and programs shared with this account will be available.", mode: "resolving" };
   }
-  return { eyebrow: "Return to something meaningful", title: "Welcome back.", body: "Sign in to manage your experience, review a song, access an organization account, or revisit something created together.", mode: "credentials" };
+  return { eyebrow: "Return to something meaningful", title: "Welcome back.", body: "Sign in to manage your organization's experiences or return to private songs and event memories shared with you.", mode: "credentials" };
 }
 
 export function LoginRoute() {
@@ -41,7 +43,7 @@ export function LoginRoute() {
   const activeNode = activeSlug ? getLoginNode(activeSlug) : undefined;
   const copy = copyForNode(activeNode?.id);
   const requestedNext = searchParams.get("next");
-  const safeNext = requestedNext?.startsWith("/") && !requestedNext.startsWith("//") ? requestedNext : null;
+  const safeNext = safeReturnPath(requestedNext);
 
   async function handleSignIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -62,7 +64,12 @@ export function LoginRoute() {
         return;
       }
       const organizations = await listUserOrganizations(user.uid).catch(() => []);
-      router.push(organizations.length > 0 ? "/organization" : "/customer");
+      if (organizations.length > 0) {
+        router.push("/organization");
+        return;
+      }
+      const experienceAccess = await listUserExperienceAccess(user.uid).catch(() => []);
+      router.push(experienceAccess.length > 0 ? "/memories" : "/create-account?complete=organization");
     } catch (signInError) {
       setError(signInError instanceof Error ? signInError.message : "We could not sign you in. Check your email and password and try again.");
     } finally {
@@ -76,7 +83,7 @@ export function LoginRoute() {
         <Link className={styles.visualBrand} href="/">Honor a Life Song</Link>
         <div className={styles.visualCopy}>
           <span className={styles.resonance} aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /></span>
-          <p>The moments you remember become the song you keep.</p>
+          <p>The stories of the people you serve become music a community can carry forward.</p>
         </div>
         <span className={styles.photoCredit}>Photo: Los Muertos Crew / Pexels</span>
       </section>
@@ -102,7 +109,7 @@ export function LoginRoute() {
           {copy.mode === "verification" ? <div className={styles.resolving} role="status" aria-live="polite"><span aria-hidden="true" /><div><strong>Additional verification</strong><p>If multi-factor authentication is enabled for this Firebase project, the provider flow will continue from here.</p></div></div> : null}
           {copy.mode === "resolving" ? <div className={styles.resolving} role="status" aria-live="polite"><span aria-hidden="true" /><div><strong>Your privacy comes first.</strong><p>We only open songs, stories, organizations, and programs this account is allowed to see.</p></div></div> : null}
 
-          <div className={styles.newHere}><span>New to Honor a Life Song?</span><Link href={safeNext ? `/create-account?next=${encodeURIComponent(safeNext)}` : "/create-account"}>Create your account →</Link></div>
+          <div className={styles.newHere}><span>New to Honor a Life Song?</span><Link href={safeNext ? `/create-account?next=${encodeURIComponent(safeNext)}` : "/create-account"}>{safeNext ? "Create a secure sign-in" : "Create an organization account"} →</Link></div>
         </div>
       </section>
     </main>

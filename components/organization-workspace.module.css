@@ -273,6 +273,29 @@
   max-width: 56rem;
 }
 
+.experienceNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 2rem 0;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(35, 29, 24, 0.16);
+  border-bottom: 1px solid rgba(35, 29, 24, 0.16);
+}
+
+.experienceNav a {
+  padding: 0.55rem 0.75rem;
+  border-radius: 999px;
+  color: #665b53;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.experienceNav .activeView {
+  background: #28201b;
+  color: white;
+}
+
 .experienceDetail .kicker {
   margin-top: 2rem;
 }
@@ -322,6 +345,147 @@
 .postEventActions a {
   color: inherit;
   font-weight: 800;
+}
+
+.stage,
+.participantSection,
+.materialsSection {
+  padding-top: 1rem;
+}
+
+.stage > p,
+.participantSection .sectionHeading p,
+.materialsSection .sectionHeading p,
+.shareSection > p {
+  color: #71665d;
+  line-height: 1.65;
+}
+
+.stage > div {
+  display: grid;
+  margin-top: 1.5rem;
+  border-top: 1px solid rgba(35, 29, 24, 0.14);
+}
+
+.stage > div span {
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(35, 29, 24, 0.1);
+  font-weight: 750;
+}
+
+.participantList,
+.shareList {
+  display: grid;
+}
+
+.participantList > div,
+.shareList > article {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(35, 29, 24, 0.12);
+}
+
+.participantList > div > div,
+.shareList > article > div:first-child {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.participantList span,
+.shareList span,
+.shareList small {
+  color: #71665d;
+}
+
+.participantForm,
+.shareList form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  align-items: end;
+  gap: 0.7rem;
+  margin-top: 1.25rem;
+}
+
+.participantForm label,
+.shareList form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.participantForm input,
+.shareList input,
+.shareList select {
+  min-height: 2.65rem;
+  border: 1px solid rgba(35, 29, 24, 0.18);
+  border-radius: 0.65rem;
+  padding: 0 0.7rem;
+  background: white;
+  color: inherit;
+  font: inherit;
+}
+
+.participantForm button,
+.shareList button,
+.permissionGuide button,
+.inviteResult button {
+  min-height: 2.65rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  background: #28201b;
+  color: white;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.participantForm button:disabled,
+.shareList button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.permissionGuide {
+  margin-top: 2rem;
+  padding: 1.25rem 0;
+  border-top: 1px solid rgba(35, 29, 24, 0.14);
+}
+
+.permissionGuide summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.permissionGuide ul {
+  list-style: none;
+  padding: 0;
+}
+
+.permissionGuide li {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem 0;
+  border-top: 1px solid rgba(35, 29, 24, 0.09);
+}
+
+.permissionGuide li span {
+  color: #71665d;
+  font-size: 0.82rem;
+}
+
+.shareSection {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(35, 29, 24, 0.18);
+}
+
+.shareList > article {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.55fr) minmax(0, 1.45fr);
 }
 
 .assetList {
@@ -522,7 +686,10 @@
   }
 
   .inviteForm,
-  .signatureForm {
+  .signatureForm,
+  .participantForm,
+  .shareList form,
+  .shareList > article {
     grid-template-columns: 1fr;
   }
 
@@ -534,5 +701,22 @@
   .sectionHeading {
     align-items: flex-start;
     flex-direction: column;
+  }
+}
+
+@media print {
+  .experienceNav,
+  .participantForm,
+  .shareList form,
+  .primaryAction,
+  .secondaryAction,
+  .backLink {
+    display: none !important;
+  }
+
+  .permissionGuide,
+  .inviteResult {
+    display: block;
+    border: 0;
   }
 }

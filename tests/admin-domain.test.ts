@@ -39,7 +39,7 @@ describe("Admin workflow authority", () => {
 });
 
 describe("Admin operational derivation", () => {
-  it("derives active individual work from the governed journey range", () => {
+  it("derives active organization order work from the governed journey range", () => {
     expect(isActiveOrderJourneyState("Qualified")).toBe(true);
     expect(isActiveOrderJourneyState("Production")).toBe(true);
     expect(isActiveOrderJourneyState("Final Approval")).toBe(true);

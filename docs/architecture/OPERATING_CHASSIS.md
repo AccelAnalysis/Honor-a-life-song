@@ -2,13 +2,13 @@
 
 ## Architectural rule
 
-Honor a Life Song is one platform with a shared meaning-to-song engine. Individual/family services, Project Ageless and future program templates use the same people, organization, story, creative-work, consent, payment, communication, media and delivery boundaries. Project Ageless is not a separate application.
+Honor a Life Song is one platform with a shared meaning-to-song engine. Organization-owned group events, full Honor a Life Song experiences, and future approved experience templates use the same people, organization, story, creative-work, consent, payment, communication, media, and delivery boundaries.
 
 ## Four shells
 
 1. **Public / Acquisition** — marketing, service education, Project Ageless, stories, partnerships, pricing, request entry and public legal/support destinations.
 2. **Identity / Access** — login, registration, verification, password recovery, invitation acceptance, MFA and access/consent error states.
-3. **Authenticated Workspace** — one persistent responsive composition with role-aware Customer, Facility, Creator and Admin navigation.
+3. **Authenticated Workspace** — a persistent organization account with experience-level depth, lightweight participant/family memories access, and role-aware Creator and Admin navigation. Earlier Customer and Facility mega-workspaces remain reference surfaces rather than primary customer entry points.
 4. **Secure Delivery** — entitlement- and consent-aware final song/keepsake access.
 
 ## Chassis ownership
@@ -38,8 +38,8 @@ The current chassis uses clearly labeled synthetic context for visual acceptance
 Operating Chassis
       ^
       |
-      +-- Individual Song Workflow
-      +-- Project Ageless Program
+      +-- Single-Song Group Event
+      +-- Honor a Life Song Experience
       +-- Story / Interview
       +-- Lyrics / Review
       +-- Production

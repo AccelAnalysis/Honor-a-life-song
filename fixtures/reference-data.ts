@@ -29,6 +29,7 @@ export const referenceFacilityContext = {
 
 export const referenceContext = {
   customer: { label: "Reference journey", value: "Sample family song" },
+  organization: { label: "Reference organization", value: "Sample community account" },
   facility: referenceFacilityContext,
   creator: { label: "Reference assignment", value: "Sample creative work" },
   admin: { label: "Environment", value: "Chassis reference mode" }
