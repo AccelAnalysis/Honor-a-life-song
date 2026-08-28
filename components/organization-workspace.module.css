@@ -1,0 +1,538 @@
+.workspace {
+  display: grid;
+  gap: 2rem;
+  max-width: 1180px;
+}
+
+.status,
+.emptyState {
+  padding: 2.5rem 0;
+  max-width: 48rem;
+}
+
+.emptyState {
+  border-top: 1px solid rgba(35, 29, 24, 0.16);
+}
+
+.emptyState strong {
+  display: block;
+  font-size: 1.35rem;
+}
+
+.emptyState p,
+.quiet {
+  color: #71665d;
+  line-height: 1.6;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.8rem;
+  border-radius: 999px;
+  padding: 0.62rem 1rem;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.primaryAction {
+  background: #28201b;
+  color: white;
+}
+
+.secondaryAction {
+  border: 1px solid rgba(40, 32, 27, 0.22);
+  color: inherit;
+}
+
+.orgSwitcher {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(35, 29, 24, 0.12);
+}
+
+.orgSwitcher > span {
+  color: #76695f;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.orgSwitcher > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.orgSwitcher a {
+  color: inherit;
+  text-decoration: none;
+  padding: 0.4rem 0.7rem;
+  border-radius: 999px;
+}
+
+.orgSwitcher .activeOrg {
+  background: rgba(40, 32, 27, 0.08);
+  font-weight: 800;
+}
+
+.inlineError {
+  margin: 0;
+  color: #8c3030;
+}
+
+.welcome p,
+.kicker {
+  margin: 0;
+  color: #76695f;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+}
+
+.welcome h2,
+.sectionHeading h2,
+.experienceDetail h2,
+.accountHeader h2,
+.help h2 {
+  margin: 0.3rem 0 0;
+  font-size: clamp(2.2rem, 5vw, 4.6rem);
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+}
+
+.home {
+  display: grid;
+  gap: 2.6rem;
+}
+
+.nextExperience {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(240px, 0.7fr);
+  gap: 2rem;
+  padding: 2rem 0;
+  border-top: 1px solid rgba(35, 29, 24, 0.18);
+  border-bottom: 1px solid rgba(35, 29, 24, 0.18);
+}
+
+.nextExperience h3 {
+  margin: 0.45rem 0;
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  letter-spacing: -0.04em;
+}
+
+.nextExperience p {
+  color: #6c6159;
+}
+
+.nextMeta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.nextMeta > span,
+.assetKind {
+  font-size: 0.73rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #76695f;
+}
+
+.homeColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(2rem, 5vw, 5rem);
+}
+
+.sectionHeading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.sectionHeading h3,
+.accountSection h3,
+.postEvent h3,
+.postEventActions h3,
+.planAhead h3 {
+  margin: 0.2rem 0 0;
+  font-size: 1.65rem;
+  letter-spacing: -0.025em;
+}
+
+.sectionHeading p {
+  max-width: 48rem;
+  color: #71665d;
+}
+
+.sectionHeading > a,
+.backLink {
+  color: inherit;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.lineItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 0;
+  border-top: 1px solid rgba(35, 29, 24, 0.1);
+}
+
+.lineItem strong {
+  color: #76695f;
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.planAhead {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+  gap: clamp(2rem, 6vw, 6rem);
+  padding: 2rem 0;
+  border-top: 1px solid rgba(35, 29, 24, 0.18);
+}
+
+.planAhead > div:first-child p:last-child {
+  color: #71665d;
+  line-height: 1.6;
+}
+
+.dateList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.dateList button {
+  display: grid;
+  text-align: left;
+  gap: 0.25rem;
+  min-height: 5.4rem;
+  border: 0;
+  border-radius: 0.85rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.72);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.dateList button:disabled {
+  opacity: 0.62;
+}
+
+.dateList span {
+  color: #76695f;
+  font-size: 0.82rem;
+}
+
+.experienceList {
+  margin-bottom: 3.5rem;
+}
+
+.experienceRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.25rem 0;
+  border-top: 1px solid rgba(35, 29, 24, 0.12);
+  color: inherit;
+  text-decoration: none;
+}
+
+.experienceRow > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.experienceRow strong {
+  font-size: 1.15rem;
+}
+
+.experienceRow span {
+  color: #71665d;
+}
+
+.experienceDetail {
+  max-width: 56rem;
+}
+
+.experienceDetail .kicker {
+  margin-top: 2rem;
+}
+
+.detailDate {
+  color: #71665d;
+  font-size: 1.1rem;
+}
+
+.detailRows {
+  margin: 2rem 0;
+  border-top: 1px solid rgba(35, 29, 24, 0.16);
+}
+
+.detailRows > div {
+  display: grid;
+  grid-template-columns: 11rem 1fr;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(35, 29, 24, 0.1);
+}
+
+.detailRows span {
+  color: #76695f;
+}
+
+.postEvent,
+.postEventActions {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 1px solid rgba(35, 29, 24, 0.18);
+}
+
+.postEvent p,
+.postEventActions p {
+  color: #71665d;
+}
+
+.postEvent > div,
+.postEventActions > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.4rem;
+}
+
+.postEvent a,
+.postEventActions a {
+  color: inherit;
+  font-weight: 800;
+}
+
+.assetList {
+  display: grid;
+  gap: 0;
+}
+
+.assetList article {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.2rem 0;
+  border-top: 1px solid rgba(35, 29, 24, 0.12);
+}
+
+.assetList h3 {
+  margin: 0.25rem 0;
+}
+
+.assetList p {
+  margin: 0;
+  color: #71665d;
+}
+
+.assetList a {
+  color: inherit;
+  font-weight: 800;
+}
+
+.accountHeader {
+  margin-bottom: 2.5rem;
+}
+
+.accountHeader p:last-child {
+  color: #71665d;
+}
+
+.accountSection {
+  padding: 2rem 0;
+  border-top: 1px solid rgba(35, 29, 24, 0.17);
+}
+
+.memberRow,
+.billingList > div,
+.agreementList > article {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1rem 0;
+  border-top: 1px solid rgba(35, 29, 24, 0.09);
+}
+
+.memberRow > div,
+.billingList > div > div,
+.agreementList > article > div:first-child {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.memberRow span,
+.billingList span,
+.agreementList span,
+.agreementList small {
+  color: #71665d;
+}
+
+.inviteForm,
+.signatureForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr) auto;
+  align-items: end;
+  gap: 0.8rem;
+  margin-top: 1.25rem;
+}
+
+.inviteForm label,
+.signatureForm label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.inviteForm input,
+.inviteForm select,
+.signatureForm input {
+  min-height: 2.8rem;
+  border: 1px solid rgba(35, 29, 24, 0.18);
+  border-radius: 0.65rem;
+  padding: 0 0.75rem;
+  background: white;
+  color: inherit;
+  font: inherit;
+}
+
+.inviteForm button,
+.signatureForm button,
+.agreementActions button {
+  min-height: 2.8rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  background: #28201b;
+  color: white;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.inviteForm button:disabled,
+.signatureForm button:disabled {
+  opacity: 0.5;
+}
+
+.inviteResult {
+  margin-top: 1rem;
+  padding: 1rem 0;
+}
+
+.inviteResult p {
+  color: #71665d;
+}
+
+.inviteResult code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 0.78rem;
+}
+
+.agreementList > article {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.agreementActions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.agreementActions a,
+.billingList a {
+  color: inherit;
+  font-weight: 800;
+}
+
+.signatureForm {
+  flex-basis: 100%;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.signatureForm .checkbox {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-weight: 500;
+}
+
+.signatureForm .checkbox input {
+  min-height: auto;
+  margin-top: 0.15rem;
+}
+
+.signatureForm button {
+  width: fit-content;
+}
+
+.help {
+  max-width: 48rem;
+}
+
+.help > div {
+  display: grid;
+  margin-top: 2rem;
+  border-top: 1px solid rgba(35, 29, 24, 0.14);
+}
+
+.help a {
+  padding: 1.1rem 0;
+  border-bottom: 1px solid rgba(35, 29, 24, 0.1);
+  color: inherit;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+@media (max-width: 850px) {
+  .nextExperience,
+  .homeColumns,
+  .planAhead {
+    grid-template-columns: 1fr;
+  }
+
+  .dateList {
+    grid-template-columns: 1fr;
+  }
+
+  .inviteForm,
+  .signatureForm {
+    grid-template-columns: 1fr;
+  }
+
+  .detailRows > div {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+
+  .sectionHeading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
