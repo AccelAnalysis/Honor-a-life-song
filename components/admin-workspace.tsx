@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { referenceAdminRecordIds } from "@/fixtures/reference-data";
 import {
   adminServiceConnections,
   buildAdminHref,
@@ -16,17 +15,17 @@ type AdminWorkspaceProps = {
 };
 
 const policyCopy: Record<AdminIntegrityKind, string> = {
-  capacity: "Capacity uses recorded workload, active work, commitments, configured limits, and turnaround targets.",
-  payment: "Payment, refund, and reconciliation state can only change after server-side confirmation.",
-  funding: "Funding relationships do not grant access to participant information.",
-  scheduling: "Appointments and events use the shared platform schedule so every workspace sees the same timing.",
-  communications: "Email and text delivery use the shared communications service and its delivery status.",
-  consent: "Access permission and participant consent are separate requirements. Restrictions and withdrawals continue to apply to administrators.",
-  reporting: "Reports use recorded platform activity and do not infer clinical outcomes from program participation.",
-  export: "Exports respect access, participant permissions, retention rules, and audit requirements.",
-  monitoring: "Alerts and incidents come from recorded service or workflow conditions.",
-  configuration: "High-impact settings require server-side authorization and cannot bypass workflow or consent protections.",
-  identity: "People, organizations, memberships, and roles share one identity model with least-privilege access."
+  capacity: "Capacity should reflect assigned work, active commitments, configured limits, and actual staffing rather than estimates presented as facts.",
+  payment: "A payment, refund, or reconciliation should only be treated as complete when the recorded financial activity confirms it.",
+  funding: "Sponsors, facilities, nonprofits, and grant-supported partners do not receive participant information simply because they fund a program.",
+  scheduling: "Customer interviews, facility activities, creator commitments, and administrative scheduling should stay aligned so the same event is not represented differently in different areas.",
+  communications: "Send and track customer, family, facility, creator, and program communication from one coordinated place.",
+  consent: "Administrative access never overrides a participant's choices about recording, sharing, performance, photography, publication, or other uses.",
+  reporting: "Use real records and timestamps for reporting, and do not turn participation or satisfaction measures into unsupported clinical claims.",
+  export: "Exports should respect the person's access level, the purpose of the export, participant permissions, and applicable retention or deletion requirements.",
+  monitoring: "Alerts and incidents should reflect actual failures, service health, blockers, or operational conditions.",
+  configuration: "Settings should not override privacy, payment integrity, required approvals, or security protections.",
+  identity: "Customers, families, facilities, creators, sponsors, partners, and administrators should receive only the access appropriate to their role."
 };
 
 const columnsByParent: Record<AdminParentId, readonly string[]> = {
@@ -59,21 +58,11 @@ function ActionArea({ node }: { node: AdminWorkflowNode }) {
 }
 
 function RecordContext({ node, route }: { node: AdminWorkflowNode; route: AdminRouteResolution }) {
-  if (!node.recordKind) return null;
-
-  if (route.recordId) {
-    return <div className={styles.recordLine}>
-      <span>{node.recordKind.replaceAll("_", " ")}</span>
-      <strong>Selected</strong>
-    </div>;
-  }
-
-  const referenceId = referenceAdminRecordIds[node.recordKind];
-  return <Link className={styles.exampleLink} href={buildAdminHref({
-    parentId: route.parent.id as AdminParentId,
-    childId: node.id,
-    recordId: referenceId
-  })}>Open example</Link>;
+  if (!node.recordKind || !route.recordId) return null;
+  return <div className={styles.recordLine}>
+    <span>{node.recordKind.replaceAll("_", " ")}</span>
+    <strong>Selected</strong>
+  </div>;
 }
 
 function PolicyDetails({ node }: { node: AdminWorkflowNode }) {
@@ -89,16 +78,13 @@ function ProgramTemplateLink({ node, route }: { node: AdminWorkflowNode; route: 
   const target = node.id === "catalog-program-templates"
     ? { parentId: "settings" as const, childId: "settings-program-templates" }
     : { parentId: "catalog" as const, childId: "catalog-program-templates" };
-  const label = node.id === "catalog-program-templates" ? "Platform Configuration" : "Catalog & Pricing";
-  return <Link className={styles.relatedLink} href={buildAdminHref({ ...target, recordId: route.recordId })}>
-    Also available in {label}
-  </Link>;
+  const label = node.id === "catalog-program-templates" ? "Settings" : "Catalog & Pricing";
+  return <Link className={styles.relatedLink} href={buildAdminHref({ ...target, recordId: route.recordId })}>Also available in {label}</Link>;
 }
 
 function EmptyTable({ parentId, node }: { parentId: AdminParentId; node: AdminWorkflowNode }) {
   const columns = columnsByParent[parentId];
   const available = serviceAvailable(node);
-
   return <div className={styles.tableWrap}>
     <table>
       <thead><tr>{columns.map((column) => <th key={column} scope="col">{column}</th>)}</tr></thead>
@@ -127,7 +113,7 @@ function MonitoringLeaf() {
     <div className={styles.tableWrap}>
       <table>
         <thead><tr><th scope="col">Service</th><th scope="col">Status</th><th scope="col">Updated</th></tr></thead>
-        <tbody><tr><td className={styles.emptyCell} colSpan={3}>No monitoring data to show yet.</td></tr></tbody>
+        <tbody><tr><td className={styles.emptyCell} colSpan={3}>No monitoring information to show yet.</td></tr></tbody>
       </table>
     </div>
   </section>;
@@ -149,7 +135,7 @@ export function AdminWorkspace({ route }: AdminWorkspaceProps) {
   const children = getAdminChildren(parentId);
 
   return <div className={styles.adminModule}>
-    {children.length > 0 && <nav className={styles.childNav} aria-label={`${route.parent.label} workflows`}>
+    {children.length > 0 && <nav className={styles.childNav} aria-label={`${route.parent.label} options`}>
       {children.map((child) => <Link
         aria-current={route.child?.id === child.id ? "page" : undefined}
         className={route.child?.id === child.id ? styles.active : ""}

@@ -5,12 +5,12 @@ export default function HowItWorksPage() {
   return (
     <PublicShell>
       <main className="contentPage">
-        <p className="eyebrow">Meaning-to-Song Engine</p>
-        <h1>How Honor a Life Song works</h1>
-        <p className="lede">The public journey follows six understandable stages: share the story, capture it through human conversation, shape the song, review it, produce it and deliver the approved keepsake.</p>
+        <p className="eyebrow">How It Works</p>
+        <h1>From a life story to a song you can keep</h1>
+        <p className="lede">We begin by listening. From there, a human songwriter shapes the story, works with you through review, produces the recording, and delivers a finished keepsake made to last.</p>
         <Journey />
         <div className="callout">
-          <strong>One shared journey:</strong> These public stages describe the service experience. The deeper operational state machine remains in the chassis so individual songs and Project Ageless can use the same governed story, creative-work, approval, production and delivery services.
+          <strong>Human from beginning to end:</strong> Your memories are interpreted and shaped by people who listen for the details, relationships, and meaning that make the story yours.
         </div>
       </main>
     </PublicShell>

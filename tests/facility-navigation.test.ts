@@ -14,7 +14,7 @@ const expectedParents = [
   "Program Dashboard",
   "Program Overview",
   "Participants",
-  "Schedule & Touchpoints",
+  "Schedule & Activities",
   "Stories & Interviews",
   "Songs & Creative Works",
   "Families",
@@ -50,12 +50,12 @@ const expectedParticipantGrandchildren = [
 ] as const;
 
 describe("Facility / Project Ageless hierarchy", () => {
-  it("keeps the existing eleven top-level Facility destinations in source order", () => {
+  it("keeps the eleven top-level Facility destinations in order", () => {
     expect(workspaceNavigation.facility.map((item) => item.label)).toEqual(expectedParents);
     expect(workspaceNavigation.facility).toHaveLength(11);
   });
 
-  it("registers every source-defined child without omissions", () => {
+  it("registers every defined child without omissions", () => {
     for (const [parentId, labels] of Object.entries(expectedChildren) as [FacilityParentId, readonly string[]][]) {
       expect(facilityChildren[parentId].map((item) => item.label)).toEqual(labels);
       expect(new Set(facilityChildren[parentId].map((item) => item.slug)).size).toBe(labels.length);
@@ -65,13 +65,13 @@ describe("Facility / Project Ageless hierarchy", () => {
     expect(Object.values(facilityChildren).flat()).toHaveLength(60);
   });
 
-  it("keeps all eight Participant Detail grandchildren in selected-participant context", () => {
+  it("keeps all eight Participant Detail areas in selected-participant context", () => {
     const participantDetail = getFacilityChild("participants", "participant-detail");
     expect(participantDetail?.grandchildren?.map((item) => item.label)).toEqual(expectedParticipantGrandchildren);
     expect(participantDetail?.grandchildren).toHaveLength(8);
   });
 
-  it("round-trips ProgramRun, parent, child, participant, and grandchild deep-link context", () => {
+  it("round-trips program, parent, child, participant, and detail deep-link context", () => {
     const href = buildFacilityHref({
       parentId: "participants",
       childId: "participant-detail",
@@ -91,14 +91,14 @@ describe("Facility / Project Ageless hierarchy", () => {
     expect(route?.contextual).toBe(true);
   });
 
-  it("resolves nested Facility children and rejects invalid child/grandchild routes safely", () => {
+  it("resolves nested Facility children and rejects invalid child/detail routes safely", () => {
     expect(resolveFacilityRoute(["run", "run-1", "events", "photography-media-permissions"])?.child?.id).toBe("event-media-permissions");
     expect(resolveFacilityRoute(["run", "run-1", "events", "not-a-workflow"])).toBeUndefined();
     expect(resolveFacilityRoute(["participants", "detail", "participant-1", "not-a-grandchild"])).toBeUndefined();
     expect(resolveFacilityRoute(["participants", "roster", "unexpected-extra-segment"])).toBeUndefined();
   });
 
-  it("uses the same complete registry to generate preview/deep-link routes", () => {
+  it("uses the complete registry to generate preview and deep-link routes", () => {
     const slugs = getFacilityStaticRouteSlugs("run-reference", "participant-reference");
     const keys = new Set(slugs.map((segments) => segments.join("/")));
 
@@ -109,7 +109,7 @@ describe("Facility / Project Ageless hierarchy", () => {
     expect(keys.has("participants/detail/participant-reference/family-connections")).toBe(true);
   });
 
-  it("keeps production actions fail-closed until shared services are connected", () => {
+  it("keeps unavailable actions disabled until their services are connected", () => {
     expect(Object.values(facilityServiceConnections).every((connected) => connected === false)).toBe(true);
 
     const actions = Object.values(facilityChildren)
@@ -120,7 +120,7 @@ describe("Facility / Project Ageless hierarchy", () => {
     expect(actions.every((node) => node.action && facilityServiceConnections[node.action.service] === false)).toBe(true);
   });
 
-  it("keeps every top-level Facility destination backed by the shared child registry used by both responsive navigation modes", () => {
+  it("keeps every top-level Facility destination backed by the same child registry", () => {
     const parentIds = workspaceNavigation.facility.map((item) => item.id as FacilityParentId);
     expect(parentIds.every((id) => facilityChildren[id] !== undefined)).toBe(true);
   });

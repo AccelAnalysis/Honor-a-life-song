@@ -16,64 +16,61 @@ type CreatorWorkspaceProps = {
   route: CreatorRouteResolution;
 };
 
-function BoundaryList({ node }: { node: CreatorWorkflowNode }) {
-  return <div className={styles.boundaries} aria-label="Shared platform boundaries">
-    {node.boundaries.map((boundary) => <span key={boundary}>{boundary}</span>)}
-  </div>;
-}
-
-function ExposureNotice({ node }: { node: CreatorWorkflowNode }) {
-  if (!node.exposure) return null;
-  const copy = node.exposure === "creator_internal"
-    ? "Creator/internal only. Do not expose this material through Customer, Facility, Sponsor, public, or Secure Delivery surfaces."
-    : node.exposure === "delivery_candidate"
-      ? "Delivery candidate only. Final approval, entitlement, consent, and Secure Delivery checks still apply."
-      : "Authorized collaboration only. Access remains scoped to the applicable customer/family/reviewer context.";
-  return <div className={styles.exposure}><strong>Information boundary</strong><span>{copy}</span></div>;
+function creatorDescription(node: CreatorWorkflowNode) {
+  const descriptions: Record<string, string> = {
+    "song-lyrics": "Draft, review, compare, and refine the lyrics for the selected song.",
+    "production-composition": "Develop the composition after the song is approved for production.",
+    "production-arrangement": "Shape the arrangement and musical structure for the approved song.",
+    "production-recording": "Track the recording work for the approved song.",
+    "production-editing": "Refine the recorded performance before final mixing.",
+    "production-mixing": "Balance and prepare the recording for finalization.",
+    "production-mastering-finalization": "Prepare the finished recording for final quality review.",
+    "production-quality-review": "Complete the final creative and technical review before delivery."
+  };
+  return descriptions[node.id] ?? `Use this area to view or manage ${node.label.toLowerCase()} for the selected song.`;
 }
 
 function ConsentNotice({ node }: { node: CreatorWorkflowNode }) {
   if (!node.requiredConsentScopes?.length) return null;
-  return <div className={styles.consent}><strong>Authorization + consent</strong><span>Creator authorization alone is insufficient. Required scope: {node.requiredConsentScopes.join(", ")}.</span></div>;
+  return <div className={styles.consent}><strong>Sharing permission required</strong><span>Make sure the necessary participant permission is in place before using or sharing this material.</span></div>;
 }
 
 function ServiceGate({ node }: { node: CreatorWorkflowNode }) {
-  if (!node.action) {
-    return <div className={styles.gate}><strong>Structural workflow available</strong><span>Authoritative records for this workflow are not connected in the reference chassis.</span></div>;
-  }
+  if (!node.action) return null;
   const connected = creatorServiceConnections[node.action.service];
+  if (connected) return <button type="button">{node.action.label}</button>;
   return <div className={styles.gate}>
-    <strong>{connected ? "Production service connected" : "Production action gated"}</strong>
-    <span>{connected ? `${node.action.service} is available through the shared platform boundary.` : `${node.action.service} is not connected; the platform will not simulate success.`}</span>
-    <button disabled={!connected} type="button">{node.action.label}</button>
+    <strong>This action is currently unavailable online.</strong>
+    <span>You can review this area now, but changes cannot be submitted here yet.</span>
+    <button disabled type="button">{node.action.label}</button>
   </div>;
 }
 
 function WorkflowGuardrail({ node }: { node: CreatorWorkflowNode }) {
   if (!node.id.startsWith("production-")) return null;
   return <div className={styles.guardrail}>
-    <strong>Production prerequisite</strong>
-    <span>The selected CreativeWork must be governed as Approved for Production before production begins. A lyric draft, uploaded recording, or completed production subtask cannot bypass review, approval, quality review, final approval, or Secure Delivery.</span>
+    <strong>Ready for production</strong>
+    <span>Begin production only after the song has completed the required review and approval.</span>
   </div>;
 }
 
 function TargetLink({ node, creativeWorkId }: { node: CreatorWorkflowNode; creativeWorkId?: string }) {
   if (!node.target) return null;
   const targetWorkId = creativeWorkId && creatorParentCarriesWorkContext(node.target.parentId) ? creativeWorkId : undefined;
-  return <Link className={styles.primaryLink} href={buildCreatorHref({ ...node.target, creativeWorkId: targetWorkId })}>Open corresponding workflow</Link>;
+  return <Link className={styles.primaryLink} href={buildCreatorHref({ ...node.target, creativeWorkId: targetWorkId })}>Open related area</Link>;
 }
 
 function WorkSelectionRequired({ node, route }: { node: CreatorWorkflowNode; route: CreatorRouteResolution }) {
   if (!node.requiresCreativeWork || route.creativeWorkId) return null;
   return <section className={styles.selectionState} aria-labelledby="creator-selection-heading">
-    <h2 id="creator-selection-heading">Select assigned work first</h2>
-    <p>{node.label} operates on a selected canonical CreativeWork or assignment context. The platform does not guess which song/story the creator intended to open, and no authoritative assignment repository is connected in the reference chassis.</p>
+    <h2 id="creator-selection-heading">Choose an assigned song first</h2>
+    <p>{node.label} belongs to a specific song or assignment. Select the work you want to open.</p>
     <Link className={styles.primaryLink} href={buildCreatorHref({
       parentId: route.parent.id as CreatorParentId,
       childId: route.child?.id,
       grandchildId: route.grandchild?.id,
       creativeWorkId: referenceCreatorContext.creativeWorkId
-    })}>Open synthetic reference context</Link>
+    })}>Open assigned song</Link>
   </section>;
 }
 
@@ -82,13 +79,11 @@ function WorkflowSurface({ node, route }: { node: CreatorWorkflowNode; route: Cr
   if (selectionRequired) return <WorkSelectionRequired node={node} route={route} />;
 
   return <section className={styles.workflowSurface} aria-labelledby="creator-workflow-heading">
-    <p className={styles.kicker}>Concrete workflow boundary</p>
+    <p className={styles.kicker}>Creator Studio</p>
     <h2 id="creator-workflow-heading">{node.label}</h2>
-    <p>{node.description}</p>
-    {route.creativeWorkId && <div className={styles.contextPill}><span>Selected CreativeWork</span><strong>{route.creativeWorkId}</strong></div>}
-    <BoundaryList node={node} />
+    <p>{creatorDescription(node)}</p>
+    {route.creativeWorkId && <div className={styles.contextPill}><span>Selected song</span><strong>In progress</strong></div>}
     <ConsentNotice node={node} />
-    <ExposureNotice node={node} />
     <WorkflowGuardrail node={node} />
     <TargetLink node={node} creativeWorkId={route.creativeWorkId} />
     <ServiceGate node={node} />
@@ -100,7 +95,7 @@ function ChildNavigation({ route }: { route: CreatorRouteResolution }) {
   const children = getCreatorChildren(parentId);
   if (!children.length) return null;
 
-  return <nav className={styles.childNav} aria-label={`${route.parent.label} workflows`}>
+  return <nav className={styles.childNav} aria-label={`${route.parent.label} options`}>
     {children.map((child) => <Link
       aria-current={route.child?.id === child.id ? "page" : undefined}
       className={route.child?.id === child.id ? styles.active : undefined}
@@ -112,7 +107,7 @@ function ChildNavigation({ route }: { route: CreatorRouteResolution }) {
 
 function LyricsGrandchildNavigation({ route }: { route: CreatorRouteResolution }) {
   if (route.parent.id !== "song" || route.child?.id !== "song-lyrics") return null;
-  return <nav className={styles.grandchildNav} aria-label="Lyrics workflows">
+  return <nav className={styles.grandchildNav} aria-label="Lyrics options">
     <span>Lyrics</span>
     <div>
       {route.child.grandchildren?.map((grandchild) => <Link
@@ -139,16 +134,15 @@ function ModuleLanding({ route }: { route: CreatorRouteResolution }) {
 
   return <section>
     <div className={styles.moduleIntro}>
-      <div><p className={styles.kicker}>Creator module</p><h2>{route.parent.label}</h2><p>{route.parent.description}</p></div>
-      {route.creativeWorkId && <div className={styles.contextPill}><span>Selected CreativeWork</span><strong>{route.creativeWorkId}</strong></div>}
+      <div><p className={styles.kicker}>Creator Studio</p><h2>{route.parent.label}</h2><p>{route.parent.description}</p></div>
+      {route.creativeWorkId && <div className={styles.contextPill}><span>Selected song</span><strong>In progress</strong></div>}
     </div>
-    {children.some((child) => child.requiresCreativeWork) && !route.creativeWorkId && <div className={styles.selectionHint}><strong>Selected-work context required</strong><span>Open a workflow to select a canonical CreativeWork context. The UI will not infer one from unrelated state.</span></div>}
+    {children.some((child) => child.requiresCreativeWork) && !route.creativeWorkId && <div className={styles.selectionHint}><strong>Choose an assigned song to continue</strong><span>Open an area below to begin.</span></div>}
     <div className={styles.workflowGrid}>
       {children.map((child) => <article key={child.id}>
         <h3>{child.label}</h3>
-        <p>{child.description}</p>
-        <BoundaryList node={child} />
-        <Link href={buildCreatorHref({ parentId, childId: child.id, creativeWorkId: route.creativeWorkId })}>Open workflow</Link>
+        <p>{creatorDescription(child)}</p>
+        <Link href={buildCreatorHref({ parentId, childId: child.id, creativeWorkId: route.creativeWorkId })}>Open {child.label.toLowerCase()}</Link>
       </article>)}
     </div>
   </section>;
@@ -160,14 +154,14 @@ function LyricsLanding({ route }: { route: CreatorRouteResolution }) {
 
   return <section>
     <div className={styles.moduleIntro}>
-      <div><p className={styles.kicker}>Nested lyric workflow</p><h2>Lyrics</h2><p>The active CreativeWork stays in the route while moving among Draft, Version History, and Comparison.</p></div>
-      <div className={styles.contextPill}><span>Selected CreativeWork</span><strong>{route.creativeWorkId}</strong></div>
+      <div><p className={styles.kicker}>Song Workspace</p><h2>Lyrics</h2><p>Draft, review, compare, and refine the lyrics for this song.</p></div>
+      <div className={styles.contextPill}><span>Selected song</span><strong>In progress</strong></div>
     </div>
     <div className={styles.workflowGrid}>
       {route.child.grandchildren?.map((grandchild) => <article key={grandchild.id}>
         <h3>{grandchild.label}</h3>
-        <p>{grandchild.description}</p>
-        <Link href={buildCreatorHref({ parentId: "song", childId: "song-lyrics", grandchildId: grandchild.id, creativeWorkId: route.creativeWorkId })}>Open lyric workflow</Link>
+        <p>{creatorDescription(grandchild)}</p>
+        <Link href={buildCreatorHref({ parentId: "song", childId: "song-lyrics", grandchildId: grandchild.id, creativeWorkId: route.creativeWorkId })}>Open {grandchild.label.toLowerCase()}</Link>
       </article>)}
     </div>
   </section>;
@@ -177,10 +171,6 @@ export function CreatorWorkspace({ route }: CreatorWorkspaceProps) {
   const activeWorkflow = route.grandchild ?? route.child;
 
   return <div className={styles.creatorModule}>
-    <div className={styles.structureBanner}>
-      <strong>Workflow structure active</strong>
-      <span>Human-led story-to-song workflows are navigable. Assignment, story, lyric, approval, production, media, scheduling, messaging, delivery, and audit services remain explicitly gated where they are not connected.</span>
-    </div>
     <ChildNavigation route={route} />
     <LyricsGrandchildNavigation route={route} />
     {route.child?.id === "song-lyrics" && !route.grandchild

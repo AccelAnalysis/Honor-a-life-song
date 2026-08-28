@@ -11,7 +11,7 @@ import {
 import { secureDeliveryServiceAvailability } from "@/services/secure-delivery";
 import styles from "./secure-delivery.module.css";
 
-const REFERENCE_PRESENTATION = {
+const KEEPSAKE_PRESENTATION = {
   dedication: "For someone unforgettable",
   title: "The Porch Light Stayed On",
   subtitle: "A private Honor a Life Song keepsake"
@@ -51,12 +51,12 @@ function SafeState({ state }: { state: DeliveryResolutionState }) {
     },
     asset_unavailable: {
       title: "This keepsake is still being prepared",
-      body: "Access is valid, but there are no approved final song or keepsake files ready to present yet.",
+      body: "There are no final song or keepsake files ready to share here yet.",
       tone: "notice"
     },
     service_unavailable: {
-      title: "Private listening is not connected yet",
-      body: "This reference environment preserves the secure boundary without pretending that a private song has been authorized.",
+      title: "Private listening isn’t available yet",
+      body: "Contact Honor a Life Song if you need help accessing a finished song or keepsake.",
       tone: "notice"
     }
   };
@@ -70,10 +70,6 @@ function SafeState({ state }: { state: DeliveryResolutionState }) {
       <p>{message.body}</p>
       {state === "verification_required" ? <button className={styles.primaryAction} type="button" disabled>Verify access</button> : null}
       <Link className={styles.secondaryAction} href="/">Return home</Link>
-      <details className={styles.technicalDetails}>
-        <summary>Delivery details</summary>
-        <p>Private delivery remains fail-closed until identity, entitlement, consent, and approved-asset checks all succeed.</p>
-      </details>
     </section>
   );
 }
@@ -97,7 +93,7 @@ function PrivateSongPage({ context }: { context: DeliveryAccessContext }) {
   return (
     <article className={styles.keepsake}>
       <header className={styles.releaseHero}>
-        <div className={styles.albumArtwork} aria-label="Reference song artwork without participant media">
+        <div className={styles.albumArtwork} aria-label="Song artwork">
           <div className={styles.artworkGlow} />
           <div className={styles.artworkWave} aria-hidden="true">{Array.from({ length: 17 }, (_, index) => <span key={index} />)}</div>
           <span className={styles.artworkLabel}>Honor a Life Song</span>
@@ -105,29 +101,29 @@ function PrivateSongPage({ context }: { context: DeliveryAccessContext }) {
 
         <div className={styles.releaseCopy}>
           <span className={styles.privateBadge}>Private keepsake</span>
-          <p className={styles.dedication}>{REFERENCE_PRESENTATION.dedication}</p>
-          <h1>{REFERENCE_PRESENTATION.title}</h1>
-          <p className={styles.releaseSubtitle}>{REFERENCE_PRESENTATION.subtitle}</p>
+          <p className={styles.dedication}>{KEEPSAKE_PRESENTATION.dedication}</p>
+          <h1>{KEEPSAKE_PRESENTATION.title}</h1>
+          <p className={styles.releaseSubtitle}>{KEEPSAKE_PRESENTATION.subtitle}</p>
 
           <section className={styles.listenHero} id="listen" aria-labelledby="listen-heading">
             <div className={styles.playerTopline}>
-              <button type="button" disabled aria-describedby="listen-service-note" aria-label={`Play ${REFERENCE_PRESENTATION.title}`}>
+              <button type="button" disabled aria-describedby="listen-service-note" aria-label={`Play ${KEEPSAKE_PRESENTATION.title}`}>
                 <span aria-hidden="true">▶</span>
               </button>
               <div>
                 <h2 id="listen-heading">Listen</h2>
-                <p>{audio?.label ?? "No authorized final audio is included"}</p>
+                <p>{audio?.label ?? "The final recording is not included here yet"}</p>
               </div>
             </div>
             <div className={styles.playerWave} aria-hidden="true">{Array.from({ length: 34 }, (_, index) => <span key={index} />)}</div>
             <div className={styles.playerTime}><span>0:00</span><span>Private final recording</span><span>—:—</span></div>
-            <p className={styles.serviceNote} id="listen-service-note">Playback remains unavailable until the secure media service issues short-lived access for this recipient.</p>
+            <p className={styles.serviceNote} id="listen-service-note">This recording isn’t available to play online yet.</p>
           </section>
         </div>
       </header>
 
       {context.entryMechanism === "qr" ? (
-        <div className={styles.qrNotice} role="note"><strong>Opened from a keepsake QR code</strong><span>The QR code enters this same protected experience and does not bypass any access or permission check.</span></div>
+        <div className={styles.qrNotice} role="note"><strong>Opened from a keepsake QR code</strong><span>This QR code opens the same private song page.</span></div>
       ) : null}
 
       <nav className={styles.sectionNav} aria-label="Private song page sections">
@@ -142,20 +138,20 @@ function PrivateSongPage({ context }: { context: DeliveryAccessContext }) {
             <div className={styles.lyricPaper}>
               <span>{lyrics.label}</span>
               <div className={styles.lyricLines} aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /></div>
-              <p>The approved lyric page is ready for this private keepsake. Working drafts and review notes remain outside the delivery experience.</p>
+              <p>Your lyric sheet is part of this private keepsake.</p>
             </div>
-          ) : <p className={styles.empty}>Approved lyrics are not included in this delivery.</p>}
+          ) : <p className={styles.empty}>Lyrics are not included in this delivery.</p>}
         </section>
 
         <section className={styles.storyFeature} id="photos-approved-story" aria-labelledby="story-heading">
           <div className={styles.storyArtwork} aria-hidden="true"><span>Story</span></div>
           <div>
             <p className={styles.eyebrow}>Behind the song</p>
-            <h2 id="story-heading">Photos / Approved Story</h2>
+            <h2 id="story-heading">Photos & Story</h2>
             {approvedStoryAssets.length > 0 ? (
               <div className={styles.assetChips}>{approvedStoryAssets.map((asset) => <span key={asset.id}>{asset.label}</span>)}</div>
-            ) : <p className={styles.empty}>No approved photo or story material is included in this delivery.</p>}
-            <p>Only the keepsake selection explicitly approved for this recipient can appear here.</p>
+            ) : <p className={styles.empty}>No photos or story details are included in this delivery.</p>}
+            <p>Only the photos and story details chosen for this keepsake appear here.</p>
           </div>
         </section>
 
@@ -166,16 +162,16 @@ function PrivateSongPage({ context }: { context: DeliveryAccessContext }) {
             <div className={styles.actionList}>
               {downloadableAssets.map((asset) => {
                 const decision = authorizeDeliveryAsset(context, { deliveryId: context.deliveryId, assetId: asset.id, action: "download" });
-                return <button type="button" disabled key={asset.id}><span>↓</span><strong>{asset.label}</strong><small>{decision.allowed ? "Secure authorization required" : "Unavailable"}</small></button>;
+                return <button type="button" disabled key={asset.id}><span>↓</span><strong>{asset.label}</strong><small>{decision.allowed ? "Download will be available here" : "Unavailable"}</small></button>;
               })}
             </div>
           </section>
 
           <section id="share-controls" aria-labelledby="share-heading">
             <p className={styles.eyebrow}>Invite someone in</p>
-            <h2 id="share-heading">Share Controls</h2>
-            <button className={styles.shareButton} type="button" disabled><span>↗</span><strong>Share privately</strong><small>{shareDecision.allowed ? "Controlled access service required" : "Not authorized for this delivery"}</small></button>
-            <p className={styles.serviceNote}>Private sharing never becomes public marketing permission.</p>
+            <h2 id="share-heading">Share Privately</h2>
+            <button className={styles.shareButton} type="button" disabled><span>↗</span><strong>Share privately</strong><small>{shareDecision.allowed ? "Private sharing will be available here" : "Sharing isn’t available for this delivery"}</small></button>
+            <p className={styles.serviceNote}>Sharing a private keepsake does not make it public.</p>
           </section>
         </section>
       </div>
@@ -184,15 +180,10 @@ function PrivateSongPage({ context }: { context: DeliveryAccessContext }) {
         <div>
           <p className={styles.eyebrow}>Delivery Confirmation</p>
           <h2 id="confirmation-heading">Received with care.</h2>
-          <p>Opening this page does not mark the song journey delivered or closed. Confirmation remains a separate, auditable action.</p>
+          <p>Confirming receipt lets Honor a Life Song know your keepsake arrived safely.</p>
         </div>
         <button type="button" disabled={!secureDeliveryServiceAvailability.confirmationPersistence}>Confirm receipt</button>
       </section>
-
-      <details className={styles.deliveryDetails}>
-        <summary>About this reference delivery</summary>
-        <p>This visual preview uses fictional reference artwork and labels only. It exposes no production participant, recording, photograph, private link credential, or internal media location.</p>
-      </details>
 
       <footer className={styles.deliveryFooter}><span>Honor a Life Song</span><span>Made from a story. Kept as a song.</span></footer>
     </article>

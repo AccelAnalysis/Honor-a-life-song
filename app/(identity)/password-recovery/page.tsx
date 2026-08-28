@@ -1,5 +1,5 @@
 import { IdentityLifecyclePlaceholder } from "@/components/identity-lifecycle-placeholder";
 
 export default function PasswordRecoveryPage() {
-  return <IdentityLifecyclePlaceholder title="Password Recovery" description="Password recovery is a dedicated Identity / Access workflow. It must use the selected provider's secure recovery process rather than exposing password-reset behavior in the Login presentation layer." />;
+  return <IdentityLifecyclePlaceholder title="Reset Your Password" description="Request a secure password reset so you can return to your Honor a Life Song account when online password recovery is available." />;
 }
