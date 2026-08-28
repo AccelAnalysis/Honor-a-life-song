@@ -1,5 +1,6 @@
-import { IdentityLifecyclePlaceholder } from "@/components/identity-lifecycle-placeholder";
+import { Suspense } from "react";
+import { CreateAccountRoute } from "@/components/create-account-route";
 
 export default function CreateAccountPage() {
-  return <IdentityLifecyclePlaceholder title="Create Account" description="Create an Honor a Life Song account to begin or continue a song journey, collaborate with family, or take part in a program when online account creation is available." />;
+  return <Suspense fallback={<main className="centeredPage"><section className="authCard"><p>Opening account setup…</p></section></main>}><CreateAccountRoute /></Suspense>;
 }

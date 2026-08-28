@@ -31,14 +31,14 @@ Child workflows are route-backed, for example:
 
 - `/admin/dashboard/active-orders`
 - `/admin/requests/new-inquiries`
-- `/admin/programs/project-ageless-programs`
+- `/admin/programs/organization-experiences`
 - `/admin/consent/withdrawals`
 - `/admin/reports/program-outcomes`
 - `/admin/settings/feature-flags`
 
 Where a workflow supports a selected canonical record, the record identity is explicit in the route instead of being guessed from transient browser state:
 
-`/admin/programs/individual-orders/record/<orderId>`
+`/admin/programs/organization-orders/record/<orderId>`
 
 `/admin/people/facilities/record/<organizationId>`
 
@@ -77,6 +77,7 @@ Admin surfaces are explicitly bound to shared concepts including:
 - `Organization`;
 - `Inquiry`;
 - `Order`;
+- `OrganizationExperience`;
 - `ProgramTemplate`;
 - `ProgramRun`;
 - `Participant`;
@@ -106,8 +107,8 @@ Both routes declare the same `program_template` record context and are presented
 The dashboard children are operational views, not a new analytics database:
 
 - New Requests → canonical inquiries;
-- Active Orders → governed individual song workflow state;
-- Active Programs → canonical program-run state;
+- Active Organization Orders → governed organization purchase state;
+- Active Experiences → canonical organization-experience state;
 - Songs Completed → governed creative/approval completion;
 - Revenue → authoritative received payment state;
 - Capacity → supported workload/capacity inputs only;
@@ -119,7 +120,7 @@ Reference mode intentionally does not fabricate counts, revenue, capacity foreca
 
 The request area remains deliberately bounded to service operation: inquiries, qualification, consultations, quotes, and conversion. It does not add generalized enterprise CRM pipelines, scoring, marketing automation, or broad constituent management.
 
-Conversion is defined as a governed transition into the canonical downstream entity: `Order` for individual service or `ProgramRun` for program delivery.
+Conversion is defined as a governed transition into an organization-owned `Order` and its resulting `OrganizationExperience`. The chosen experience template determines whether the resulting work is a light group event or the full participant/interview/song/concert program.
 
 ## Payments and finance integrity
 

@@ -14,8 +14,8 @@ export default function ProjectAgelessSectionPage({ params }: { params: { sectio
   return (
     <PublicShell>
       <PublicWorkflowDetail
-        eyebrow="Project Ageless"
-        parentLabel="Project Ageless"
+        eyebrow="Honor a Life Song Experience"
+        parentLabel="Honor a Life Song Experience"
         parentHref="/services/project-ageless"
         item={item}
         siblings={projectAgelessSections}

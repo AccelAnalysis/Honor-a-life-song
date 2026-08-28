@@ -14,7 +14,7 @@ import { workspaceNavigation } from "../lib/navigation";
 const expectedTopLevel = [
   "Executive Dashboard",
   "Requests & Leads",
-  "Orders & Programs",
+  "Orders & Experiences",
   "Users & Organizations",
   "Catalog & Pricing",
   "Payments & Finance",
@@ -27,9 +27,9 @@ const expectedTopLevel = [
 ];
 
 const expectedChildren: Record<AdminParentId, string[]> = {
-  "admin-home": ["New Requests", "Active Orders", "Active Programs", "Songs Completed", "Revenue", "Capacity", "Alerts"],
+  "admin-home": ["New Requests", "Active Organization Orders", "Active Experiences", "Songs Completed", "Revenue", "Capacity", "Alerts"],
   requests: ["New Inquiries", "Qualification", "Consultations", "Quotes", "Conversion"],
-  programs: ["Individual Orders", "Project Ageless Programs", "Other Program Runs", "Exceptions", "Closed Work"],
+  programs: ["Organization Orders", "Organization Experiences", "Experience Templates", "Exceptions", "Closed Work"],
   people: ["Customers", "Family Collaborators", "Facilities", "Facility Staff", "Creators", "Partners", "Sponsors"],
   catalog: ["Packages", "Program Templates", "Add-ons", "Deposits", "Revision Limits", "Turnaround Targets"],
   finance: ["Payments", "Invoices", "Refunds", "Failed Payments", "Sponsor Funding", "Reconciliation"],
@@ -72,9 +72,9 @@ describe("Admin routing", () => {
   });
 
   it("preserves selected record identity in deep links", () => {
-    const href = buildAdminHref({ parentId: "programs", childId: "programs-individual-orders", recordId: "order-123" });
-    expect(href).toBe("/admin/programs/individual-orders/record/order-123");
-    const route = resolveAdminRoute(["programs", "individual-orders", "record", "order-123"]);
+    const href = buildAdminHref({ parentId: "programs", childId: "programs-organization-orders", recordId: "order-123" });
+    expect(href).toBe("/admin/programs/organization-orders/record/order-123");
+    const route = resolveAdminRoute(["programs", "organization-orders", "record", "order-123"]);
     expect(route?.recordId).toBe("order-123");
     expect(route?.child?.recordKind).toBe("order");
   });
@@ -88,7 +88,7 @@ describe("Admin routing", () => {
   it("generates static child and selected-record routes", () => {
     const routes = getAdminStaticRouteSlugs(referenceAdminRecordIds).map((parts) => parts.join("/"));
     expect(routes).toContain("dashboard/new-requests");
-    expect(routes).toContain("programs/individual-orders/record/ref-order-001");
+    expect(routes).toContain("programs/organization-orders/record/ref-order-001");
     expect(routes).toContain("consent/consent-records/record/ref-consent-001");
     expect(routes).toContain("settings/program-templates/record/ref-program-template-001");
   });

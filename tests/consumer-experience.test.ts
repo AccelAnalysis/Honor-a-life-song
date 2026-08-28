@@ -22,7 +22,7 @@ describe("consumer experience composition", () => {
 
   it("uses customer-facing labels in public navigation", () => {
     expect(publicNavigationSource).toContain("Every Life Has a Song");
-    expect(publicNavigationSource).toContain("Begin a Song");
+    expect(publicNavigationSource).toContain("Plan an Experience");
     expect(publicNavigationSource).not.toContain("Hero / Value Proposition");
     expect(publicNavigationSource).not.toContain("Request a Song CTA");
     expect(publicNavigationSource).not.toContain("canonical Program Lead");
@@ -36,7 +36,8 @@ describe("consumer experience composition", () => {
     expect(loginSource).not.toContain("reference environment");
     expect(loginSource).not.toContain("simulated");
     expect(loginSource).not.toContain("/reference/identity/login");
-    expect(loginSource).toContain("Welcome back to your song");
+    expect(loginSource).toContain("manage your organization's experiences");
+    expect(loginSource).toContain("private songs and event memories shared with you");
   });
 
   it("preserves the identity architecture in a separate internal reference route", () => {

@@ -2,7 +2,7 @@
 
 ## Scope
 
-This slice implements the child and grandchild workflow hierarchy beneath **Identity / Access → Login**. It does not select or simulate a production identity provider.
+This slice implements the child and grandchild workflow hierarchy beneath **Identity / Access → Login**. Firebase Authentication now provides email/password identity; authorization still resolves separately from authentication.
 
 The governing source architecture defines Identity / Access as the shell that establishes who a person is and how they are permitted to enter the platform. Production identity is expected to plug in behind `IdentityService`, `SessionService` and `AuthorizationService`, then resolve:
 
@@ -42,7 +42,7 @@ Login starts the authentication handoff. The presentation layer does not own a c
 
 The selected provider will authenticate the person. `IdentityService` must normalize the provider result for the platform, while `SessionService` owns the authoritative session.
 
-The provider remains intentionally unselected because the source scope still lists hosting and identity stack selection as an open decision.
+Firebase Authentication is the current provider boundary. Provider success does not itself create organization membership, participant permission, or asset entitlement.
 
 #### Multi-Factor Challenge
 
@@ -83,12 +83,14 @@ The final Login stage resolves the set of permitted authenticated workspaces.
 
 #### Permitted Workspaces
 
-The operating chassis currently provides these shared workspace contexts:
+The active customer entry contexts are:
 
-- Customer / Family;
-- Facility / Project Ageless;
+- Organization account and its purchased experiences;
+- lightweight participant/family memories access;
 - Creator / Production; and
 - Admin / Operations.
+
+The earlier Customer and Facility module-heavy workspaces remain internal/reference architecture, not default sign-in destinations.
 
 The Login workflow must redirect only to a workspace present in the resolved identity context. Unresolved or unpermitted access fails closed.
 

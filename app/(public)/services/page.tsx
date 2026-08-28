@@ -6,23 +6,25 @@ export default function ServicesPage() {
     <PublicShell>
       <main className="contentPage">
         <p className="eyebrow">Services</p>
-        <h1>Ways to honor a story through song</h1>
-        <p className="lede">Choose a personal song for an individual or family, bring Project Ageless to a facility, or talk with us about a community program shaped around your group.</p>
+        <h1>Music experiences for facilities and community organizations</h1>
+        <p className="lede">Choose a focused group event or a complete multi-touch experience. Both are purchased by the organization and remain connected to its account, event history, and approved post-event materials.</p>
         <div className="cardGrid">
-          <article className="card" id="individual-family-songs">
-            <h2>Individual & Family Songs</h2>
-            <p>Create a one-of-a-kind song from the memories, people, places, and moments that define someone you love.</p>
-            <Link href="/how-it-works">See how a song comes together →</Link>
+          <article className="card" id="single-song-group-event">
+            <p className="eyebrow">$200</p>
+            <h2>Single-Song Group Event</h2>
+            <p>Bring a group together for shared story capture, one shared song, and an event presentation, with approved materials returning to the organization afterward.</p>
+            <Link href="/begin?offering=single-song-group-event">Choose the group event →</Link>
           </article>
-          <article className="card" id="project-ageless">
-            <h2>Project Ageless</h2>
-            <p>Bring residents, families, and staff together through storytelling, songwriting, listening, keepsakes, and a shared presentation.</p>
-            <Link href="/services/project-ageless">Explore Project Ageless →</Link>
+          <article className="card" id="honor-a-life-song-experience">
+            <p className="eyebrow">$2,500</p>
+            <h2>Honor a Life Song Experience</h2>
+            <p>Plan a multi-touch program with participant selection, interviews, multiple songs, family involvement where appropriate, and a follow-up concert.</p>
+            <Link href="/services/project-ageless">Explore the full experience →</Link>
           </article>
           <article className="card" id="community-programs">
-            <h2>Community Programs</h2>
-            <p>Create a tailored song experience for veterans, hospice communities, schools, cohorts, nonprofits, or other mission-driven groups.</p>
-            <span className="mutedLabel">Tell us about your community and what you hope the experience will create.</span>
+            <h2>Built for many kinds of communities</h2>
+            <p>Senior living, veterans, hospice, schools, nonprofits, healthcare, faith communities, cohorts, and other mission-driven organizations can use the same two experience models.</p>
+            <Link href="/how-it-works">See how organizations move through the journey →</Link>
           </article>
         </div>
       </main>

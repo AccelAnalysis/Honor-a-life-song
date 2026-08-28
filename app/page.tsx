@@ -8,12 +8,12 @@ export default function HomePage() {
       <section className="consumerHero" id="hero-value-proposition" aria-labelledby="consumer-hero-title">
         <div className="consumerHeroMedia" role="img" aria-label="A woman at a piano in a warm, lived-in home" />
         <div className="consumerHeroContent">
-          <p className="eyebrow">A story becomes a song.</p>
-          <h1 id="consumer-hero-title">Every life has a song.</h1>
-          <p className="consumerHeroLead">We listen for the moments that made someone who they are—then shape them into a human-created song that can be heard, held, and shared.</p>
+          <p className="eyebrow">Every life has a song.</p>
+          <h1 id="consumer-hero-title">Bring an unforgettable story-to-song experience to the people you serve.</h1>
+          <p className="consumerHeroLead">Honor a Life Song helps facilities and community organizations turn the stories of the people they serve into human-created music, shared celebration, and lasting memories.</p>
           <div className="consumerHeroActions">
-            <Link className="button primary" href="/how-it-works/share-your-story">Begin a song</Link>
-            <Link className="button secondary" href="/how-it-works">See how a story becomes music</Link>
+            <Link className="button primary" href="/services">Choose an experience</Link>
+            <Link className="button secondary" href="/how-it-works">See what happens</Link>
           </div>
           <SonicSignature inverse label="Hear our sonic signature" />
         </div>
@@ -28,8 +28,8 @@ export default function HomePage() {
           <p className="eyebrow">First, we listen.</p>
           <h2 id="listening-title">The details people remember are where the music begins.</h2>
           <div className="resonanceLine" aria-hidden="true">{Array.from({ length: 8 }, (_, index) => <span key={index} />)}</div>
-          <p>A phrase. A laugh. A place that always felt like home. Honor a Life Song turns those personal details into something a family can hear again and again.</p>
-          <Link className="textLink" href="/how-it-works/share-your-story">Share the first memory →</Link>
+          <p>A phrase. A laugh. A place that always felt like home. We help your team create the conditions for those details to be heard, shaped into music, and celebrated with participants and their families.</p>
+          <Link className="textLink" href="/how-it-works">See the experience from beginning to end →</Link>
         </div>
       </section>
 
@@ -39,17 +39,17 @@ export default function HomePage() {
             <p className="eyebrow">Songs as keepsakes</p>
             <h2 id="song-collection-title">Each story becomes its own musical world.</h2>
           </div>
-          <p>A finished song can remain a private family keepsake or, when permission is given, become a story that others can hear and celebrate.</p>
+          <p>Each organization experience can create shared event materials and, when permission is given, private songs and keepsakes for participants and designated family members.</p>
         </div>
         <div className="songGallery" aria-label="Song artwork collection">
           <article className="songCover">
-            <div className="songCoverMeta"><small>Individual song</small><h3>One life, heard closely.</h3><p>Private listening · lyrics · keepsake</p></div>
+            <div className="songCoverMeta"><small>Participant song</small><h3>One life, heard closely.</h3><p>Private listening · lyrics · keepsake</p></div>
           </article>
           <article className="songCover">
-            <div className="songCoverMeta"><small>Family song</small><h3>Memories gathered together.</h3><p>Voices become verses.</p></div>
+            <div className="songCoverMeta"><small>Single-song group event</small><h3>Memories gathered together.</h3><p>Shared stories become one song.</p></div>
           </article>
           <article className="songCover">
-            <div className="songCoverMeta"><small>Community song</small><h3>A shared experience in sound.</h3><p>Stories · performance · connection</p></div>
+            <div className="songCoverMeta"><small>Full experience</small><h3>A community celebrated in sound.</h3><p>Stories · songs · follow-up concert</p></div>
           </article>
         </div>
       </section>
@@ -62,9 +62,9 @@ export default function HomePage() {
           <div className="processCopy">
             <div><p className="eyebrow">Human from beginning to end</p><h2 id="process-title">Story. Song. Something lasting.</h2></div>
             <div className="processSteps">
-              <div className="processStep"><strong>01</strong><div><h3>Tell us about the person.</h3><p>Write, speak, upload a photograph, or invite someone else to remember with you.</p></div></div>
-              <div className="processStep"><strong>02</strong><div><h3>We listen for what matters.</h3><p>A human songwriter shapes the story, verifies the details, and develops the lyrics with care.</p></div></div>
-              <div className="processStep"><strong>03</strong><div><h3>Receive a song made for them.</h3><p>Review the work, hear the final recording, and open a private keepsake made to endure.</p></div></div>
+              <div className="processStep"><strong>01</strong><div><h3>Choose the experience for your organization.</h3><p>Select a single-song group event or the complete multi-touch Honor a Life Song experience.</p></div></div>
+              <div className="processStep"><strong>02</strong><div><h3>We listen to the people you serve.</h3><p>Participants join in flexible ways while human songwriters shape shared or individual stories with care.</p></div></div>
+              <div className="processStep"><strong>03</strong><div><h3>Celebrate, then share with permission.</h3><p>Present the music, return to approved event materials, and privately connect participants and families to what was created for them.</p></div></div>
             </div>
             <Link className="button primary" href="/how-it-works">Explore the complete journey</Link>
           </div>
@@ -73,13 +73,13 @@ export default function HomePage() {
 
       <section className="visualSection" id="program-highlights" aria-labelledby="program-title">
         <div className="visualIntro">
-          <div><p className="eyebrow">More than one kind of story</p><h2 id="program-title">Made for a person. Built for a community.</h2></div>
-          <p>The same human-led process can honor an individual, bring a family together, or become the emotional center of a community program.</p>
+          <div><p className="eyebrow">Two ways to begin</p><h2 id="program-title">Choose the experience that fits your community.</h2></div>
+          <p>Both options belong to your organization account, build its event history, and create a path back to approved songs and memories.</p>
         </div>
         <div className="programMosaic">
-          <Link className="programTile" href="/services#individual-family-songs"><div><h3>Individual &amp; family songs</h3><p>Birthdays, anniversaries, memorials, milestones, and the moments between them.</p></div></Link>
-          <Link className="programTile" href="/services/project-ageless"><div><h3>Project Ageless</h3><p>Stories, songs, family participation, and a shared presentation.</p></div></Link>
-          <Link className="programTile" href="/services#community-programs"><div><h3>Community programs</h3><p>Cohorts, veterans, hospice, schools, and mission-driven partners.</p></div></Link>
+          <Link className="programTile" href="/services#single-song-group-event"><div><h3>$200 Single-Song Group Event</h3><p>Shared story capture, one group song, and an event presentation.</p></div></Link>
+          <Link className="programTile" href="/services#honor-a-life-song-experience"><div><h3>$2,500 Honor a Life Song Experience</h3><p>Participant stories, multiple songs, family involvement, and a follow-up concert.</p></div></Link>
+          <Link className="programTile" href="/how-it-works"><div><h3>See the journey</h3><p>From organization planning through the post-event participant and family connection.</p></div></Link>
         </div>
       </section>
 
@@ -94,10 +94,10 @@ export default function HomePage() {
 
       <section className="closingScene" id="request-a-song" aria-labelledby="closing-title">
         <div>
-          <p className="eyebrow">Begin with one memory</p>
-          <h2 id="closing-title">Who do you want the world to hear?</h2>
-          <p>You do not need to arrive with a finished story. Start with the person, the moment, or the feeling you do not want to lose.</p>
-          <Link className="button" href="/how-it-works/share-your-story">Begin a song</Link>
+          <p className="eyebrow">Bring it to your community</p>
+          <h2 id="closing-title">Whose stories could your organization help people hear?</h2>
+          <p>You do not need to arrive with a finished program. Start with the people you serve, the kind of gathering you imagine, and the experience you want them to carry forward.</p>
+          <Link className="button" href="/begin">Plan an experience</Link>
         </div>
       </section>
     </PublicShell>

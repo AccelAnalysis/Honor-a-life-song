@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminOrganizationSurface } from "@/components/admin-organization-surface";
 import {
   adminServiceConnections,
   buildAdminHref,
@@ -25,13 +26,13 @@ const policyCopy: Record<AdminIntegrityKind, string> = {
   export: "Exports should respect the person's access level, the purpose of the export, participant permissions, and applicable retention or deletion requirements.",
   monitoring: "Alerts and incidents should reflect actual failures, service health, blockers, or operational conditions.",
   configuration: "Settings should not override privacy, payment integrity, required approvals, or security protections.",
-  identity: "Customers, families, facilities, creators, sponsors, partners, and administrators should receive only the access appropriate to their role."
+  identity: "Customers, families, organizations, creators, sponsors, partners, and administrators should receive only the access appropriate to their role."
 };
 
 const columnsByParent: Record<AdminParentId, readonly string[]> = {
   "admin-home": ["Area", "Status", "Updated"],
   requests: ["Request", "Type", "Status", "Received"],
-  programs: ["Work", "Customer / Facility", "Status", "Due"],
+  programs: ["Work", "Customer / Organization", "Status", "Due"],
   people: ["Name", "Type", "Access", "Activity"],
   catalog: ["Item", "Type", "Rule / Price", "Status"],
   finance: ["Reference", "Party", "Status", "Amount"],
@@ -42,6 +43,12 @@ const columnsByParent: Record<AdminParentId, readonly string[]> = {
   monitoring: ["Service", "Status", "Updated"],
   settings: ["Setting", "Status", "Updated"]
 };
+
+function displayLabel(node: AdminWorkflowNode) {
+  if (node.id === "people-facilities") return "Organizations";
+  if (node.id === "people-facility-staff") return "Organization Team";
+  return node.label;
+}
 
 function serviceAvailable(node: AdminWorkflowNode) {
   if (node.action) return adminServiceConnections[node.action.service];
@@ -124,7 +131,7 @@ function ParentOverview({ route, items }: { route: AdminRouteResolution; items: 
   return <section className={styles.workArea} aria-label={`${route.parent.label} options`}>
     <div className={styles.workflowList}>
       {items.map((child) => <Link href={buildAdminHref({ parentId, childId: child.id })} key={child.id}>
-        <span>{child.label}</span><span aria-hidden="true">→</span>
+        <span>{displayLabel(child)}</span><span aria-hidden="true">→</span>
       </Link>)}
     </div>
   </section>;
@@ -133,6 +140,7 @@ function ParentOverview({ route, items }: { route: AdminRouteResolution; items: 
 export function AdminWorkspace({ route }: AdminWorkspaceProps) {
   const parentId = route.parent.id as AdminParentId;
   const children = getAdminChildren(parentId);
+  const isOrganizations = route.child?.id === "people-facilities";
 
   return <div className={styles.adminModule}>
     {children.length > 0 && <nav className={styles.childNav} aria-label={`${route.parent.label} options`}>
@@ -141,13 +149,15 @@ export function AdminWorkspace({ route }: AdminWorkspaceProps) {
         className={route.child?.id === child.id ? styles.active : ""}
         href={buildAdminHref({ parentId, childId: child.id, recordId: route.child?.id === child.id ? route.recordId : undefined })}
         key={child.id}
-      >{child.label}</Link>)}
+      >{displayLabel(child)}</Link>)}
     </nav>}
 
-    {parentId === "monitoring"
-      ? <MonitoringLeaf />
-      : route.child
-        ? <WorkflowSurface node={route.child} route={route} />
-        : <ParentOverview route={route} items={children} />}
+    {isOrganizations
+      ? <AdminOrganizationSurface organizationId={route.recordId} />
+      : parentId === "monitoring"
+        ? <MonitoringLeaf />
+        : route.child
+          ? <WorkflowSurface node={route.child} route={route} />
+          : <ParentOverview route={route} items={children} />}
   </div>;
 }

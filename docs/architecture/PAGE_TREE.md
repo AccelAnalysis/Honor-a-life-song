@@ -3,22 +3,22 @@
 ## Public / Acquisition
 
 - Home
-  - Hero / Value Proposition
+  - Organization-facing Value Proposition
   - How It Works
   - Featured Stories / Songs
-  - Program Highlights
+  - Choose an Experience
   - Testimonials
-  - Request a Song CTA
+  - Plan an Experience CTA
 - How It Works
-  - Share Your Story
-  - Interview / Story Capture
-  - Songwriting Process
-  - Review & Revisions
-  - Production
-  - Delivery / Keepsakes
+  - Choose an Experience
+  - Prepare Participants
+  - Stories Become Songs
+  - Review & Event Preparation
+  - Presentation or Concert
+  - Secure Sharing & Keepsakes
 - Services
-  - Individual & Family Songs
-  - Project Ageless
+  - Single-Song Group Event — $200
+  - Honor a Life Song Experience — $2,500
     - Program Overview
     - Facility Benefits
     - Participant Experience
@@ -26,14 +26,14 @@
     - Concert / Presentation
     - Sponsorship
     - Request a Facility Program
-  - Community Programs
+  - Community Use Cases
 - Stories
 - Sponsorship & Partnerships
 - About
 - Pricing / Packages
 - FAQ
 - Schedule a Consultation
-- Login / Begin Request
+- Login / Plan an Experience
 
 ## Identity / Access
 
@@ -57,7 +57,50 @@
 
 The sibling Identity / Access destinations remain separate workflows. Login links to them when account creation, email verification, recovery, invitation acceptance, MFA policy/enrollment, or an explicit access/error path is required.
 
-## Customer / Family Workspace
+## Organization Account
+
+- Home
+  - Next Experience
+  - Materials Ready
+  - Agreements Requiring Attention
+  - Suggested Future Dates
+- Experiences
+  - Upcoming Experiences
+  - Past Experiences
+  - Single-Song Group Event
+    - Overview
+    - Event Setup
+    - Shared Song
+    - Event Materials
+  - Honor a Life Song Experience
+    - Overview
+    - Participants
+    - Interviews
+    - Songs
+    - Concert
+    - Event Materials
+- Songs & Memories
+- Account
+  - Team
+  - Billing
+  - Organization Agreements
+- Help
+
+## Participant / Family Access
+
+- Claim Invitation
+  - Verified Email
+  - Permissioned Access Summary
+  - Keep These Memories
+- My Memories
+  - Claimed Experiences
+  - Private Keepsake Entry
+- Secure Delivery
+  - Song / `[deliveryToken]`
+
+## Legacy Customer / Family Workflow Reference
+
+This source-defined ten-module workspace remains as a deeper internal/reference surface. It is not the initial participant/family entry experience and is not linked from primary acquisition. `CUSTOMER_MODEL.md` governs current customer ownership and access.
 
 The operating chassis currently registers exactly ten Customer / Family top-level destinations. The source-defined hierarchy beneath those integration points is:
 
@@ -126,7 +169,9 @@ The operating chassis currently registers exactly ten Customer / Family top-leve
 
 The full Platform Shell also defines standalone Customer destinations for **Production** (Production Status, Recording Status, Final Approval), **Profile & Settings**, and **Help & Support**. They remain intentionally outside this bounded ten-page chassis slice. Customer-facing production status is represented through `My Song Journey → Production` pending a later architecture decision on those omitted standalone destinations.
 
-## Facility / Project Ageless Workspace
+## Legacy Facility / Project Ageless Workflow Reference
+
+The depth below is retained as internal workflow architecture. Customer-facing facility functionality now appears package-by-package inside an `OrganizationExperience`, not as permanent global organization navigation.
 
 The operating chassis currently registers these eleven top-level Facility destinations. This slice preserves those integration points and implements the source-defined hierarchy beneath them.
 
@@ -285,10 +330,10 @@ The operating chassis currently registers exactly 12 Admin top-level destination
   - Consultations
   - Quotes
   - Conversion
-- Orders & Programs
-  - Individual Orders
-  - Project Ageless Programs
-  - Other Program Runs
+- Orders & Experiences
+  - Organization Orders
+  - Organization Experiences
+  - Experience Templates
   - Exceptions
   - Closed Work
 - Users & Organizations

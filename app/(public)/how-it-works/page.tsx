@@ -6,11 +6,11 @@ export default function HowItWorksPage() {
     <PublicShell>
       <main className="contentPage">
         <p className="eyebrow">How It Works</p>
-        <h1>From a life story to a song you can keep</h1>
-        <p className="lede">We begin by listening. From there, a human songwriter shapes the story, works with you through review, produces the recording, and delivers a finished keepsake made to last.</p>
+        <h1>From an organization&apos;s idea to songs and memories people can keep</h1>
+        <p className="lede">Your organization chooses an experience and prepares the setting. Participants join in ways that work for them, human songwriters shape what they hear, and the event becomes a bridge to carefully shared post-event memories.</p>
         <Journey />
         <div className="callout">
-          <strong>Human from beginning to end:</strong> Your memories are interpreted and shaped by people who listen for the details, relationships, and meaning that make the story yours.
+          <strong>Human from beginning to end:</strong> Stories are interpreted and shaped by people who listen for the details, relationships, and meaning that make each participant&apos;s experience their own.
         </div>
       </main>
     </PublicShell>

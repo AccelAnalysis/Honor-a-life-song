@@ -1,5 +1,6 @@
-import { IdentityLifecyclePlaceholder } from "@/components/identity-lifecycle-placeholder";
+import { Suspense } from "react";
+import { VerifyEmailRoute } from "@/components/verify-email-route";
 
 export default function VerifyEmailPage() {
-  return <IdentityLifecyclePlaceholder title="Verify Your Email" description="Confirm your email address so your Honor a Life Song account can be protected and connected to the songs, stories, or programs shared with you." />;
+  return <Suspense fallback={<main className="centeredPage"><section className="authCard"><p>Opening verification…</p></section></main>}><VerifyEmailRoute /></Suspense>;
 }

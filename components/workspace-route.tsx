@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AdminAccessGate } from "@/components/admin-access-gate";
 import { AdminWorkspace } from "@/components/admin-workspace";
 import { CreatorWorkspace } from "@/components/creator-workspace";
 import { CustomerWorkspace } from "@/components/customer-workspace";
 import { FacilityWorkspace } from "@/components/facility-workspace";
+import { OrganizationWorkspace } from "@/components/organization-workspace";
 import { referenceFacilityContext } from "@/fixtures/reference-data";
 import { buildAdminHref, resolveAdminRoute, type AdminParentId } from "@/lib/admin-navigation";
 import {
@@ -24,12 +26,9 @@ import { buildFacilityHref, resolveFacilityRoute, type FacilityParentId } from "
 import { getNavigation, isWorkspaceId, type NavigationItem, type WorkspaceId } from "@/lib/navigation";
 import styles from "./workspace-route.module.css";
 
-function titleize(value: string) {
-  return value.replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
 function workspaceDisplayName(workspace: WorkspaceId) {
   if (workspace === "customer") return "My Song";
+  if (workspace === "organization") return "Organization";
   if (workspace === "facility") return "Project Ageless";
   if (workspace === "creator") return "Creator Studio";
   return "Operations";
@@ -37,6 +36,12 @@ function workspaceDisplayName(workspace: WorkspaceId) {
 
 function flatHref(workspace: WorkspaceId, item: NavigationItem) {
   return `/${workspace}${item.slug ? `/${item.slug}` : ""}`;
+}
+
+function displayNodeLabel(id: string, label: string) {
+  if (id === "people-facilities") return "Organizations";
+  if (id === "people-facility-staff") return "Organization Team";
+  return label;
 }
 
 export function WorkspaceRoute() {
@@ -71,33 +76,20 @@ export function WorkspaceRoute() {
   const facilityProgramRunId = facilityRoute?.programRunId ?? referenceFacilityContext.programRunId;
 
   const itemHref = (item: NavigationItem) => {
-    if (workspace === "admin") {
-      return buildAdminHref({ parentId: item.id as AdminParentId });
-    }
-
+    if (workspace === "admin") return buildAdminHref({ parentId: item.id as AdminParentId });
     if (workspace === "creator") {
       const parentId = item.id as CreatorParentId;
-      const creativeWorkId = creatorRoute?.creativeWorkId && creatorParentCarriesWorkContext(parentId)
-        ? creatorRoute.creativeWorkId
-        : undefined;
+      const creativeWorkId = creatorRoute?.creativeWorkId && creatorParentCarriesWorkContext(parentId) ? creatorRoute.creativeWorkId : undefined;
       return buildCreatorHref({ parentId, creativeWorkId });
     }
-
     if (workspace === "customer") {
       const parentId = item.id as CustomerParentId;
-      const orderId = customerRoute?.orderId && customerParentCarriesOrderContext(parentId)
-        ? customerRoute.orderId
-        : undefined;
+      const orderId = customerRoute?.orderId && customerParentCarriesOrderContext(parentId) ? customerRoute.orderId : undefined;
       return buildCustomerHref({ parentId, orderId });
     }
-
     if (workspace === "facility") {
-      return buildFacilityHref({
-        parentId: item.id as FacilityParentId,
-        programRunId: facilityProgramRunId
-      });
+      return buildFacilityHref({ parentId: item.id as FacilityParentId, programRunId: facilityProgramRunId });
     }
-
     return flatHref(workspace, item);
   };
 
@@ -108,37 +100,39 @@ export function WorkspaceRoute() {
     ?? customerRoute?.grandchild
     ?? customerRoute?.child
     ?? adminRoute?.child;
-  const headingLabel = routeInvalid ? "Page not found" : activeNode?.label ?? activeItem.label;
-  const headingDescription = routeInvalid
-    ? "This page is not available. Choose another area from the navigation."
-    : activeItem.description;
+  const activeNodeLabel = activeNode ? displayNodeLabel(activeNode.id, activeNode.label) : undefined;
+  const headingLabel = routeInvalid ? "Page not found" : activeNodeLabel ?? activeItem.label;
+  const headingDescription = routeInvalid ? "This page is not available. Choose another area from the navigation." : activeItem.description;
   const workspaceName = workspaceDisplayName(workspace);
   const eyebrow = facilityRoute && activeNode
     ? `${workspaceName} / ${activeItem.label} / ${facilityRoute.child?.label}${facilityRoute.grandchild ? ` / ${facilityRoute.grandchild.label}` : ""}`
     : adminRoute && activeNode
-      ? `${workspaceName} / ${activeItem.label} / ${activeNode.label}`
+      ? `${workspaceName} / ${activeItem.label} / ${activeNodeLabel}`
       : creatorRoute && activeNode
         ? `${workspaceName} / ${activeItem.label} / ${creatorRoute.child?.label}${creatorRoute.grandchild ? ` / ${creatorRoute.grandchild.label}` : ""}`
         : customerRoute && activeNode
           ? `${workspaceName} / ${activeItem.label} / ${customerRoute.child?.label}${customerRoute.grandchild ? ` / ${customerRoute.grandchild.label}` : ""}`
           : `${workspaceName} / ${activeItem.label}`;
+  const accountHref = workspace === "organization" ? "/organization/account" : "/login";
 
   return <div className="workspaceShell">
-    <header className="workspaceHeader"><Link className="brand inverse" href="/">Honor a Life Song</Link><div className="workspaceIdentity"><span>{workspaceName}</span></div><Link href="/login">Account</Link></header>
+    <header className="workspaceHeader"><Link className="brand inverse" href="/">Honor a Life Song</Link><div className="workspaceIdentity"><span>{workspaceName}</span></div><Link href={accountHref}>Account</Link></header>
     <aside className="workspaceNav"><nav aria-label={`${workspaceName} navigation`}>{nav.map((item) => <Link aria-current={activeItem.id === item.id ? "page" : undefined} className={activeItem.id === item.id ? "active" : ""} href={itemHref(item)} key={item.id}><span>{item.label}</span></Link>)}</nav></aside>
     <main className="workspaceMain">
       <div className="pageHeading"><div><p className="eyebrow">{eyebrow}</p><h1>{headingLabel}</h1><p>{headingDescription}</p></div></div>
       {routeInvalid
         ? <section className="unavailable large"><strong>This page isn’t available.</strong><span>Choose another area from the navigation to continue.</span></section>
         : workspace === "admin" && adminRoute
-          ? <AdminWorkspace route={adminRoute} />
+          ? <AdminAccessGate><AdminWorkspace route={adminRoute} /></AdminAccessGate>
           : workspace === "creator" && creatorRoute
             ? <CreatorWorkspace route={creatorRoute} />
             : workspace === "customer" && customerRoute
               ? <CustomerWorkspace route={customerRoute} />
               : workspace === "facility" && facilityRoute
                 ? <FacilityWorkspace route={facilityRoute} />
-                : <section className="unavailable large"><strong>{activeItem.label} is coming soon.</strong><span>This area is not available yet.</span></section>}
+                : workspace === "organization"
+                  ? <OrganizationWorkspace sectionId={activeItem.id} />
+                  : <section className="unavailable large"><strong>{activeItem.label} is coming soon.</strong><span>This area is not available yet.</span></section>}
     </main>
     <nav className="mobileNav" aria-label={`${workspaceName} mobile navigation`}>
       {nav.slice(0, 3).map((item) => <Link aria-current={activeItem.id === item.id ? "page" : undefined} className={activeItem.id === item.id ? "active" : ""} href={itemHref(item)} key={item.id}>{item.label}</Link>)}
