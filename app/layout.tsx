@@ -3,6 +3,7 @@ import { AuthProvider } from "@/components/auth-provider";
 import "./globals.css";
 import "./public-hierarchy.css";
 import "./consumer-experience.css";
+import "./songkeep-polish.css";
 
 export const metadata: Metadata = {
   title: "SongKeep",
