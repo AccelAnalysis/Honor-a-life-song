@@ -16,6 +16,7 @@ describe("consumer experience composition", () => {
     expect(homeSource).toContain("songGallery");
     expect(homeSource).toContain("studioImage");
     expect(homeSource).toContain("Photo:");
+    expect(homeSource).toContain("SongKeep");
     expect(homeSource).not.toContain("Reference boundary:");
     expect(homeSource).not.toContain("referenceNotice consumerBoundary");
   });
@@ -36,8 +37,8 @@ describe("consumer experience composition", () => {
     expect(loginSource).not.toContain("reference environment");
     expect(loginSource).not.toContain("simulated");
     expect(loginSource).not.toContain("/reference/identity/login");
-    expect(loginSource).toContain("manage your organization's experiences");
-    expect(loginSource).toContain("private songs and event memories shared with you");
+    expect(loginSource).toContain("SongKeep");
+    expect(loginSource).toContain("Sign in to continue.");
   });
 
   it("preserves the identity architecture in a separate internal reference route", () => {
