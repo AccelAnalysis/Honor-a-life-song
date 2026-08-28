@@ -13,7 +13,7 @@ import { workspaceNavigation } from "../lib/navigation";
 
 const expectedTopLevel = [
   "Executive Dashboard",
-  "Requests / CRM-Lite",
+  "Requests & Leads",
   "Orders & Programs",
   "Users & Organizations",
   "Catalog & Pricing",
@@ -23,7 +23,7 @@ const expectedTopLevel = [
   "Consent & Compliance",
   "Reports & Analytics",
   "Monitoring & Incidents",
-  "Platform Configuration"
+  "Settings"
 ];
 
 const expectedChildren: Record<AdminParentId, string[]> = {
@@ -42,13 +42,13 @@ const expectedChildren: Record<AdminParentId, string[]> = {
 };
 
 describe("Admin hierarchy integrity", () => {
-  it("preserves the exact 12 chassis destinations in order", () => {
+  it("preserves the 12 admin destinations in order", () => {
     expect(workspaceNavigation.admin.map((item) => item.label)).toEqual(expectedTopLevel);
     expect(workspaceNavigation.admin).toHaveLength(12);
     expect(workspaceNavigation.admin.some((item) => item.label === "System Settings")).toBe(false);
   });
 
-  it("implements every source-defined child and keeps Monitoring as a leaf", () => {
+  it("implements every defined child and keeps Monitoring as a leaf", () => {
     for (const parent of workspaceNavigation.admin) {
       const parentId = parent.id as AdminParentId;
       expect(adminChildren[parentId].map((item) => item.label)).toEqual(expectedChildren[parentId]);
@@ -56,7 +56,7 @@ describe("Admin hierarchy integrity", () => {
     expect(adminChildren.monitoring).toEqual([]);
   });
 
-  it("keeps both Program Templates entry points on one canonical record kind", () => {
+  it("keeps both Program Templates entry points on one record kind", () => {
     expect(programTemplateEntryPointsShareCanonicalRecord()).toBe(true);
     expect(adminChildren.catalog.find((item) => item.label === "Program Templates")?.recordKind).toBe("program_template");
     expect(adminChildren.settings.find((item) => item.label === "Program Templates")?.recordKind).toBe("program_template");
@@ -67,11 +67,11 @@ describe("Admin routing", () => {
   it("resolves dashboard and nested child routes with the correct active parent", () => {
     expect(resolveAdminRoute([])?.parent.label).toBe("Executive Dashboard");
     const request = resolveAdminRoute(["requests", "new-inquiries"]);
-    expect(request?.parent.label).toBe("Requests / CRM-Lite");
+    expect(request?.parent.label).toBe("Requests & Leads");
     expect(request?.child?.label).toBe("New Inquiries");
   });
 
-  it("preserves selected canonical record identity in deep links", () => {
+  it("preserves selected record identity in deep links", () => {
     const href = buildAdminHref({ parentId: "programs", childId: "programs-individual-orders", recordId: "order-123" });
     expect(href).toBe("/admin/programs/individual-orders/record/order-123");
     const route = resolveAdminRoute(["programs", "individual-orders", "record", "order-123"]);
@@ -79,13 +79,13 @@ describe("Admin routing", () => {
     expect(route?.child?.recordKind).toBe("order");
   });
 
-  it("fails invalid nested and unsupported record routes closed", () => {
+  it("rejects invalid nested and unsupported record routes", () => {
     expect(resolveAdminRoute(["requests", "not-a-workflow"])).toBeUndefined();
     expect(resolveAdminRoute(["monitoring", "invented-child"])).toBeUndefined();
     expect(resolveAdminRoute(["reports", "sales-funnel", "record", "fake"])).toBeUndefined();
   });
 
-  it("generates static child and synthetic selected-record routes", () => {
+  it("generates static child and selected-record routes", () => {
     const routes = getAdminStaticRouteSlugs(referenceAdminRecordIds).map((parts) => parts.join("/"));
     expect(routes).toContain("dashboard/new-requests");
     expect(routes).toContain("programs/individual-orders/record/ref-order-001");
@@ -94,8 +94,8 @@ describe("Admin routing", () => {
   });
 });
 
-describe("Admin progressive availability", () => {
-  it("does not pretend production Admin services are connected", () => {
+describe("Admin service availability", () => {
+  it("does not mark unavailable Admin services as connected", () => {
     expect(Object.values(adminServiceConnections).every((connected) => connected === false)).toBe(true);
   });
 });

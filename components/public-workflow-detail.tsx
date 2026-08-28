@@ -29,20 +29,18 @@ export function PublicWorkflowDetail({
 
       <section className="workflowDetailGrid" aria-labelledby="included-heading">
         <article className="wideCard">
-          <h2 id="included-heading">What this includes</h2>
+          <h2 id="included-heading">What to expect</h2>
           <ul className="detailList">
             {item.details.map((detail) => <li key={detail}>{detail}</li>)}
           </ul>
         </article>
         <aside className="workflowContext">
-          <p className="eyebrow">Place in the hierarchy</p>
+          <p className="eyebrow">At a glance</p>
           <strong>{parentLabel}</strong>
           <p>{item.description}</p>
-          <Link href={parentHref}>View all {parentLabel.toLowerCase()} →</Link>
+          <Link href={parentHref}>Explore {parentLabel.toLowerCase()} →</Link>
         </aside>
       </section>
-
-      {item.integrationNote ? <div className="callout"><strong>Chassis integration boundary:</strong> {item.integrationNote}</div> : null}
 
       <nav className="workflowPager" aria-label={`${parentLabel} sequence`}>
         {previous ? <Link href={previous.href}><small>Previous</small><strong>← {previous.label}</strong></Link> : <span />}

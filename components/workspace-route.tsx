@@ -6,7 +6,7 @@ import { AdminWorkspace } from "@/components/admin-workspace";
 import { CreatorWorkspace } from "@/components/creator-workspace";
 import { CustomerWorkspace } from "@/components/customer-workspace";
 import { FacilityWorkspace } from "@/components/facility-workspace";
-import { referenceContext, referenceFacilityContext } from "@/fixtures/reference-data";
+import { referenceFacilityContext } from "@/fixtures/reference-data";
 import { buildAdminHref, resolveAdminRoute, type AdminParentId } from "@/lib/admin-navigation";
 import {
   buildCreatorHref,
@@ -28,9 +28,11 @@ function titleize(value: string) {
   return value.replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function availabilityLabel(item: NavigationItem) {
-  if (item.availability === "chassis") return null;
-  return item.availability === "structured" ? "Structured" : "Planned";
+function workspaceDisplayName(workspace: WorkspaceId) {
+  if (workspace === "customer") return "My Song";
+  if (workspace === "facility") return "Project Ageless";
+  if (workspace === "creator") return "Creator Studio";
+  return "Operations";
 }
 
 function flatHref(workspace: WorkspaceId, item: NavigationItem) {
@@ -43,7 +45,7 @@ export function WorkspaceRoute() {
   const candidate = parts[0] ?? "";
 
   if (!isWorkspaceId(candidate)) {
-    return <main className="centeredPage"><section className="authCard"><h1>Workspace not found</h1><Link href="/">Return home</Link></section></main>;
+    return <main className="centeredPage"><section className="authCard"><h1>Page not found</h1><p>We couldn’t find the page you were looking for.</p><Link href="/">Return home</Link></section></main>;
   }
 
   const workspace = candidate as WorkspaceId;
@@ -66,7 +68,6 @@ export function WorkspaceRoute() {
           ? !facilityRoute
           : !flatItem && flatSlug.length > 0;
   const activeItem = adminRoute?.parent ?? creatorRoute?.parent ?? customerRoute?.parent ?? facilityRoute?.parent ?? flatItem ?? nav[0];
-  const context = referenceContext[workspace];
   const facilityProgramRunId = facilityRoute?.programRunId ?? referenceFacilityContext.programRunId;
 
   const itemHref = (item: NavigationItem) => {
@@ -107,29 +108,28 @@ export function WorkspaceRoute() {
     ?? customerRoute?.grandchild
     ?? customerRoute?.child
     ?? adminRoute?.child;
-  const headingLabel = routeInvalid ? "Workflow not found" : activeNode?.label ?? activeItem.label;
+  const headingLabel = routeInvalid ? "Page not found" : activeNode?.label ?? activeItem.label;
   const headingDescription = routeInvalid
-    ? "This route is not part of the governed workspace hierarchy. No fallback workflow was selected."
-    : activeNode?.description ?? activeItem.description;
+    ? "This page is not available. Choose another area from the navigation."
+    : activeItem.description;
+  const workspaceName = workspaceDisplayName(workspace);
   const eyebrow = facilityRoute && activeNode
-    ? `${titleize(workspace)} / ${activeItem.label} / ${facilityRoute.child?.label}${facilityRoute.grandchild ? ` / ${facilityRoute.grandchild.label}` : ""}`
+    ? `${workspaceName} / ${activeItem.label} / ${facilityRoute.child?.label}${facilityRoute.grandchild ? ` / ${facilityRoute.grandchild.label}` : ""}`
     : adminRoute && activeNode
-      ? `${titleize(workspace)} / ${activeItem.label} / ${activeNode.label}`
+      ? `${workspaceName} / ${activeItem.label} / ${activeNode.label}`
       : creatorRoute && activeNode
-        ? `${titleize(workspace)} / ${activeItem.label} / ${creatorRoute.child?.label}${creatorRoute.grandchild ? ` / ${creatorRoute.grandchild.label}` : ""}`
+        ? `${workspaceName} / ${activeItem.label} / ${creatorRoute.child?.label}${creatorRoute.grandchild ? ` / ${creatorRoute.grandchild.label}` : ""}`
         : customerRoute && activeNode
-          ? `${titleize(workspace)} / ${activeItem.label} / ${customerRoute.child?.label}${customerRoute.grandchild ? ` / ${customerRoute.grandchild.label}` : ""}`
-          : `${titleize(workspace)} / ${activeItem.label}`;
-  const structuredNestedRoute = hasNestedHierarchy && !routeInvalid;
+          ? `${workspaceName} / ${activeItem.label} / ${customerRoute.child?.label}${customerRoute.grandchild ? ` / ${customerRoute.grandchild.label}` : ""}`
+          : `${workspaceName} / ${activeItem.label}`;
 
   return <div className="workspaceShell">
-    <header className="workspaceHeader"><Link className="brand inverse" href="/">Honor a Life Song</Link><div className="workspaceIdentity"><span>{titleize(workspace)} workspace</span><small>REFERENCE CHASSIS</small></div><Link href="/login">Access</Link></header>
-    <aside className="workspaceNav"><div className="contextCard"><span>{context.label}</span><strong>{context.value}</strong></div><nav aria-label={`${workspace} workspace navigation`}>{nav.map((item) => <Link aria-current={activeItem.id === item.id ? "page" : undefined} className={activeItem.id === item.id ? "active" : ""} href={itemHref(item)} key={item.id}><span>{item.label}</span>{availabilityLabel(item) && <small>{availabilityLabel(item)}</small>}</Link>)}</nav></aside>
+    <header className="workspaceHeader"><Link className="brand inverse" href="/">Honor a Life Song</Link><div className="workspaceIdentity"><span>{workspaceName}</span></div><Link href="/login">Account</Link></header>
+    <aside className="workspaceNav"><nav aria-label={`${workspaceName} navigation`}>{nav.map((item) => <Link aria-current={activeItem.id === item.id ? "page" : undefined} className={activeItem.id === item.id ? "active" : ""} href={itemHref(item)} key={item.id}><span>{item.label}</span></Link>)}</nav></aside>
     <main className="workspaceMain">
-      <div className="referenceBanner"><strong>REFERENCE CHASSIS</strong><span>Synthetic context only. No production participant, customer, facility, payment or media data is connected.</span></div>
-      <div className="pageHeading"><div><p className="eyebrow">{eyebrow}</p><h1>{headingLabel}</h1><p>{headingDescription}</p></div><span className={`status ${structuredNestedRoute ? styles.structuredStatus : activeItem.availability}`}>{structuredNestedRoute ? "Workflow structure active" : activeItem.availability === "chassis" ? "Chassis active" : activeItem.availability === "structured" ? "Workflow structured" : "Workflow planned"}</span></div>
+      <div className="pageHeading"><div><p className="eyebrow">{eyebrow}</p><h1>{headingLabel}</h1><p>{headingDescription}</p></div></div>
       {routeInvalid
-        ? <section className="unavailable large"><strong>Invalid nested workspace route</strong><span>The requested child, grandchild, or selected-record route is not registered in the source-defined hierarchy.</span><p>Use the governed workspace navigation instead of falling back to an unrelated destination.</p></section>
+        ? <section className="unavailable large"><strong>This page isn’t available.</strong><span>Choose another area from the navigation to continue.</span></section>
         : workspace === "admin" && adminRoute
           ? <AdminWorkspace route={adminRoute} />
           : workspace === "creator" && creatorRoute
@@ -138,11 +138,9 @@ export function WorkspaceRoute() {
               ? <CustomerWorkspace route={customerRoute} />
               : workspace === "facility" && facilityRoute
                 ? <FacilityWorkspace route={facilityRoute} />
-                : activeItem.availability === "chassis"
-                  ? <section className="dashboardGrid"><article className="metric"><span>Workspace</span><strong>{titleize(workspace)}</strong></article><article className="metric"><span>Route contract</span><strong>Active</strong></article><article className="metric"><span>Authorization</span><strong>Interface only</strong></article><article className="metric"><span>Live services</span><strong>Not connected</strong></article><article className="wideCard"><h2>What the chassis guarantees</h2><ul><li>Stable route and navigation ownership</li><li>Responsive workspace composition</li><li>Shared context boundary</li><li>Explicit progressive availability</li><li>No simulated backend service behavior</li></ul></article></section>
-                  : <section className="unavailable large"><strong>{activeItem.label} is reserved in the operating chassis</strong><span>{activeItem.unavailableReason}</span><p>Later implementation should supply this module through the governed domain and service contracts without changing the surrounding workspace composition.</p></section>}
+                : <section className="unavailable large"><strong>{activeItem.label} is coming soon.</strong><span>This area is not available yet.</span></section>}
     </main>
-    <nav className="mobileNav" aria-label="Mobile workspace navigation">
+    <nav className="mobileNav" aria-label={`${workspaceName} mobile navigation`}>
       {nav.slice(0, 3).map((item) => <Link aria-current={activeItem.id === item.id ? "page" : undefined} className={activeItem.id === item.id ? "active" : ""} href={itemHref(item)} key={item.id}>{item.label}</Link>)}
       <details className={styles.mobileMore}><summary>More</summary><div>{nav.slice(3).map((item) => <Link aria-current={activeItem.id === item.id ? "page" : undefined} className={activeItem.id === item.id ? "active" : ""} href={itemHref(item)} key={item.id}>{item.label}</Link>)}</div></details>
     </nav>
