@@ -10,8 +10,10 @@ describe("secure delivery accessibility contract", () => {
   it("announces protected delivery states without relying on color alone", () => {
     expect(componentSource).toContain('role="status"');
     expect(componentSource).toContain('aria-live="polite"');
-    expect(componentSource).toContain("This delivery link cannot be opened");
-    expect(componentSource).toContain("This delivery is currently restricted");
+    expect(componentSource).toContain('invalid: { title: "This link can’t be opened."');
+    expect(componentSource).toContain('expired: { title: "This link has expired."');
+    expect(componentSource).toContain('revoked: { title: "This link is no longer available."');
+    expect(componentSource).toContain('consent_blocked: { title: "This keepsake is restricted."');
   });
 
   it("provides semantic section navigation and labelled delivery regions", () => {
