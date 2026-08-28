@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AdminAccessGate } from "@/components/admin-access-gate";
 import { AdminWorkspace } from "@/components/admin-workspace";
+import { SongKeepLockup } from "@/components/brand";
 import { CreatorWorkspace } from "@/components/creator-workspace";
 import { CustomerWorkspace } from "@/components/customer-workspace";
 import { FacilityWorkspace } from "@/components/facility-workspace";
@@ -116,8 +117,12 @@ export function WorkspaceRoute() {
   const accountHref = workspace === "organization" ? "/organization/account" : "/login";
   const customerFacing = workspace === "organization" || workspace === "customer";
 
-  return <div className="workspaceShell">
-    <header className="workspaceHeader"><Link className="brand inverse" href="/">SongKeep</Link><div className="workspaceIdentity"><span>{workspaceName}</span></div><Link href={accountHref}>Account</Link></header>
+  return <div className="workspaceShell" data-workspace={workspace}>
+    <header className="workspaceHeader">
+      <Link className="workspaceBrand" href="/" aria-label="SongKeep home"><SongKeepLockup variant="app" /></Link>
+      <div className="workspaceIdentity"><span>{workspaceName}</span></div>
+      <Link className="workspaceAccount" href={accountHref}>Account</Link>
+    </header>
     <aside className="workspaceNav"><nav aria-label={`${workspaceName} navigation`}>{nav.map((item) => <Link aria-current={activeItem.id === item.id ? "page" : undefined} className={activeItem.id === item.id ? "active" : ""} href={itemHref(item)} key={item.id}><span>{item.label}</span></Link>)}</nav></aside>
     <main className="workspaceMain">
       <div className="pageHeading"><div>{customerFacing ? null : <p className="eyebrow">{eyebrow}</p>}<h1>{headingLabel}</h1>{customerFacing ? null : <p>{headingDescription}</p>}</div></div>
