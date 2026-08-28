@@ -1,0 +1,187 @@
+.shell {
+  display: grid;
+  gap: 1.6rem;
+}
+
+.status,
+.error,
+.quiet {
+  padding: 1rem 0;
+  color: #6f655d;
+}
+
+.error {
+  color: #8c3030;
+}
+
+.heading,
+.sectionHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1.25rem;
+}
+
+.heading h2 {
+  margin: 0.25rem 0;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  letter-spacing: -0.04em;
+}
+
+.heading p,
+.sectionHeading p {
+  max-width: 52rem;
+  color: #6f655d;
+  line-height: 1.55;
+}
+
+.kicker {
+  margin: 0;
+  font-size: 0.73rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 800;
+  color: #776c63;
+}
+
+.back,
+.customerView {
+  color: inherit;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.customerView {
+  display: inline-flex;
+  border: 1px solid rgba(33, 28, 24, 0.18);
+  border-radius: 999px;
+  padding: 0.65rem 1rem;
+  white-space: nowrap;
+}
+
+.organizationList {
+  border-top: 1px solid rgba(33, 28, 24, 0.14);
+}
+
+.organizationList > a,
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid rgba(33, 28, 24, 0.09);
+}
+
+.organizationList > a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.organizationList > a > div,
+.row > div {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.organizationList span,
+.row span {
+  color: #71675f;
+  font-size: 0.85rem;
+}
+
+.section {
+  padding-top: 1.6rem;
+  border-top: 1px solid rgba(33, 28, 24, 0.15);
+}
+
+.sectionHeading {
+  align-items: flex-start;
+  margin-bottom: 0.65rem;
+}
+
+.sectionHeading h3 {
+  margin: 0;
+  font-size: 1.45rem;
+}
+
+.sectionHeading p {
+  margin: 0.35rem 0 0;
+}
+
+.rows {
+  min-height: 1rem;
+}
+
+.actionPanel {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(33, 28, 24, 0.08);
+}
+
+.actionPanel summary {
+  width: fit-content;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.actionPanel form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+  max-width: 60rem;
+}
+
+.actionPanel label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.actionPanel input,
+.actionPanel select {
+  min-height: 2.7rem;
+  border: 1px solid rgba(33, 28, 24, 0.2);
+  border-radius: 0.6rem;
+  padding: 0 0.7rem;
+  background: white;
+  color: inherit;
+  font: inherit;
+}
+
+.actionPanel button {
+  align-self: end;
+  width: fit-content;
+  min-height: 2.7rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  background: #27201b;
+  color: white;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.actionPanel button:disabled {
+  opacity: 0.5;
+}
+
+@media (max-width: 760px) {
+  .heading,
+  .sectionHeading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .actionPanel form {
+    grid-template-columns: 1fr;
+  }
+
+  .row,
+  .organizationList > a {
+    align-items: flex-start;
+  }
+}
