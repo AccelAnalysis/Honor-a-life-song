@@ -248,7 +248,7 @@ export function OrganizationWorkspace({ sectionId }: OrganizationWorkspaceProps)
         <div className={styles.sectionHeading}><div><p className={styles.kicker}>Experiences</p><h2>Upcoming</h2></div><Link className={styles.primaryAction} href={`/begin?organizationId=${selectedOrganization.id}`}>Plan an experience</Link></div>
         <div className={styles.experienceList}>{upcoming.length ? upcoming.map((experience) => <Link className={styles.experienceRow} href={`/organization/experiences?org=${selectedOrganization.id}&experience=${experience.id}`} key={experience.id}><div><strong>{experience.title}</strong><span>{formatDate(experience.startsAt)}</span></div><span>{titleize(experience.status)} →</span></Link>) : <p className={styles.quiet}>No upcoming experiences are scheduled.</p>}</div>
         <div className={styles.sectionHeading}><div><p className={styles.kicker}>Your history</p><h2>Past experiences</h2></div></div>
-        <div className={styles.experienceList}>{past.length ? past.map((experience) => <Link className={styles.experienceRow} href={`/organization/experiences?org=${selectedOrganization.id}&experience=${experience.id}`} key={experience.id}><div><strong>{experience.title}</strong><span>{formatDate(experience.startsAt)}</span></div><span>Revisit →</span></Link>) : <p className={styles.quiet}>Completed experiences will remain here as part of your organization's history.</p>}</div>
+        <div className={styles.experienceList}>{past.length ? past.map((experience) => <Link className={styles.experienceRow} href={`/organization/experiences?org=${selectedOrganization.id}&experience=${experience.id}`} key={experience.id}><div><strong>{experience.title}</strong><span>{formatDate(experience.startsAt)}</span></div><span>Revisit →</span></Link>) : <p className={styles.quiet}>Completed experiences will remain here as part of your organization&apos;s history.</p>}</div>
       </>}
     </section> : null}
 
@@ -265,7 +265,7 @@ export function OrganizationWorkspace({ sectionId }: OrganizationWorkspaceProps)
       <div className={styles.accountHeader}><div><p className={styles.kicker}>Organization account</p><h2>{selectedOrganization.name}</h2><p>{titleize(selectedOrganization.kind)}</p></div></div>
 
       <section className={styles.accountSection}>
-        <div className={styles.sectionHeading}><div><h3>Team</h3><p>Each person signs in with their own account. Removing a person does not remove your organization's event history.</p></div></div>
+        <div className={styles.sectionHeading}><div><h3>Team</h3><p>Each person signs in with their own account. Removing a person does not remove your organization&apos;s event history.</p></div></div>
         <div className={styles.memberList}>{members.map((member) => <div className={styles.memberRow} key={member.userId}><div><strong>{member.displayName}</strong><span>{member.email}</span></div><span>{titleize(member.role)}</span></div>)}</div>
         {canManageAccount ? <form className={styles.inviteForm} onSubmit={handleInvite}>
           <label><span>Invite by email</span><input required type="email" name="email" placeholder="colleague@example.com" /></label>
