@@ -22,6 +22,7 @@ export type ServiceOfferingId = (typeof serviceOfferings)[number]["id"];
 
 export const bookingSteps = [
   "welcome",
+  "account",
   "schedule",
   "agreement",
   "payment",
