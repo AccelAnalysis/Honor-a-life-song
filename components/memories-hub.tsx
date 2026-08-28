@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { SongKeepLockup } from "@/components/brand";
 import type { UserExperienceAccess } from "@/domain/organization-account";
 import { listUserExperienceAccess } from "@/lib/firebase/organization-invitations";
 import styles from "./memories-hub.module.css";
@@ -34,11 +35,11 @@ export function MemoriesHub() {
 
   if (status === "loading" || loading) return <main className={styles.shell}><p>Opening SongKeep…</p></main>;
   if (status === "unavailable") return <main className={styles.shell}><section><h1>SongKeep is unavailable here.</h1><p>{configurationError}</p></section></main>;
-  if (status === "signed_out" || !user) return <main className={styles.shell}><section><p className={styles.eyebrow}>SongKeep</p><h1>Sign in to continue.</h1><Link className={styles.primary} href="/login?next=%2Fmemories">Sign in</Link></section></main>;
+  if (status === "signed_out" || !user) return <main className={styles.shell}><section><SongKeepLockup variant="full" /><p className={styles.eyebrow}>Private collection</p><h1>Sign in to continue.</h1><Link className={styles.primary} href="/login?next=%2Fmemories">Sign in</Link></section></main>;
 
   return <main className={styles.shell}>
-    <header><Link className={styles.brand} href="/">SongKeep</Link><span>Memories</span></header>
-    <section className={styles.intro}><p className={styles.eyebrow}>Your collection</p><h1>Songs worth keeping.</h1></section>
+    <header><Link className={styles.brand} href="/" aria-label="SongKeep home"><SongKeepLockup variant="app" /></Link><span>Memories</span></header>
+    <section className={styles.intro}><p className={styles.eyebrow}>Your collection</p><h1>Songs worth keeping.</h1><p>Your private songs and shared memories live here.</p></section>
     {error ? <p className={styles.error} role="alert">{error}</p> : null}
     {access.length ? <section className={styles.list} aria-label="Claimed experiences">{access.map((item) => <article key={item.id}>
       <div><p className={styles.eyebrow}>{item.organizationName}</p><h2>{item.experienceTitle}</h2><p>{item.participantName} · {formatDate(item.acceptedAt)}</p></div>
