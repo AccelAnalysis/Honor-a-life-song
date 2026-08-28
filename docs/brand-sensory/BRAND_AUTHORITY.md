@@ -1,40 +1,48 @@
-# Honor a Life Song — Brand + Sensory Experience Authority
+# SongKeep / Honor a Life Song — Brand + Sensory Experience Authority
 
 **Authority status:** architectural design authority  
-**Version:** 0.1.0  
+**Version:** 0.2.0  
 **Applies to:** Public, Identity, Customer / Family, Facility / Project Ageless, Creator / Production, Admin / Operations, Secure Delivery, and shared platform services
 
 ## 1. Governing rule
 
-> **Workflows inherit the Honor a Life Song sensory system. Workflows do not invent their own brand language.**
+> **Workflows inherit the SongKeep sensory system. Workflows do not invent their own brand language.**
 
 The operating chassis governs where experiences belong. Workflow contracts govern what those experiences do. This authority governs how they feel, look, move, sound, and present approved human media.
 
-This document is intentionally separate from repo-wide restyling. It defines the sanctioned system while route hierarchy work is still consolidating. Adoption may occur progressively after hierarchy branches merge.
+The approved SongKeep logo supplied on August 28, 2026 is the visual source of truth for the application design system. The application-facing identity is **SongKeep**, with the tagline **“Your Story. Your Song. Always.”** The repository and operating architecture may continue to use **Honor a Life Song** as the project/service name during naming migration, but customer-facing screens should not compete with themselves by presenting both names as equal primary brands.
 
 ## 2. Brand idea
 
-Honor a Life Song is a human-led story-to-song platform. The sensory identity should express the transformation:
+SongKeep is a human-led story-to-song experience centered on three promises expressed directly in the mark:
+
+- **Heart:** a life and story worth holding;
+- **Music:** the story becomes a song; and
+- **Keyhole:** the song and memories are treated as something personal, protected, and lasting.
+
+The sensory identity should express the transformation:
 
 **voice → story → lyric → song → shared meaning → keepsake**
 
 The design direction is:
 
-**documentary storytelling × recording-studio craft × modern heirloom album**
+**living memory × music craft × protected keepsake**
 
-The platform must not present itself as an AI song generator, generic media SaaS, senior-living portal, funeral or memorial product, or entertainment streaming service.
+The platform must not present itself as an AI song generator, generic media SaaS product, senior-living portal, funeral or memorial product, clinical system, or entertainment streaming service.
 
 ## 3. Personality
 
 The experience should be:
 
+- warm;
 - human;
-- intimate;
 - alive;
-- crafted;
 - musical;
-- documentary;
-- dignified; and
+- personal;
+- contemporary;
+- optimistic;
+- crafted;
+- trustworthy; and
 - intergenerational.
 
 It should avoid feeling:
@@ -42,79 +50,183 @@ It should avoid feeling:
 - clinical;
 - sentimentalized;
 - elderly-coded;
-- technology-forward for its own sake;
 - funeral-coded;
+- technology-forward for its own sake;
 - generic SaaS;
-- luxury for luxury's sake; or
-- decorated with literal music-note motifs.
+- overly luxurious or formal;
+- childish or candy-colored; or
+- decorated with repeated music-note or heart motifs.
 
-Warmth must come from human material, composition, typography, pacing, and craft—not from excessive ornament or sentimentality.
+The logo may contain its sanctioned heart, note, and keyhole. Those elements should not be repeated throughout the interface as decorative icons. Warmth comes from people, sound, imagery, pacing, color, and language—not visual clutter.
 
-## 4. Experience layers
+## 4. Brand architecture
 
-### Public / Acquisition
+### Application-facing brand
 
-Cinematic, editorial, photographic, and musical. Public surfaces should explain the transformation from story to song with approved human media and consent-aware audio previews. The public experience may be emotionally expressive but must never autoplay audio.
+**SongKeep** is the primary product identity shown in application chrome, authentication, customer workspaces, delivery, and other product-facing surfaces.
 
-### Authenticated working platform
+### Service / operating context
 
-Calm, legible, efficient, and restrained. Brand is carried through typography, semantic color, artwork, thumbnails, waveform language, microcopy, and media behavior rather than decorative treatment. Operational tasks take priority over emotional staging.
+**Honor a Life Song** remains the service and repository context until a separate naming migration changes architecture, source paths, legal language, program documents, or contractual references.
 
-### Secure Delivery / Keepsake
+### Program brands
 
-The most emotionally expressive product surface. A finished private song should feel like receiving a private record release made for one person—not like downloading a file from storage.
+Program names such as **Project Ageless** remain program identities inside SongKeep. They should use the same core interface system rather than creating separate branded applications.
 
-## 5. Sensory motif: resonance
+### Co-branding rule
 
-The primary visual motif is **resonance**, not a music note.
+Do not place a large SongKeep logo beside a large Honor a Life Song wordmark. If both names must appear for transitional, legal, or program reasons, SongKeep remains the visual brand and the secondary service reference is quiet text.
 
-A resonance line may begin with irregular human-speech energy, move through story or lyric structure, and resolve into a more musical cadence. The motif may appear as:
+## 5. Logo authority
 
-- static waveform-derived rules;
-- section dividers;
-- progress visualizations;
-- album / keepsake artwork;
-- playback progress;
-- subtle motion transitions; and
-- abstract background details.
+The approved mark consists of:
 
-Do not use the motif as decorative noise. Every use should reinforce voice, transformation, playback, or progression.
+1. the heart / music-note / keyhole emblem;
+2. the **SongKeep** wordmark;
+3. the tagline **YOUR STORY. YOUR SONG. ALWAYS.**; and
+4. a pink → violet → blue gradient as a core signature.
 
-## 6. Color authority
+The master supplied artwork is authoritative for shape, proportions, gradient direction, and lettering. Do not redraw the wordmark using a substitute typeface.
 
-The existing warm foundation is retained and clarified semantically.
+### Sanctioned logo variants
+
+- **Full lockup:** emblem + SongKeep + tagline. Use on welcome, login, public landing, formal presentation, and selected empty-state / delivery moments.
+- **Primary app lockup:** emblem + SongKeep, without tagline. Use in application headers and navigation where the full lockup would consume too much space.
+- **Compact mark:** emblem only. Use for favicon, app icon, compact mobile chrome, loading mark, and small signed brand moments.
+- **Monochrome mark:** a single-color version in Midnight Ink or white when gradients cannot be reproduced accessibly or reliably.
+
+### Clear space and scale
+
+- Preserve clear space around the mark equal to at least one quarter of the emblem height.
+- Never compress, stretch, rotate, skew, outline, or add independent drop shadows to the mark.
+- Never put the full tagline lockup into small application headers.
+- Never place the gradient mark over visually busy imagery without an appropriate quiet field.
+- Prefer white, near-white, or deep Midnight Ink backgrounds around the mark.
+
+See [`LOGO_SYSTEM.md`](./LOGO_SYSTEM.md) for implementation details.
+
+## 6. Core color system
+
+The new palette is derived from the approved SongKeep artwork. Approximate digital tokens are sampled from the supplied logo and are intended for interface use; the source artwork remains authoritative for the logo itself.
 
 | Token | Value | Role |
 |---|---:|---|
-| Ink | `#191722` | Primary text / deep neutral |
-| Muted ink | `#6E6878` | Secondary text |
-| Paper | `#FFFDF9` | Primary light surface |
-| Soft paper | `#F3EFE9` | Secondary surface |
-| Line | `#DDD6CF` | Borders / dividers |
-| Plum | `#5B3D63` | Core brand emphasis |
-| Plum soft | `#EEE4EF` | Brand-tinted surface |
-| Brass | `#B58A4D` | Crafted / heirloom accent |
-| Resonance | `#4F7470` | Living secondary accent; audio / story resonance |
-| Resonance soft | `#E8F0EE` | Quiet resonance surface |
-| Success | `#2F6B4F` | Success states only |
-| Warning | `#8A5A22` | Warning states only |
-| Danger | `#8A3D46` | Destructive / critical states only |
+| **Midnight Ink** | `#141648` | Primary text, deep navigation, high-contrast brand field |
+| **Indigo** | `#4858BE` | Core brand color, focus, selected state, graphic accents |
+| **Azure** | `#1572C6` | Primary action, links, active controls |
+| **Sky** | `#1C8BD3` | Bright secondary accent, visualization, decorative gradient edge |
+| **Violet** | `#834AB4` | Story / creative accent, artwork, gradient transition |
+| **Magenta** | `#D53FA3` | Emotional highlight, lyric/story emphasis, gradient start |
+| **Lavender Mist** | `#E5E3F0` | Quiet tinted surface |
+| **Canvas** | `#FFFFFF` | Primary background |
+| **Soft Canvas** | `#F7F8FC` | Secondary background |
+| **Line** | `#E1E4F0` | Dividers and low-emphasis borders |
+| **Muted Ink** | `#62657A` | Secondary text |
+| **Success** | `#2F6B4F` | Success states only |
+| **Warning** | `#8A5A22` | Warning states only |
+| **Danger** | `#8A3D46` | Destructive / critical states only |
 
-Plum and brass remain heritage colors. Resonance teal prevents the identity from collapsing into memorial/luxury coding and represents life, connection, and sound.
+### Primary gradient
 
-Semantic status colors may not be replaced by brand accents when doing so would reduce clarity.
+The sanctioned interface echo of the logo gradient is:
 
-## 7. Typography authority
+```css
+linear-gradient(
+  135deg,
+  #D53FA3 0%,
+  #834AB4 35%,
+  #4858BE 62%,
+  #1572C6 82%,
+  #1C8BD3 100%
+)
+```
 
-Typography should feel editorial rather than ornamental.
+Use the gradient for:
 
-- **Display / story serif:** contemporary humanist or editorial serif. The implementation must support a brand-serif token; Georgia remains an acceptable system fallback until a licensed/approved typeface is selected.
-- **UI sans:** highly legible sans for controls, navigation, forms, labels, data, and operational content. Inter/system sans remains an acceptable baseline.
-- **Transcript / lyric presentation:** serif by default for reading emphasis, with comfortable measure and line height. Creators may switch to an operational monospace or sans view where comparison tooling requires it.
+- waveform / resonance detail;
+- selected song artwork treatments;
+- thin progress or accent rules;
+- hero light fields;
+- small brand moments; and
+- controlled delivery / keepsake artwork.
 
-Typography may evoke liner notes through large lyrical statements, quiet captions, dates, places, names, credits, and generous lyric spacing. It must not imitate decorative sheet music.
+Do **not** make every button, card, header, or page background a gradient. The brand should feel fresh and clear, not neon or gamer-like.
 
-## 8. Photography authority
+### Accessibility rules
+
+- Midnight Ink, Indigo, and Azure may be used for normal text on white when contrast requirements are met.
+- Sky and Magenta are primarily accent colors; do not use them for small body text on white.
+- Primary buttons should normally use solid Midnight Ink or Azure with white text rather than a multi-stop gradient.
+- Status colors retain their semantic meaning. Brand colors must not replace success, warning, or danger when meaning would become ambiguous.
+- Never encode state through color alone.
+
+## 7. Surface and container system
+
+SongKeep should not look like a conventional dashboard product.
+
+### Default surface behavior
+
+- White and Soft Canvas are the dominant page fields.
+- Use negative space before adding a container.
+- Use thin dividers before adding bordered cards.
+- Use media, song artwork, quotes, lyrics, and human imagery as visual anchors.
+- Cards are for genuine groups, choices, collections, or stateful work—not for every paragraph.
+- Avoid nested cards, boxes inside boxes, thick borders, full-page side panels, and persistent metadata chrome.
+
+### Radius
+
+The rounded logo language should be reflected with restraint:
+
+- controls: `12px`;
+- compact cards / inputs: `14px`;
+- media / feature surfaces: `20px`;
+- large hero / keepsake artwork: `28px` when appropriate;
+- pills: only for chips, tags, filters, and small segmented controls.
+
+Do not make every object pill-shaped.
+
+### Elevation
+
+Use shadows sparingly. Prefer one soft elevation level for floating controls or media, and flat composition elsewhere.
+
+## 8. Typography authority
+
+The logo is smooth, contemporary, and rounded. The interface should therefore use a **warm humanist / rounded sans** as its primary visual voice rather than making the product serif-led.
+
+### UI / brand sans
+
+Use a highly legible humanist or rounded sans for:
+
+- navigation;
+- controls;
+- headings;
+- forms;
+- labels;
+- dashboard information; and
+- app chrome.
+
+The implementation should expose `--font-brand-sans` and use a system-safe fallback until a final open-licensed typeface is selected. Do not approximate the SongKeep wordmark in typed text and call it the logo.
+
+### Story / lyric serif
+
+A calm editorial serif may be used selectively for:
+
+- lyric reading;
+- long story passages;
+- participant quotations;
+- keepsake notes; and
+- editorial public storytelling.
+
+The serif is a storytelling layer, not the default interface font.
+
+### Hierarchy
+
+- Large display headings should be short and emotionally direct.
+- Body copy should be comfortably readable and not overly narrow.
+- Metadata should be reduced in prominence rather than removed when operationally necessary.
+- Avoid excessive all-caps text. The tagline is an intentional exception within the logo artwork.
+
+## 9. Photography authority
 
 Use **observed moments rather than posed beneficiaries**.
 
@@ -152,7 +264,25 @@ The people should look like people with stories, not demographics receiving a se
 
 These are defaults, not cropping mandates. Never damage meaning, accessibility, or consent scope to force a ratio.
 
-## 9. Album / keepsake artwork system
+## 10. Visual motif: resonance
+
+The logo already contains a literal musical note. Outside the sanctioned mark, the primary reusable visual motif remains **resonance** rather than additional floating music notes.
+
+A resonance line may begin with irregular human-speech energy, move through story or lyric structure, and resolve into a musical cadence. It may use the SongKeep gradient when color is appropriate.
+
+The motif may appear as:
+
+- waveform-derived rules;
+- section dividers;
+- playback progress;
+- story-to-song progression;
+- song artwork;
+- recording state; and
+- subtle motion transitions.
+
+Do not use the motif as decorative noise.
+
+## 11. Album / keepsake artwork system
 
 Every finished creative work may have a square **song artwork** surface. Artwork is not automatically public.
 
@@ -161,6 +291,7 @@ Artwork may combine:
 - approved portrait or memory photography;
 - an approved place, object, document, or environmental image;
 - restrained resonance-line graphics;
+- SongKeep gradient accents;
 - title;
 - dedicatee / subject name; and
 - optional date or program identity.
@@ -169,7 +300,37 @@ The artwork system must support image-free treatments for participants who do no
 
 Do not fabricate documentary photographs or imply that generated imagery is participant history. Synthetic or illustrative art, if used, must be clearly an art treatment and must not be presented as evidence of a real memory or event.
 
-## 10. Audio experience authority
+## 12. Experience modes
+
+### Public / Acquisition
+
+Visual, cinematic, photographic, and musical. Public surfaces should make it immediately clear that the experience is about a person, a story, and a song. Use large imagery, short copy, audio invitations, and clear customer journeys. Avoid presenting the public site like a product dashboard.
+
+### Identity / Login
+
+A calm branded welcome. The primary feeling should be **returning to something personal**, not entering enterprise software. Use the SongKeep mark prominently, one clear task, a warm image or subtle brand field, and minimal technical explanation.
+
+### Customer / Family
+
+Personal and journey-led. The current song, story, next meaningful action, media, and listening should dominate. Operational status should be translated into plain language.
+
+### Facility / Project Ageless
+
+People, songs, upcoming touchpoints, and the program experience lead. Administrative coordination is present but visually secondary to the participants and program.
+
+### Creator / Production
+
+A studio-like working mode. Creative-work identity, lyrics, source material, recording, versions, and playback lead. Denser controls are appropriate when they support creative work rather than generic CRM behavior.
+
+### Admin / Operations
+
+The most restrained use of the brand. Use clear hierarchy, strong whitespace, solid semantic controls, and selective gradient / artwork accents. Tables and filters are appropriate, but containerization should still be controlled.
+
+### Secure Delivery / Keepsake
+
+The most emotionally expressive product surface. A finished private song should feel like receiving a private record made for one person—not like opening cloud storage.
+
+## 13. Audio experience authority
 
 Audio is a primary product primitive, not a file attachment.
 
@@ -207,9 +368,9 @@ One sanctioned audio system should support context variants:
 - A denied microphone permission must degrade to another contribution method rather than block the participant journey.
 - Transcripts or equivalent text are required when speech content must be understood to complete the workflow.
 
-## 11. Sonic-brand principles
+## 14. Sonic-brand principles
 
-Honor a Life Song may later commission a short sonic signature for films, approved videos, event presentation, social media, and other intentionally sounded media.
+SongKeep may later commission a short sonic signature for films, approved videos, event presentation, social media, and intentionally sounded media.
 
 Direction:
 
@@ -222,37 +383,39 @@ Direction:
 
 The platform UI must not play a sonic signature automatically. A branded sound is a media asset, not a notification requirement.
 
-## 12. Motion principles
+## 15. Motion principles
 
 Motion should communicate **arrival, transition, resonance, and continuity**.
 
 Use:
 
 - short fades or spatial transitions for contextual change;
-- subtle waveform/progress motion during intentional playback;
+- subtle waveform / progress motion during intentional playback;
+- gentle gradient movement only in isolated expressive surfaces;
 - restrained artwork reveals in public or delivery surfaces; and
 - clear state transitions for recording / playback.
 
 Avoid:
 
 - continuous decorative waveform animation;
+- full-page animated gradients;
 - parallax that competes with reading;
-- bouncing music notes;
+- bouncing hearts or music notes;
 - autoplay video with sound;
 - motion used as the sole state cue; and
 - large cinematic transitions inside Admin / Creator operational tasks.
 
 When `prefers-reduced-motion` is active, remove decorative transforms, waveform animation, parallax, and crossfades while preserving immediate state changes.
 
-## 13. Iconography
+## 16. Iconography
 
 Use a coherent, simple stroke icon family. Icons should represent actions and objects directly.
 
 Allowed examples: play, pause, record, microphone, image, document, people, calendar, download, share, lock, waveform, message, approval.
 
-Do not use a music note as the generic icon for every creative concept. A song, recording, story, lyric, performance, and creative work are different domain objects and should remain distinguishable.
+Do not use heart, keyhole, or music-note icons as generic decoration simply because they appear in the logo. A song, recording, story, lyric, performance, consent record, and creative work are different domain objects and should remain distinguishable.
 
-## 14. Brand voice and microcopy
+## 17. Brand voice and microcopy
 
 Voice is warm, clear, specific, and human. It should not perform sentimentality.
 
@@ -262,6 +425,7 @@ Prefer:
 - “Record a memory”
 - “Share a story”
 - “Ready for family review”
+- “Your interview is scheduled for Tuesday”
 - “This photo is approved for private family sharing”
 
 Avoid:
@@ -270,11 +434,12 @@ Avoid:
 - “Create unforgettable moments with AI”
 - “Your loved one’s digital legacy vault”
 - “The elderly participant” when a person’s name or participant role is available
+- internal build terms such as chassis, reference boundary, provider handoff, object model, or workflow contract in customer-facing copy
 - celebratory language on error, consent, grief, payment, or restriction states
 
 Operational surfaces may be more direct than public storytelling surfaces.
 
-## 15. Consent-aware media presentation
+## 18. Consent-aware media presentation
 
 Authorization and consent remain separate.
 
@@ -291,7 +456,7 @@ Presentation rules:
 
 Brand expression never overrides consent.
 
-## 16. Accessibility authority
+## 19. Accessibility authority
 
 Target WCAG 2.2 AA.
 
@@ -310,14 +475,20 @@ The sensory system must support:
 - assisted workflows; and
 - media experiences that do not require an email address, smartphone, or independent digital operation from every participant.
 
-## 17. Sanctioned reusable primitives
+## 20. Sanctioned reusable primitives
 
 The platform should converge on these integration points rather than inventing equivalents per workflow:
 
 ```text
 Brand
+├── identity
+│   ├── FullLockup
+│   ├── AppLockup
+│   └── CompactMark
+│
 ├── tokens
 │   ├── color
+│   ├── gradient
 │   ├── typography
 │   ├── spacing
 │   ├── radius
@@ -340,28 +511,33 @@ Brand
     └── PlaybackProgress
 ```
 
-The first implementation slice may provide reference-safe primitives without production media or recording services. Components must not simulate connected services.
+The implementation must not simulate connected production services.
 
-## 18. Adoption order
+## 21. Adoption order
 
-1. Establish this authority and tokens without repo-wide restyling.
-2. Complete and merge workflow-hierarchy branches.
-3. Rebase a bounded Brand implementation onto consolidated `main`.
-4. Brand Secure Delivery reference preview first.
-5. Apply the system to Public / Home.
-6. Apply to Customer / Family.
+1. Establish this SongKeep authority and tokens without repo-wide restyling.
+2. Add approved logo assets and sanctioned variants.
+3. Apply the system to Identity / Login.
+4. Apply the system to Public / Home and public customer journeys.
+5. Apply to Customer / Family.
+6. Apply to Secure Delivery / Keepsake.
 7. Apply to Facility / Project Ageless.
-8. Apply the restrained variant to Creator / Production and Admin / Operations.
+8. Apply the studio variant to Creator / Production.
+9. Apply the restrained operational variant to Admin / Operations.
 
-## 19. Acceptance test for the system
+## 22. Acceptance test for the system
 
 The brand system is working when:
 
-- a Secure Delivery song page feels unmistakably Honor a Life Song without resembling a streaming-service clone;
+- a screenshot feels recognizably SongKeep even when the logo is not visible;
+- the interface uses the logo gradient as a signature rather than a background effect everywhere;
+- customer surfaces feel visual, musical, personal, and calm rather than like SaaS dashboards;
+- the Login page feels like entering a personal music-and-memory experience;
+- a Secure Delivery song page feels like receiving a private record release rather than downloading a file;
 - the same audio language is recognizable in Public, Customer, Facility, Creator, and Delivery contexts;
 - photography looks documentary rather than generic or demographic;
 - the UI remains fully understandable with sound disabled;
 - reduced motion does not remove meaning;
 - consent restrictions visibly control media availability;
-- workspaces feel related while preserving their operational needs; and
-- a screenshot can feel recognizably Honor a Life Song without relying on music-note decoration or the wordmark alone.
+- Admin and Creator remain efficient without forcing their dense visual grammar onto customer experiences; and
+- no route invents a competing color palette, logo treatment, or component aesthetic.
