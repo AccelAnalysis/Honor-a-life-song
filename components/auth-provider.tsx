@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setStatus(nextUser ? "signed_in" : "signed_out");
         if (nextUser) {
           try {
-            await ensureUserProfile(nextUser);
+            await ensureUserProfile({ uid: nextUser.uid, email: nextUser.email, displayName: nextUser.displayName });
           } catch {
             // Account access should still resolve even if the optional profile write is temporarily unavailable.
           }
@@ -65,14 +65,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     configurationError,
     async signIn(email, password) {
       const result = await signInWithEmailAndPassword(getFirebaseAuth(), email.trim(), password);
-      await ensureUserProfile(result.user);
+      await ensureUserProfile({ uid: result.user.uid, email: result.user.email, displayName: result.user.displayName });
       return result.user;
     },
     async createAccount({ email, password, displayName }) {
       const result = await createUserWithEmailAndPassword(getFirebaseAuth(), email.trim(), password);
-      await updateProfile(result.user, { displayName: displayName.trim() });
+      const normalizedName = displayName.trim();
+      await updateProfile(result.user, { displayName: normalizedName });
       await sendEmailVerification(result.user);
-      await ensureUserProfile({ ...result.user, displayName: displayName.trim() });
+      await ensureUserProfile({ uid: result.user.uid, email: result.user.email, displayName: normalizedName });
       setUser(result.user);
       setStatus("signed_in");
       return result.user;
