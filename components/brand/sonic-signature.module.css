@@ -1,1 +1,40 @@
-.signature{display:flex;align-items:center;gap:14px;flex-wrap:wrap}.signature button{min-height:48px;border:1px solid rgba(25,23,34,.18);border-radius:999px;padding:10px 18px 10px 10px;background:rgba(255,253,249,.92);color:#191722;display:inline-flex;align-items:center;gap:10px;font:inherit;font-weight:800;cursor:pointer;box-shadow:0 12px 30px rgba(25,23,34,.1);backdrop-filter:blur(12px)}.signature button:hover{transform:translateY(-1px)}.signature button:focus-visible{outline:3px solid #4f7470;outline-offset:4px}.signature button:disabled{cursor:default}.playIcon{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#5b3d63;color:white;font-size:.78rem;padding-left:2px}.pulse{height:30px;display:flex;align-items:center;gap:3px}.pulse span{width:3px;border-radius:999px;background:#4f7470;opacity:.52;transform:scaleY(.75);transform-origin:center}.pulseActive span{animation:resonate .8s ease-in-out infinite alternate}.pulseActive span:nth-child(2n){animation-delay:.12s}.pulseActive span:nth-child(3n){animation-delay:.24s}.fallback{font-size:.78rem;color:#6e6878}.fallback:empty{display:none}.compact button{min-height:42px;padding:7px 14px 7px 7px;font-size:.82rem}.compact .playIcon{width:28px;height:28px}.inverse button{background:rgba(25,23,34,.62);border-color:rgba(255,255,255,.3);color:white}.inverse .playIcon{background:#fffdf9;color:#5b3d63}.inverse .pulse span{background:#fffdf9}@keyframes resonate{from{transform:scaleY(.45);opacity:.45}to{transform:scaleY(1);opacity:1}}@media(prefers-reduced-motion:reduce){.signature button{transition:none}.signature button:hover{transform:none}.pulseActive span{animation:none;transform:scaleY(1)}}
+.signature { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.signature button {
+  min-height: 48px;
+  border: 1px solid rgba(20, 22, 72, 0.14);
+  border-radius: 12px;
+  padding: 9px 16px 9px 9px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #141648;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font: inherit;
+  font-weight: 820;
+  cursor: pointer;
+  box-shadow: 0 10px 26px rgba(20, 22, 72, 0.09);
+  backdrop-filter: blur(12px);
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.signature button:hover { transform: translateY(-1px); box-shadow: 0 14px 32px rgba(20, 22, 72, 0.12); }
+.signature button:focus-visible { outline: 3px solid rgba(21, 114, 198, 0.3); outline-offset: 4px; }
+.signature button:disabled { cursor: default; }
+.playIcon { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; background: #1572c6; color: white; font-size: 0.78rem; padding-left: 2px; }
+.pulse { height: 30px; display: flex; align-items: center; gap: 3px; }
+.pulse span { width: 3px; border-radius: 999px; background: linear-gradient(180deg, #d53fa3, #834ab4, #1572c6); opacity: 0.62; transform: scaleY(0.75); transform-origin: center; }
+.pulseActive span { animation: resonate 0.8s ease-in-out infinite alternate; }
+.pulseActive span:nth-child(2n) { animation-delay: 0.12s; }
+.pulseActive span:nth-child(3n) { animation-delay: 0.24s; }
+.fallback { font-size: 0.78rem; color: #62657a; }
+.fallback:empty { display: none; }
+.compact button { min-height: 42px; padding: 7px 14px 7px 7px; font-size: 0.82rem; }
+.compact .playIcon { width: 28px; height: 28px; }
+.inverse button { background: rgba(20, 22, 72, 0.66); border-color: rgba(255, 255, 255, 0.28); color: white; }
+.inverse .playIcon { background: white; color: #1572c6; }
+.inverse .pulse span { background: linear-gradient(180deg, #ff83d1, #8fd5ff); }
+@keyframes resonate { from { transform: scaleY(0.45); opacity: 0.45; } to { transform: scaleY(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .signature button { transition: none; }
+  .signature button:hover { transform: none; }
+  .pulseActive span { animation: none; transform: scaleY(1); }
+}
