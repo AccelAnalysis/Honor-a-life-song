@@ -33,8 +33,8 @@ export const bookingSteps = [
 export type BookingStep = (typeof bookingSteps)[number];
 
 export const bookingServiceCapabilities = {
-  invitationResolution: false,
-  identity: false,
+  invitationResolution: true,
+  identity: true,
   scheduling: false,
   agreementPersistence: false,
   payments: false,
