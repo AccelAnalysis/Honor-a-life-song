@@ -39,7 +39,7 @@ describe("post-engagement catalog", () => {
 describe("booking truthfulness", () => {
   it("uses connected Firebase identity while failing closed for unconnected services", () => {
     expect(bookingActionIsAvailable("identity")).toBe(true);
-    expect(bookingActionIsAvailable("invitationResolution")).toBe(true);
+    expect(bookingActionIsAvailable("invitationResolution")).toBe(false);
     expect(bookingActionIsAvailable("scheduling")).toBe(false);
     expect(bookingActionIsAvailable("agreementPersistence")).toBe(false);
     expect(bookingActionIsAvailable("payments")).toBe(false);
