@@ -1,1 +1,129 @@
-.creatorModule{display:flex;flex-direction:column;gap:20px}.structureBanner{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border:1px solid #d8cce0;border-radius:14px;background:#f7f1f8;color:#5b3d63;font-size:.84rem}.structureBanner span{color:#655b6b;line-height:1.5}.childNav{display:flex;flex-wrap:wrap;gap:8px;padding:12px;border:1px solid #ddd6cf;border-radius:16px;background:#fff}.childNav a,.grandchildNav a{padding:9px 12px;border-radius:999px;border:1px solid #ddd6cf;background:#fff;font-size:.78rem;font-weight:700}.childNav a:hover,.childNav a.active,.grandchildNav a:hover,.grandchildNav a.active{border-color:#cbb7d1;background:#f1ebf2;color:#5b3d63}.grandchildNav{display:flex;flex-direction:column;gap:10px;padding:14px 16px;border-left:4px solid #5b3d63;background:#f7f4f8;border-radius:12px}.grandchildNav>span{font-size:.75rem;font-weight:800;color:#5b3d63}.grandchildNav>div{display:flex;flex-wrap:wrap;gap:8px}.moduleIntro{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin:8px 0 18px}.moduleIntro h2,.workflowSurface h2,.selectionState h2{margin:.15em 0 .35em;font-size:clamp(1.7rem,3vw,2.5rem)}.moduleIntro p,.workflowSurface>p,.selectionState p{max-width:780px;color:#6e6878;line-height:1.65}.kicker{text-transform:uppercase;letter-spacing:.12em;font-size:.7rem!important;font-weight:800;color:#5b3d63!important}.contextPill{display:flex;flex-direction:column;min-width:220px;padding:12px 14px;border-radius:12px;background:#f3efe9;color:#6e6878;font-size:.72rem}.contextPill strong{margin-top:4px;color:#191722;font-size:.82rem;overflow-wrap:anywhere}.workflowGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.workflowGrid article,.workflowSurface,.selectionState{background:#fff;border:1px solid #ddd6cf;border-radius:18px;padding:22px;box-shadow:0 10px 28px rgba(35,24,39,.06)}.workflowGrid h3{margin:0 0 8px}.workflowGrid p{color:#6e6878;line-height:1.55}.workflowGrid a,.primaryLink{display:inline-flex;margin-top:12px;color:#5b3d63;font-weight:800}.boundaries{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}.boundaries span{padding:5px 8px;border-radius:999px;background:#f3efe9;color:#6a626f;font-size:.68rem;font-weight:700}.gate,.consent,.exposure,.guardrail,.selectionHint{display:flex;flex-direction:column;gap:6px;margin-top:16px;padding:14px 16px;border-radius:14px;font-size:.82rem;line-height:1.5}.gate{border:1px solid #ead8b8;background:#f8f2e8;color:#66451b}.gate button{align-self:flex-start;margin-top:6px;padding:10px 14px;border:0;border-radius:999px;background:#d9d2c7;color:#766f66;font-weight:800}.consent{border:1px solid #d9c9de;background:#f5eff7;color:#5b3d63}.exposure{border:1px solid #d5d9df;background:#f3f5f7;color:#444b55}.guardrail{border-left:4px solid #8a5a22;background:#fbf5eb;color:#66451b}.selectionHint{margin:0 0 16px;border:1px solid #ddd6cf;background:#f7f4f1;color:#5f5863}.selectionState>span{display:block;margin-top:12px;color:#8a5a22;font-weight:700}@media(max-width:900px){.structureBanner{flex-direction:column}.childNav{overflow-x:auto;flex-wrap:nowrap;padding-bottom:14px}.childNav a{white-space:nowrap}.grandchildNav>div{overflow-x:auto;flex-wrap:nowrap;padding-bottom:4px}.grandchildNav a{white-space:nowrap}.moduleIntro{display:block}.contextPill{margin-top:12px;min-width:0}.workflowGrid{grid-template-columns:1fr}}@media(max-width:520px){.workflowGrid article,.workflowSurface,.selectionState{padding:18px}}
+.creatorModule { display: flex; flex-direction: column; gap: 22px; max-width: 1200px; }
+.structureBanner { display: none; }
+
+.childNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  padding: 0 2px 10px;
+  border: 0;
+  border-bottom: 1px solid #dedfec;
+  border-radius: 0;
+  background: transparent;
+  overflow-x: auto;
+}
+.childNav a,
+.grandchildNav a {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 6px 0 10px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #676879;
+  font-size: 0.79rem;
+  font-weight: 760;
+  white-space: nowrap;
+}
+.childNav a::after,
+.grandchildNav a::after { content: ""; position: absolute; left: 0; right: 0; bottom: -11px; height: 2px; background: transparent; }
+.childNav a:hover,
+.childNav a.active,
+.grandchildNav a:hover,
+.grandchildNav a.active { color: #834ab4; }
+.childNav a.active::after { background: #834ab4; }
+.grandchildNav { display: grid; gap: 12px; padding: 14px 0 4px; border: 0; background: transparent; }
+.grandchildNav > span { font-size: 0.69rem; font-weight: 850; color: #834ab4; text-transform: uppercase; letter-spacing: 0.12em; }
+.grandchildNav > div { display: flex; flex-wrap: wrap; gap: 18px; border-bottom: 1px solid #dedfec; padding-bottom: 10px; }
+.grandchildNav a.active::after { background: #d53fa3; }
+
+.moduleIntro {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: clamp(28px, 5vw, 72px);
+  margin: 16px 0 24px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid #dedfec;
+}
+.moduleIntro h2,
+.workflowSurface h2,
+.selectionState h2 {
+  margin: 0.12em 0 0.35em;
+  font-family: var(--font-brand-sans, "Avenir Next", Avenir, Inter, sans-serif);
+  font-size: clamp(2.25rem, 4.2vw, 3.9rem);
+  font-weight: 650;
+  line-height: 0.97;
+  letter-spacing: -0.05em;
+  color: #141648;
+}
+.moduleIntro p,
+.workflowSurface > p,
+.selectionState p { max-width: 780px; color: #62657a; line-height: 1.65; }
+.kicker { text-transform: uppercase; letter-spacing: 0.13em; font-size: 0.69rem !important; font-weight: 850; color: #834ab4 !important; }
+.contextPill { display: flex; flex-direction: column; min-width: 210px; padding: 12px 14px; border-radius: 12px; background: #f5f1fa; color: #767389; font-size: 0.7rem; }
+.contextPill strong { margin-top: 4px; color: #141648; font-size: 0.82rem; overflow-wrap: anywhere; }
+
+.workflowGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: clamp(28px, 4vw, 58px);
+  row-gap: 0;
+  border-top: 1px solid #dedfec;
+}
+.workflowGrid article {
+  min-width: 0;
+  padding: 25px 4px 28px;
+  border: 0;
+  border-bottom: 1px solid #dedfec;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.workflowGrid h3 { margin: 0 0 8px; font-size: 1.18rem; letter-spacing: -0.025em; }
+.workflowGrid p { color: #62657a; line-height: 1.55; }
+.workflowGrid a,
+.primaryLink { display: inline-flex; margin-top: 12px; color: #834ab4; font-weight: 820; }
+
+.workflowSurface,
+.selectionState {
+  position: relative;
+  background:
+    radial-gradient(circle at 96% 0%, rgba(131, 74, 180, 0.08), transparent 26%),
+    #fbfbfe;
+  border: 1px solid #dedfec;
+  border-radius: 16px;
+  padding: clamp(24px, 4vw, 38px);
+  box-shadow: none;
+  max-width: 1000px;
+}
+.workflowSurface::before,
+.selectionState::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; border-radius: 16px 0 0 16px; background: linear-gradient(180deg, #d53fa3, #834ab4, #4858be); }
+.boundaries { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0; }
+.boundaries span { padding: 5px 8px; border-radius: 8px; background: #f0eef6; color: #69657a; font-size: 0.68rem; font-weight: 700; }
+.gate,
+.consent,
+.exposure,
+.guardrail,
+.selectionHint { display: flex; flex-direction: column; gap: 6px; margin-top: 16px; padding: 14px 16px; border-radius: 12px; font-size: 0.82rem; line-height: 1.5; }
+.gate { border-left: 3px solid #8a5a22; background: #fff8ed; color: #66451b; }
+.gate button { align-self: flex-start; margin-top: 6px; padding: 10px 14px; border: 0; border-radius: 10px; background: #e3e5eb; color: #777a87; font-weight: 800; }
+.consent { border-left: 3px solid #834ab4; background: #f5f1fa; color: #5e397c; }
+.exposure { border-left: 3px solid #1572c6; background: #f1f7fc; color: #315b7e; }
+.guardrail { border-left: 3px solid #8a5a22; background: #fff8ed; color: #66451b; }
+.selectionHint { margin: 0 0 16px; border: 0; border-left: 3px solid #834ab4; background: #f6f3fa; color: #5f586d; }
+.selectionState > span { display: block; margin-top: 12px; color: #8a5a22; font-weight: 700; }
+
+@media (max-width: 900px) {
+  .childNav { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 12px; }
+  .grandchildNav > div { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 10px; }
+  .moduleIntro { display: block; }
+  .contextPill { margin-top: 16px; min-width: 0; width: fit-content; }
+  .workflowGrid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 520px) {
+  .workflowGrid article,
+  .workflowSurface,
+  .selectionState { padding: 20px; }
+}
