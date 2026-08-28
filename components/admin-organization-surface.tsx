@@ -238,7 +238,7 @@ export function AdminOrganizationSurface({ organizationId }: AdminOrganizationSu
     </section>
 
     <section className={styles.section}>
-      <div className={styles.sectionHeading}><div><h3>Post-event materials</h3><p>Release songs, lyrics, event video, approved photos, reports, and keepsakes into the organization's permanent archive.</p></div></div>
+      <div className={styles.sectionHeading}><div><h3>Post-event materials</h3><p>Release songs, lyrics, event video, approved photos, reports, and keepsakes into the organization&apos;s permanent archive.</p></div></div>
       <div className={styles.rows}>{assets.map((asset) => <div className={styles.row} key={asset.id}><div><strong>{asset.title}</strong><span>{titleize(asset.kind)}</span></div><span>{titleize(asset.status)}</span></div>)}</div>
       <details className={styles.actionPanel}><summary>Add event material</summary><form onSubmit={handleAddAsset}>
         <label><span>Experience</span><select required name="experienceId" defaultValue=""><option disabled value="">Choose experience</option>{experiences.map((experience) => <option key={experience.id} value={experience.id}>{experience.title}</option>)}</select></label>
