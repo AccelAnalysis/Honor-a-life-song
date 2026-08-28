@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SongKeepLockup } from "@/components/brand";
 import {
   authorizeDeliveryAsset,
   canUseControlledSharing,
@@ -14,7 +15,7 @@ import styles from "./secure-delivery.module.css";
 const KEEPSAKE_PRESENTATION = {
   dedication: "For someone unforgettable",
   title: "The Porch Light Stayed On",
-  subtitle: "A private Honor a Life Song keepsake"
+  subtitle: "A private SongKeep keepsake"
 } as const;
 
 function SafeState({ state }: { state: DeliveryResolutionState }) {
@@ -31,8 +32,9 @@ function SafeState({ state }: { state: DeliveryResolutionState }) {
 
   const message = messages[state as Exclude<DeliveryResolutionState, "available">];
   return <section className={`${styles.stateCard} ${message.tone === "warning" ? styles.warning : ""}`} role="status" aria-live="polite">
+    <div className={styles.safeBrand}><SongKeepLockup variant="full" /></div>
     <div className={styles.stateMark} aria-hidden="true"><span /><span /><span /><span /><span /></div>
-    <p className={styles.eyebrow}>SongKeep</p>
+    <p className={styles.eyebrow}>Private keepsake</p>
     <h1>{message.title}</h1>
     <p>{message.body}</p>
     {state === "verification_required" ? <button className={styles.primaryAction} type="button" disabled>Verify</button> : null}
@@ -57,7 +59,7 @@ function PrivateSongPage({ context }: { context: DeliveryAccessContext }) {
       <div className={styles.albumArtwork} aria-label="Song artwork">
         <div className={styles.artworkGlow} />
         <div className={styles.artworkWave} aria-hidden="true">{Array.from({ length: 17 }, (_, index) => <span key={index} />)}</div>
-        <span className={styles.artworkLabel}>SongKeep</span>
+        <span className={styles.artworkLabel}><SongKeepLockup variant="mark" inverse /></span>
       </div>
 
       <div className={styles.releaseCopy}>
@@ -119,14 +121,14 @@ function PrivateSongPage({ context }: { context: DeliveryAccessContext }) {
       <button type="button" disabled={!secureDeliveryServiceAvailability.confirmationPersistence}>Confirm</button>
     </section>
 
-    <footer className={styles.deliveryFooter}><span>SongKeep</span><span>Made from a story. Kept as a song.</span></footer>
+    <footer className={styles.deliveryFooter}><SongKeepLockup variant="app" /><span>Made from a story. Kept as a song.</span></footer>
   </article>;
 }
 
 export function SecureDelivery({ context }: { context: DeliveryAccessContext }) {
   const resolution = resolveDeliveryAccess(context);
   return <main className={styles.deliveryShell}>
-    <div className={styles.brandRow}><Link className={styles.brand} href="/">SongKeep</Link><span>Private listening</span></div>
+    <div className={styles.brandRow}><Link className={styles.brand} href="/" aria-label="SongKeep home"><SongKeepLockup variant="app" inverse /></Link><span>Private listening</span></div>
     {resolution.state === "available" ? <PrivateSongPage context={context} /> : <SafeState state={resolution.state} />}
   </main>;
 }
