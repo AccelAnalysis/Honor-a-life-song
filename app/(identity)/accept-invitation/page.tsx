@@ -1,5 +1,5 @@
-import { IdentityLifecyclePlaceholder } from "@/components/identity-lifecycle-placeholder";
+import { AcceptInvitationRoute } from "@/components/accept-invitation-route";
 
 export default function AcceptInvitationPage() {
-  return <IdentityLifecyclePlaceholder title="Accept Invitation" description="Use your invitation to join a family collaboration, facility program, or creative team when invitation access is available online." />;
+  return <AcceptInvitationRoute />;
 }
