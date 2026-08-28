@@ -8,14 +8,27 @@ import {
 } from "../lib/media-presentation";
 
 describe("brand sensory authority", () => {
+  it("defines SongKeep as the application-facing brand", () => {
+    expect(brandSensory.applicationBrand.name).toBe("SongKeep");
+    expect(brandSensory.applicationBrand.tagline).toBe("Your Story. Your Song. Always.");
+    expect(brandSensory.authorityVersion).toBe("0.2.0");
+  });
+
+  it("uses the approved SongKeep-derived palette", () => {
+    expect(brandSensory.colors.midnightInk).toBe("#141648");
+    expect(brandSensory.colors.azure).toBe("#1572C6");
+    expect(brandSensory.colors.magenta).toBe("#D53FA3");
+    expect(brandSensory.gradients.primary).toContain("#834AB4");
+  });
+
   it("forbids autoplay and preserves the public preview window", () => {
     expect(brandSensory.audio.autoplay).toBe(false);
     expect(brandSensory.audio.publicPreviewSeconds).toEqual({ min: 20, max: 40 });
   });
 
-  it("retains resonance as a living secondary accent rather than a status color", () => {
-    expect(brandSensory.colors.resonance).toBe("#4F7470");
-    expect(brandSensory.colors.resonance).not.toBe(brandSensory.colors.success);
+  it("keeps brand accents distinct from semantic status colors", () => {
+    expect(brandSensory.colors.azure).not.toBe(brandSensory.colors.success);
+    expect(brandSensory.colors.magenta).not.toBe(brandSensory.colors.danger);
   });
 
   it("keeps audio and recorder state contracts explicit", () => {
