@@ -1,5 +1,160 @@
-/* Small cross-surface SongKeep polish rules that should remain independent of CSS-module internals. */
+/* Cross-surface SongKeep finishing rules.
+   Keep these focused on legacy CSS-module internals that are intentionally not
+   coupled to the shared application shell. */
+
 [class*="inviteResult"] strong::after {
   content: " · Send this link";
   font-weight: 600;
+}
+
+/* Organization account / multi-user experience -------------------------------- */
+[class*="organization-workspace_workspace"] {
+  color: #141648;
+  max-width: 1180px;
+}
+
+[class*="organization-workspace_workspace"] h2,
+[class*="organization-workspace_workspace"] h3,
+[class*="organization-workspace_workspace"] strong {
+  color: #141648;
+}
+
+[class*="organization-workspace_welcome"] p,
+[class*="organization-workspace_kicker"],
+[class*="organization-workspace_quiet"],
+[class*="organization-workspace_sectionHeading"] p,
+[class*="organization-workspace_nextExperience"] p,
+[class*="organization-workspace_experienceRow"] span,
+[class*="organization-workspace_detailDate"],
+[class*="organization-workspace_postEvent"] p,
+[class*="organization-workspace_postEventActions"] p,
+[class*="organization-workspace_accountHeader"] p,
+[class*="organization-workspace_memberRow"] span,
+[class*="organization-workspace_billingList"] span,
+[class*="organization-workspace_agreementList"] span,
+[class*="organization-workspace_agreementList"] small {
+  color: #62657a !important;
+}
+
+[class*="organization-workspace_welcome"] h2,
+[class*="organization-workspace_sectionHeading"] h2,
+[class*="organization-workspace_experienceDetail"] h2,
+[class*="organization-workspace_accountHeader"] h2,
+[class*="organization-workspace_help"] h2 {
+  font-family: var(--font-brand-sans) !important;
+  color: #141648 !important;
+  letter-spacing: -0.05em !important;
+}
+
+[class*="organization-workspace_nextExperience"],
+[class*="organization-workspace_planAhead"],
+[class*="organization-workspace_experienceRow"],
+[class*="organization-workspace_detailRows"],
+[class*="organization-workspace_postEvent"],
+[class*="organization-workspace_postEventActions"],
+[class*="organization-workspace_shareSection"],
+[class*="organization-workspace_accountSection"],
+[class*="organization-workspace_memberRow"],
+[class*="organization-workspace_billingList"] > div,
+[class*="organization-workspace_agreementList"] > article,
+[class*="organization-workspace_participantList"] > div,
+[class*="organization-workspace_shareList"] > article,
+[class*="organization-workspace_assetList"] article {
+  border-color: #e1e4f0 !important;
+}
+
+[class*="organization-workspace_primaryAction"],
+[class*="organization-workspace_participantForm"] button,
+[class*="organization-workspace_shareList"] button,
+[class*="organization-workspace_permissionGuide"] button,
+[class*="organization-workspace_inviteResult"] button,
+[class*="organization-workspace_inviteForm"] button,
+[class*="organization-workspace_signatureForm"] button,
+[class*="organization-workspace_agreementActions"] button {
+  border-radius: 12px !important;
+  background: #1572c6 !important;
+  color: white !important;
+  box-shadow: none !important;
+}
+
+[class*="organization-workspace_secondaryAction"] {
+  border-radius: 12px !important;
+  border-color: #e1e4f0 !important;
+  color: #141648 !important;
+  background: white !important;
+}
+
+[class*="organization-workspace_orgSwitcher"] {
+  border-color: #e1e4f0 !important;
+}
+
+[class*="organization-workspace_orgSwitcher"] > span,
+[class*="organization-workspace_nextMeta"] > span,
+[class*="organization-workspace_assetKind"] {
+  color: #62657a !important;
+}
+
+[class*="organization-workspace_activeOrg"] {
+  background: #f1f6fc !important;
+  color: #1572c6 !important;
+  border-radius: 10px !important;
+}
+
+[class*="organization-workspace_dateList"] button {
+  border-radius: 12px !important;
+  background: #f7f8fc !important;
+  color: #141648 !important;
+}
+
+[class*="organization-workspace_experienceNav"] {
+  border-color: #e1e4f0 !important;
+}
+
+[class*="organization-workspace_experienceNav"] a {
+  border-radius: 10px !important;
+  color: #62657a !important;
+}
+
+[class*="organization-workspace_activeView"] {
+  background: #141648 !important;
+  color: white !important;
+}
+
+[class*="organization-workspace_participantForm"] input,
+[class*="organization-workspace_shareList"] input,
+[class*="organization-workspace_shareList"] select,
+[class*="organization-workspace_inviteForm"] input,
+[class*="organization-workspace_inviteForm"] select,
+[class*="organization-workspace_signatureForm"] input {
+  min-height: 2.8rem !important;
+  border-color: #e1e4f0 !important;
+  border-radius: 12px !important;
+  background: white !important;
+  color: #141648 !important;
+}
+
+[class*="organization-workspace_participantForm"] input:focus,
+[class*="organization-workspace_shareList"] input:focus,
+[class*="organization-workspace_shareList"] select:focus,
+[class*="organization-workspace_inviteForm"] input:focus,
+[class*="organization-workspace_inviteForm"] select:focus,
+[class*="organization-workspace_signatureForm"] input:focus {
+  outline: 0 !important;
+  border-color: #1572c6 !important;
+  box-shadow: 0 0 0 4px rgba(21, 114, 198, 0.1) !important;
+}
+
+[class*="organization-workspace_inlineError"] {
+  color: #8a3d46 !important;
+}
+
+/* Keep internal operational buttons contemporary without turning them all into pills. */
+.workspaceShell button:not([class*="playButton"]):not([class*="recordButton"]) {
+  border-radius: 10px;
+}
+
+.workspaceShell input,
+.workspaceShell select,
+.workspaceShell textarea {
+  accent-color: #1572c6;
 }
