@@ -5,7 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import type { OrganizationAccount, OrganizationInvitation } from "@/domain/organization-account";
-import { acceptOrganizationInvitation, getOrganization, getOrganizationInvitation } from "@/lib/firebase/organization-account";
+import { getOrganization, getOrganizationInvitation } from "@/lib/firebase/organization-account";
+import { acceptOrganizationInvitationSecure } from "@/lib/firebase/organization-invitations";
 
 export function AcceptInvitationRoute() {
   const router = useRouter();
@@ -40,7 +41,7 @@ export function AcceptInvitationRoute() {
     setLoading(true);
     setError(null);
     try {
-      await acceptOrganizationInvitation({
+      await acceptOrganizationInvitationSecure({
         organizationId,
         invitationId,
         userId: user.uid,
@@ -62,7 +63,7 @@ export function AcceptInvitationRoute() {
 
   if (status === "loading") return <main className="centeredPage"><section className="authCard"><p>Opening invitation…</p></section></main>;
   if (status === "signed_out") {
-    return <main className="centeredPage"><section className="authCard"><p className="eyebrow">Organization invitation</p><h1>Sign in to join your organization.</h1><p>Use the same email address the invitation was sent to.</p><Link href={`/login?next=${encodeURIComponent(returnPath)}`}>Sign in</Link><p>New here? <Link href={`/create-account?org=${encodeURIComponent(organizationId)}&invite=${encodeURIComponent(invitationId)}`}>Create an account</Link></p></section></main>;
+    return <main className="centeredPage"><section className="authCard"><p className="eyebrow">Organization invitation</p><h1>Sign in to join your organization.</h1><p>Use the same email address the invitation was sent to.</p><Link href={`/login?next=${encodeURIComponent(returnPath)}`}>Sign in</Link><p>New here? <Link href={`/create-account?next=${encodeURIComponent(returnPath)}`}>Create an account</Link></p></section></main>;
   }
 
   if (loading && !invitation) return <main className="centeredPage"><section className="authCard"><p>Opening invitation…</p></section></main>;
