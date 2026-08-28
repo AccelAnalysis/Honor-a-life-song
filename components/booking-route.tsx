@@ -223,14 +223,14 @@ export function BookingRoute() {
                 <span>Agreements complete</span>
                 <span>Participant forms complete</span>
               </div>
-              <Link className={styles.primaryLink} href="/customer/dashboard">Continue to your song</Link>
+              <Link className={styles.primaryLink} href="/customer">Continue to your song</Link>
             </section>
           ) : null}
         </div>
 
         <footer className={styles.flowFooter}>
           <span>Need help? We&apos;ll make sure you can complete this online or on paper.</span>
-          <div><Link href="/">Privacy</Link><Link href="/">Terms</Link><Link href="/">Accessibility</Link></div>
+          <span>Privacy, terms, and accessibility information are provided before submission.</span>
         </footer>
       </section>
     </main>
