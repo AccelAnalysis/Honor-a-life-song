@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { SongKeepLockup } from "@/components/brand";
 import { getLoginNode } from "@/lib/identity-navigation";
 import { isPlatformAdmin, listUserOrganizations } from "@/lib/firebase/organization-account";
 import { listUserExperienceAccess } from "@/lib/firebase/organization-invitations";
@@ -24,7 +25,7 @@ function copyForNode(nodeId?: string): ScreenCopy {
   if (["login-resolve-access", "login-person", "login-memberships", "login-roles", "login-organization", "login-enter-workspace", "login-permitted-workspaces"].includes(nodeId ?? "")) {
     return { eyebrow: "SongKeep", title: "Opening your account.", body: "Finding what belongs to you.", mode: "resolving" };
   }
-  return { eyebrow: "SongKeep", title: "Welcome back.", body: "Sign in to continue.", mode: "credentials" };
+  return { eyebrow: "Welcome", title: "Welcome back.", body: "Your stories, songs, and experiences are waiting.", mode: "credentials" };
 }
 
 export function LoginRoute() {
@@ -77,17 +78,21 @@ export function LoginRoute() {
   return (
     <main className={styles.shell}>
       <section className={styles.visual} aria-label="SongKeep">
-        <Link className={styles.visualBrand} href="/">SongKeep</Link>
+        <Link className={styles.visualBrand} href="/" aria-label="SongKeep home">
+          <SongKeepLockup variant="full" inverse />
+        </Link>
         <div className={styles.visualCopy}>
           <span className={styles.resonance} aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /></span>
-          <p>Stories worth keeping.</p>
+          <p>Every life has a song worth keeping.</p>
         </div>
         <span className={styles.photoCredit}>Photo: Los Muertos Crew / Pexels</span>
       </section>
 
       <section className={styles.entry} aria-labelledby="login-title">
         <div className={styles.entryInner}>
-          <Link className={styles.mobileBrand} href="/">SongKeep</Link>
+          <Link className={styles.mobileBrand} href="/" aria-label="SongKeep home">
+            <SongKeepLockup variant="full" />
+          </Link>
           <p className={styles.eyebrow}>{copy.eyebrow}</p>
           <h1 id="login-title">{copy.title}</h1>
           <p className={styles.lede}>{copy.body}</p>
