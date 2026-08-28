@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { referenceAdminRecordIds } from "@/fixtures/reference-data";
 import {
   adminServiceConnections,
   buildAdminHref,
@@ -15,138 +14,118 @@ type AdminWorkspaceProps = {
   route: AdminRouteResolution;
 };
 
-function BoundaryList({ node }: { node: AdminWorkflowNode }) {
-  return <div className={styles.boundaries} aria-label="Shared platform boundaries">
-    {node.boundaries.map((boundary) => <span key={boundary}>{boundary}</span>)}
-  </div>;
-}
-
-const integrityCopy: Record<AdminIntegrityKind, { title: string; body: string }> = {
-  capacity: {
-    title: "Capacity is operational, not speculative",
-    body: "Use supported workload, active work, configured limits, commitments, and targets only. Improved forecasting remains a later enhancement until a real forecasting model exists."
-  },
-  payment: {
-    title: "Server-authoritative finance",
-    body: "Client state, redirects, query parameters, or visual success cannot mark a payment successful, issue a refund, or declare reconciliation complete."
-  },
-  funding: {
-    title: "Funding does not create participant access",
-    body: "Sponsor, facility, nonprofit, and grant-supported funding relationships remain separate from participant authorization and consent. This surface is not grant-application management."
-  },
-  scheduling: {
-    title: "One shared scheduling authority",
-    body: "Customer, Facility, Creator, and Admin scheduling must resolve through the same scheduling boundary so calendars cannot disagree."
-  },
-  communications: {
-    title: "Shared communication boundary",
-    body: "Admin workflows create normalized communication intents. Provider adapters handle email/SMS delivery, and unconnected providers cannot appear to send successfully."
-  },
-  consent: {
-    title: "Authorization + consent",
-    body: "Admin privilege never becomes a universal consent bypass. Restrictions and withdrawals must fail closed for future covered use while preserving required audit evidence."
-  },
-  reporting: {
-    title: "Authoritative reporting only",
-    body: "Reports derive from canonical records and real timestamps. Reference-mode values are not presented as production metrics, and Project Ageless experience measures are not converted into unsupported clinical claims."
-  },
-  export: {
-    title: "Governed export boundary",
-    body: "Exports require role authorization, valid scope, applicable participant consent, retention/deletion compliance, and auditability. There is no consent-bypassing Export All path."
-  },
-  monitoring: {
-    title: "Traceable operational conditions",
-    body: "Alerts and incidents must originate from actual service health, failures, blockers, or governed operational state. No arbitrary AI alerts or fake live monitoring are generated."
-  },
-  configuration: {
-    title: "High-impact configuration stays server-side",
-    body: "Feature flags and integration settings cannot bypass authorization, consent, workflow prerequisites, payment integrity, or security. Secrets are never exposed to the browser."
-  },
-  identity: {
-    title: "Canonical identity and least privilege",
-    body: "People, organizations, memberships, and roles remain shared platform records. Family, sponsor, facility, creator, and Admin contexts do not create duplicate identity systems or automatic broad access."
-  }
+const policyCopy: Record<AdminIntegrityKind, string> = {
+  capacity: "Capacity should reflect assigned work, active commitments, configured limits, and actual staffing rather than estimates presented as facts.",
+  payment: "A payment, refund, or reconciliation should only be treated as complete when the recorded financial activity confirms it.",
+  funding: "Sponsors, facilities, nonprofits, and grant-supported partners do not receive participant information simply because they fund a program.",
+  scheduling: "Customer interviews, facility activities, creator commitments, and administrative scheduling should stay aligned so the same event is not represented differently in different areas.",
+  communications: "Send and track customer, family, facility, creator, and program communication from one coordinated place.",
+  consent: "Administrative access never overrides a participant's choices about recording, sharing, performance, photography, publication, or other uses.",
+  reporting: "Use real records and timestamps for reporting, and do not turn participation or satisfaction measures into unsupported clinical claims.",
+  export: "Exports should respect the person's access level, the purpose of the export, participant permissions, and applicable retention or deletion requirements.",
+  monitoring: "Alerts and incidents should reflect actual failures, service health, blockers, or operational conditions.",
+  configuration: "Settings should not override privacy, payment integrity, required approvals, or security protections.",
+  identity: "Customers, families, facilities, creators, sponsors, partners, and administrators should receive only the access appropriate to their role."
 };
 
-function IntegrityNotice({ kind }: { kind?: AdminIntegrityKind }) {
-  if (!kind) return null;
-  const copy = integrityCopy[kind];
-  return <div className={styles.integrity}><strong>{copy.title}</strong><span>{copy.body}</span></div>;
+const columnsByParent: Record<AdminParentId, readonly string[]> = {
+  "admin-home": ["Area", "Status", "Updated"],
+  requests: ["Request", "Type", "Status", "Received"],
+  programs: ["Work", "Customer / Facility", "Status", "Due"],
+  people: ["Name", "Type", "Access", "Activity"],
+  catalog: ["Item", "Type", "Rule / Price", "Status"],
+  finance: ["Reference", "Party", "Status", "Amount"],
+  scheduling: ["Date", "Type", "With", "Status"],
+  communications: ["Recipient", "Channel", "Status", "Sent"],
+  consent: ["Person", "Permission", "Status", "Updated"],
+  reports: ["Report", "Period", "Updated"],
+  monitoring: ["Service", "Status", "Updated"],
+  settings: ["Setting", "Status", "Updated"]
+};
+
+function serviceAvailable(node: AdminWorkflowNode) {
+  if (node.action) return adminServiceConnections[node.action.service];
+  return node.boundaries.some((boundary) => adminServiceConnections[boundary]);
 }
 
-function ServiceGate({ node }: { node: AdminWorkflowNode }) {
-  if (!node.action) {
-    const connected = node.boundaries.some((boundary) => adminServiceConnections[boundary]);
-    return <div className={styles.gate}>
-      <strong>{connected ? "Authoritative service available" : "Authoritative data not connected"}</strong>
-      <span>{connected ? "This read surface may consume the connected shared service." : "The workflow structure is implemented, but reference mode will not invent production records or authoritative metrics."}</span>
-    </div>;
-  }
-
+function ActionArea({ node }: { node: AdminWorkflowNode }) {
+  if (!node.action) return null;
   const connected = adminServiceConnections[node.action.service];
-  return <div className={styles.gate}>
-    <strong>{connected ? "Production action connected" : "Production action gated"}</strong>
-    <span>{connected ? `${node.action.service} is available through the shared platform service boundary.` : `${node.action.service} is not connected; this Admin surface will not simulate authoritative success.`}</span>
+  return <div className={styles.actionArea}>
     <button disabled={!connected} type="button">{node.action.label}</button>
+    {!connected && <span>Not available yet</span>}
   </div>;
 }
 
 function RecordContext({ node, route }: { node: AdminWorkflowNode; route: AdminRouteResolution }) {
-  if (!node.recordKind) return null;
-  if (route.recordId) {
-    return <div className={styles.contextPill}>
-      <span>Selected canonical <span className={styles.recordKind}>{node.recordKind.replaceAll("_", " ")}</span></span>
-      <strong>{route.recordId}</strong>
-    </div>;
-  }
-
-  const parentId = route.parent.id as AdminParentId;
-  const referenceId = referenceAdminRecordIds[node.recordKind];
-  return <div className={styles.recordHint}>
-    <strong>Selected-record deep link supported</strong>
-    <span>This workflow can preserve one canonical {node.recordKind.replaceAll("_", " ")} identity in the URL. The interface does not guess which record an administrator intended to open.</span>
-    <Link className={styles.primaryLink} href={buildAdminHref({ parentId, childId: node.id, recordId: referenceId })}>Open synthetic reference record</Link>
+  if (!node.recordKind || !route.recordId) return null;
+  return <div className={styles.recordLine}>
+    <span>{node.recordKind.replaceAll("_", " ")}</span>
+    <strong>Selected</strong>
   </div>;
 }
 
-function ProgramTemplateOverlap({ node, route }: { node: AdminWorkflowNode; route: AdminRouteResolution }) {
+function PolicyDetails({ node }: { node: AdminWorkflowNode }) {
+  if (!node.integrity) return null;
+  return <details className={styles.policyDetails}>
+    <summary>Permissions and data rules</summary>
+    <p>{policyCopy[node.integrity]}</p>
+  </details>;
+}
+
+function ProgramTemplateLink({ node, route }: { node: AdminWorkflowNode; route: AdminRouteResolution }) {
   if (node.id !== "catalog-program-templates" && node.id !== "settings-program-templates") return null;
   const target = node.id === "catalog-program-templates"
     ? { parentId: "settings" as const, childId: "settings-program-templates" }
     : { parentId: "catalog" as const, childId: "catalog-program-templates" };
-  return <div className={styles.sharedRecord}>
-    <strong>One canonical ProgramTemplate record</strong>
-    <span>The source intentionally exposes Program Templates from both Catalog & Pricing and Platform Configuration. These are two operational entry points, not two persisted template systems.</span>
-    <Link className={styles.primaryLink} href={buildAdminHref({ ...target, recordId: route.recordId })}>Open the other Program Templates entry point</Link>
+  const label = node.id === "catalog-program-templates" ? "Settings" : "Catalog & Pricing";
+  return <Link className={styles.relatedLink} href={buildAdminHref({ ...target, recordId: route.recordId })}>Also available in {label}</Link>;
+}
+
+function EmptyTable({ parentId, node }: { parentId: AdminParentId; node: AdminWorkflowNode }) {
+  const columns = columnsByParent[parentId];
+  const available = serviceAvailable(node);
+  return <div className={styles.tableWrap}>
+    <table>
+      <thead><tr>{columns.map((column) => <th key={column} scope="col">{column}</th>)}</tr></thead>
+      <tbody><tr><td className={styles.emptyCell} colSpan={columns.length}>{available ? "No items to show." : "No items to show yet."}</td></tr></tbody>
+    </table>
   </div>;
 }
 
 function WorkflowSurface({ node, route }: { node: AdminWorkflowNode; route: AdminRouteResolution }) {
-  return <section className={styles.workflowSurface} aria-labelledby="admin-workflow-heading">
-    <p className={styles.kicker}>Concrete operational workflow boundary</p>
-    <div className={styles.moduleIntro}>
-      <div>
-        <h2 id="admin-workflow-heading">{node.label}</h2>
-        <p>{node.description}</p>
+  const parentId = route.parent.id as AdminParentId;
+  return <section className={styles.workArea} aria-label={node.label}>
+    <div className={styles.toolbar}>
+      <div className={styles.utilityLine}>
+        <RecordContext node={node} route={route} />
+        <ProgramTemplateLink node={node} route={route} />
       </div>
-      {route.recordId && node.recordKind ? <RecordContext node={node} route={route} /> : null}
+      <ActionArea node={node} />
     </div>
-    {!route.recordId ? <RecordContext node={node} route={route} /> : null}
-    <BoundaryList node={node} />
-    <IntegrityNotice kind={node.integrity} />
-    <ProgramTemplateOverlap node={node} route={route} />
-    <ServiceGate node={node} />
+    <EmptyTable parentId={parentId} node={node} />
+    <PolicyDetails node={node} />
   </section>;
 }
 
 function MonitoringLeaf() {
-  return <section className={styles.leafSurface} aria-labelledby="monitoring-heading">
-    <p className={styles.kicker}>Source-defined leaf integration point</p>
-    <h2 id="monitoring-heading">Monitoring & Incidents</h2>
-    <p>The source defines no child navigation beneath this destination. It remains the cross-platform operational-health integration point for shared service health, errors, failed jobs, integration failures, incidents, and recovery information.</p>
-    <div className={styles.leafNotice}>
-      <strong>Production monitoring is not connected</strong>
-      <span>No synthetic uptime, incident, failure, recovery, or service-health event is presented as live. A production monitoring adapter should plug into this boundary later without creating a second monitoring platform.</span>
+  return <section className={styles.workArea} aria-label="Monitoring & Incidents">
+    <div className={styles.tableWrap}>
+      <table>
+        <thead><tr><th scope="col">Service</th><th scope="col">Status</th><th scope="col">Updated</th></tr></thead>
+        <tbody><tr><td className={styles.emptyCell} colSpan={3}>No monitoring information to show yet.</td></tr></tbody>
+      </table>
+    </div>
+  </section>;
+}
+
+function ParentOverview({ route, items }: { route: AdminRouteResolution; items: readonly AdminWorkflowNode[] }) {
+  const parentId = route.parent.id as AdminParentId;
+  return <section className={styles.workArea} aria-label={`${route.parent.label} options`}>
+    <div className={styles.workflowList}>
+      {items.map((child) => <Link href={buildAdminHref({ parentId, childId: child.id })} key={child.id}>
+        <span>{child.label}</span><span aria-hidden="true">→</span>
+      </Link>)}
     </div>
   </section>;
 }
@@ -156,12 +135,7 @@ export function AdminWorkspace({ route }: AdminWorkspaceProps) {
   const children = getAdminChildren(parentId);
 
   return <div className={styles.adminModule}>
-    <div className={styles.structureBanner}>
-      <strong>ADMIN CONTROL PLANE</strong>
-      <span>This hierarchy operates on shared canonical records and shared service boundaries. It does not create AdminOrder, AdminProgram, AdminConsent, AdminPayment, or other parallel business entities.</span>
-    </div>
-
-    {children.length > 0 && <nav className={styles.childNav} aria-label={`${route.parent.label} workflows`}>
+    {children.length > 0 && <nav className={styles.childNav} aria-label={`${route.parent.label} options`}>
       {children.map((child) => <Link
         aria-current={route.child?.id === child.id ? "page" : undefined}
         className={route.child?.id === child.id ? styles.active : ""}
@@ -174,25 +148,6 @@ export function AdminWorkspace({ route }: AdminWorkspaceProps) {
       ? <MonitoringLeaf />
       : route.child
         ? <WorkflowSurface node={route.child} route={route} />
-        : <>
-          <div className={styles.moduleIntro}>
-            <div>
-              <p className={styles.kicker}>Source-defined child hierarchy</p>
-              <h2>{route.parent.label}</h2>
-              <p>{route.parent.description}</p>
-            </div>
-            <div className={styles.contextPill}><span>Control-plane state</span><strong>Structure active · production services gated</strong></div>
-          </div>
-          <section className={styles.workflowGrid} aria-label={`${route.parent.label} child workflows`}>
-            {children.map((child) => <article key={child.id}>
-              <h3>{child.label}</h3>
-              <p>{child.description}</p>
-              <BoundaryList node={child} />
-              <Link href={buildAdminHref({ parentId, childId: child.id })}>Open workflow</Link>
-            </article>)}
-          </section>
-        </>}
-
-    <p className={styles.smallNote}>System Settings remains source-defined outside this bounded 12-page chassis slice and is not added as a thirteenth Admin destination.</p>
+        : <ParentOverview route={route} items={children} />}
   </div>;
 }

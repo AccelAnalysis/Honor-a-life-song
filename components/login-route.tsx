@@ -64,7 +64,7 @@ export function LoginRoute() {
           <span className={styles.resonance} aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /></span>
           <p>The moments you remember become the song you keep.</p>
         </div>
-        <span className={styles.photoCredit}>Reference image: Los Muertos Crew / Pexels</span>
+        <span className={styles.photoCredit}>Photo: Los Muertos Crew / Pexels</span>
       </section>
 
       <section className={styles.entry} aria-labelledby="login-title">
@@ -84,7 +84,7 @@ export function LoginRoute() {
                 <span>Password</span>
                 <input type="password" name="password" autoComplete="current-password" placeholder="Your password" />
               </label>
-              <button type="submit" disabled aria-describedby="sign-in-preview-note">Continue to your song</button>
+              <button type="submit" disabled aria-describedby="sign-in-availability-note">Continue to your song</button>
               <div className={styles.formLinks}>
                 <Link href="/password-recovery">Forgot your password?</Link>
                 <Link href="/accept-invitation">Have an invitation?</Link>
@@ -98,7 +98,7 @@ export function LoginRoute() {
                 <span>Verification code</span>
                 <input type="text" name="code" inputMode="numeric" autoComplete="one-time-code" placeholder="000000" />
               </label>
-              <button type="submit" disabled aria-describedby="sign-in-preview-note">Verify and continue</button>
+              <button type="submit" disabled aria-describedby="sign-in-availability-note">Verify and continue</button>
               <Link className={styles.quietLink} href="/login">Use a different account</Link>
             </form>
           ) : null}
@@ -106,21 +106,16 @@ export function LoginRoute() {
           {copy.mode === "resolving" ? (
             <div className={styles.resolving} role="status" aria-live="polite">
               <span aria-hidden="true" />
-              <div><strong>Your privacy comes first.</strong><p>Access stays closed until identity and permission checks are complete.</p></div>
+              <div><strong>Your privacy comes first.</strong><p>We only open songs, stories, and programs this account is allowed to see.</p></div>
             </div>
           ) : null}
 
-          <p className={styles.previewNote} id="sign-in-preview-note">Secure account sign-in is not connected in this reference environment, so no credentials are submitted and no access success is simulated.</p>
+          <p className={styles.previewNote} id="sign-in-availability-note">Online account sign-in is not available yet. If you need help accessing an existing song, invitation, or program, contact Honor a Life Song.</p>
 
           <div className={styles.newHere}>
             <span>New to Honor a Life Song?</span>
             <Link href="/create-account">Begin your song journey →</Link>
           </div>
-
-          <details className={styles.referenceNote}>
-            <summary>About this preview</summary>
-            <p>The consumer experience is intentionally separate from the internal identity workflow reference. Developers and reviewers can inspect that architecture at <Link href="/reference/identity/login">the identity reference route</Link>.</p>
-          </details>
         </div>
       </section>
     </main>
