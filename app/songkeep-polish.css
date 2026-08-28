@@ -1,0 +1,5 @@
+/* Small cross-surface SongKeep polish rules that should remain independent of CSS-module internals. */
+[class*="inviteResult"] strong::after {
+  content: " · Send this link";
+  font-weight: 600;
+}
