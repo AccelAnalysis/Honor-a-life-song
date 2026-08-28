@@ -63,39 +63,39 @@ export function ExperienceAccessClaim() {
 
   return <main className={styles.shell}>
     <section className={styles.story}>
-      <Link className={styles.brand} href="/">Honor a Life Song</Link>
+      <Link className={styles.brand} href="/">SongKeep</Link>
       <div className={styles.storyCopy}>
         <span className={styles.wave} aria-hidden="true"><i /><i /><i /><i /><i /><i /></span>
-        <p>A story shared in community can remain close long after the event.</p>
+        <p>Your songs. Your memories.</p>
       </div>
     </section>
 
     <section className={styles.claim} aria-labelledby="claim-title">
       <div className={styles.claimInner}>
-        <p className={styles.eyebrow}>Private participant &amp; family access</p>
-        {!completeLink ? <><h1 id="claim-title">This invitation link is incomplete.</h1><p>Use the complete link provided by the organization that hosted the experience.</p><Link className={styles.secondary} href="/">Return home</Link></> : null}
-        {completeLink && status === "loading" ? <><h1 id="claim-title">Opening your invitation…</h1></> : null}
-        {completeLink && status === "unavailable" ? <><h1 id="claim-title">Private access is unavailable here.</h1><p>{configurationError ?? "Account access is not configured in this environment."}</p></> : null}
+        <p className={styles.eyebrow}>Private access</p>
+        {!completeLink ? <><h1 id="claim-title">Link incomplete.</h1><p>Use the full link you received.</p><Link className={styles.secondary} href="/">Home</Link></> : null}
+        {completeLink && status === "loading" ? <h1 id="claim-title">Opening…</h1> : null}
+        {completeLink && status === "unavailable" ? <><h1 id="claim-title">Access unavailable.</h1><p>{configurationError ?? "Account access is unavailable here."}</p></> : null}
         {completeLink && status === "signed_out" ? <>
-          <h1 id="claim-title">Keep the memories shared with you.</h1>
-          <p>Sign in with the email address that received this invitation. If you are new, create a secure sign-in first.</p>
+          <h1 id="claim-title">Sign in to continue.</h1>
+          <p>Use the email that received this invitation.</p>
           <div className={styles.actions}><Link href={`/login?next=${encodeURIComponent(returnPath)}`}>Sign in</Link><Link className={styles.secondary} href={`/create-account?next=${encodeURIComponent(returnPath)}`}>Create account</Link></div>
         </> : null}
         {completeLink && user && !user.emailVerified ? <>
-          <h1 id="claim-title">Verify your email to continue.</h1>
-          <p>This confirms that the invitation reached the intended person before any private experience details are shown.</p>
+          <h1 id="claim-title">Verify your email.</h1>
+          <p>We need to confirm it’s you.</p>
           <Link href={`/verify-email?next=${encodeURIComponent(returnPath)}`}>Verify email</Link>
         </> : null}
-        {completeLink && user?.emailVerified && loading && !invitation ? <><h1 id="claim-title">Opening your invitation…</h1></> : null}
+        {completeLink && user?.emailVerified && loading && !invitation ? <h1 id="claim-title">Opening…</h1> : null}
         {completeLink && user?.emailVerified && invitation ? <>
           <p className={styles.host}>{invitation.organizationName}</p>
           <h1 id="claim-title">{invitation.experienceTitle}</h1>
-          <p><strong>{invitation.participantName}</strong> was part of this experience. This invitation connects only the materials that were released for {invitation.recipient === "designated_family" ? "designated family access" : "participant access"}.</p>
-          <div className={styles.accessSummary}><span>Available when claimed</span><strong>{invitation.entitlementIds.length} permissioned {invitation.entitlementIds.length === 1 ? "item" : "items"}</strong></div>
-          {invitation.status === "pending" ? <button type="button" disabled={loading} onClick={accept}>{loading ? "Connecting…" : "Keep these memories"}</button> : null}
-          {invitation.status === "accepted" ? <Link href="/memories">Open your memories</Link> : null}
-          {invitation.status === "revoked" || invitation.status === "expired" ? <p className={styles.error}>This invitation is no longer available. Contact the organization or Honor a Life Song for help.</p> : null}
-          <small>Claiming access does not make a song, photograph, or event video public.</small>
+          <p><strong>{invitation.participantName}</strong></p>
+          <div className={styles.accessSummary}><span>Available</span><strong>{invitation.entitlementIds.length} {invitation.entitlementIds.length === 1 ? "item" : "items"}</strong></div>
+          {invitation.status === "pending" ? <button type="button" disabled={loading} onClick={accept}>{loading ? "Adding…" : "Add to SongKeep"}</button> : null}
+          {invitation.status === "accepted" ? <Link href="/memories">Open SongKeep</Link> : null}
+          {invitation.status === "revoked" || invitation.status === "expired" ? <p className={styles.error}>This invitation is no longer available. Contact the organization or SongKeep for help.</p> : null}
+          <small>Private by default.</small>
         </> : null}
         {error ? <p className={styles.error} role="alert">{error}</p> : null}
       </div>

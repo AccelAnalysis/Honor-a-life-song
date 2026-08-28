@@ -14,19 +14,20 @@ function isActive(pathname: string, item: PublicHierarchyItem) {
   return pathname === itemPath || pathname.startsWith(`${itemPath}/`);
 }
 
-function MenuTree({ items, pathname, depth = 0 }: { items: readonly PublicHierarchyItem[]; pathname: string; depth?: number }) {
+function TopLevelLinks({ pathname }: { pathname: string }) {
   return (
-    <ul className={`publicMenuTree depth${depth}`}>
-      {items.map((item) => (
-        <li key={item.id} className={item.children?.length ? "hasChildren" : undefined}>
-          <Link className={isActive(pathname, item) ? "active" : undefined} href={item.href}>
-            <span>{item.label}</span>
-            {item.children?.length ? <span aria-hidden="true">›</span> : null}
-          </Link>
-          {item.children?.length ? <MenuTree items={item.children} pathname={pathname} depth={depth + 1} /> : null}
-        </li>
+    <>
+      {publicNavigation.map((item) => (
+        <Link
+          key={item.id}
+          className={isActive(pathname, item) ? "active" : undefined}
+          href={item.href}
+          aria-current={isActive(pathname, item) ? "page" : undefined}
+        >
+          {item.label}
+        </Link>
       ))}
-    </ul>
+    </>
   );
 }
 
@@ -36,22 +37,15 @@ export function PublicNavigation() {
   return (
     <nav className="publicNav" aria-label="Public navigation">
       <div className="publicNavDesktop">
-        {publicNavigation.map((item) => (
-          <div className="publicNavGroup" key={item.id}>
-            <Link className={isActive(pathname, item) ? "active" : undefined} href={item.href} aria-current={isActive(pathname, item) ? "page" : undefined}>
-              {item.label}
-            </Link>
-            {item.children?.length ? <MenuTree items={item.children} pathname={pathname} /> : null}
-          </div>
-        ))}
-        <Link className="button small secondary" href="/login">Login</Link>
+        <TopLevelLinks pathname={pathname} />
+        <Link className="button small secondary" href="/login">Sign in</Link>
       </div>
 
       <details className="publicNavMobile">
-        <summary>Explore</summary>
+        <summary>Menu</summary>
         <div className="publicMobilePanel">
-          <MenuTree items={publicNavigation} pathname={pathname} />
-          <Link className="button small secondary" href="/login">Login</Link>
+          <TopLevelLinks pathname={pathname} />
+          <Link className="button small secondary" href="/login">Sign in</Link>
         </div>
       </details>
     </nav>

@@ -48,10 +48,12 @@ describe("booking truthfulness", () => {
   });
 
   it("does not simulate live transactional success", () => {
-    expect(bookingSource).toContain("Continue with this organization");
-    expect(bookingSource).toContain("date entered here is not held or saved");
-    expect(bookingSource).toContain("no payment success is simulated");
-    expect(bookingSource).toContain("No checkbox on this page creates a legal acceptance record");
+    expect(bookingSource).toContain('disabled={!date || !time || !bookingActionIsAvailable("scheduling")}');
+    expect(bookingSource).toContain("Live scheduling isn’t connected yet.");
+    expect(bookingSource).toContain('disabled={!reviewedTerms || !bookingActionIsAvailable("agreementPersistence")}');
+    expect(bookingSource).toContain("Electronic signing isn’t connected yet.");
+    expect(bookingSource).toContain('disabled={!bookingActionIsAvailable("payments")}');
+    expect(bookingSource).toContain("Secure checkout isn’t connected yet.");
     expect(bookingSource).toContain('disabled={!bookingActionIsAvailable("experiencePersistence")}');
   });
 });
@@ -67,10 +69,10 @@ describe("participant permissions", () => {
   });
 
   it("supports printable forms without creating a second consent model", () => {
+    expect(organizationSource).toContain("participantPermissionScopes.map");
     expect(organizationSource).toContain("window.print()");
     expect(organizationCss).toContain("@media print");
-    expect(organizationSource).toContain("Each choice remains separate");
-    expect(organizationSource).toContain("electronically, with assistance, or on paper");
+    expect(organizationSource).toContain("Complete digitally, with assistance, or on paper.");
   });
 });
 

@@ -19,15 +19,12 @@ interface ScreenCopy {
 
 function copyForNode(nodeId?: string): ScreenCopy {
   if (nodeId === "login-mfa") {
-    return { eyebrow: "One more step", title: "Keep this song private.", body: "Complete the additional verification requested for your account.", mode: "verification" };
+    return { eyebrow: "Security", title: "One more step.", body: "Verify your account.", mode: "verification" };
   }
-  if (["login-resolve-access", "login-person", "login-memberships", "login-roles", "login-organization"].includes(nodeId ?? "")) {
-    return { eyebrow: "Welcome back", title: "Finding the right place for you.", body: "Your account can connect you to an organization, the experiences it purchased, private memories shared with you, or the creative work you help make.", mode: "resolving" };
+  if (["login-resolve-access", "login-person", "login-memberships", "login-roles", "login-organization", "login-enter-workspace", "login-permitted-workspaces"].includes(nodeId ?? "")) {
+    return { eyebrow: "SongKeep", title: "Opening your account.", body: "Finding what belongs to you.", mode: "resolving" };
   }
-  if (["login-enter-workspace", "login-permitted-workspaces"].includes(nodeId ?? "")) {
-    return { eyebrow: "Almost there", title: "Opening your experience.", body: "Only the songs, stories, organizations, and programs shared with this account will be available.", mode: "resolving" };
-  }
-  return { eyebrow: "Return to something meaningful", title: "Welcome back.", body: "Sign in to manage your organization's experiences or return to private songs and event memories shared with you.", mode: "credentials" };
+  return { eyebrow: "SongKeep", title: "Welcome back.", body: "Sign in to continue.", mode: "credentials" };
 }
 
 export function LoginRoute() {
@@ -79,37 +76,37 @@ export function LoginRoute() {
 
   return (
     <main className={styles.shell}>
-      <section className={styles.visual} aria-label="Honor a Life Song listening experience">
-        <Link className={styles.visualBrand} href="/">Honor a Life Song</Link>
+      <section className={styles.visual} aria-label="SongKeep">
+        <Link className={styles.visualBrand} href="/">SongKeep</Link>
         <div className={styles.visualCopy}>
           <span className={styles.resonance} aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /></span>
-          <p>The stories of the people you serve become music a community can carry forward.</p>
+          <p>Stories worth keeping.</p>
         </div>
         <span className={styles.photoCredit}>Photo: Los Muertos Crew / Pexels</span>
       </section>
 
       <section className={styles.entry} aria-labelledby="login-title">
         <div className={styles.entryInner}>
-          <Link className={styles.mobileBrand} href="/">Honor a Life Song</Link>
+          <Link className={styles.mobileBrand} href="/">SongKeep</Link>
           <p className={styles.eyebrow}>{copy.eyebrow}</p>
           <h1 id="login-title">{copy.title}</h1>
           <p className={styles.lede}>{copy.body}</p>
 
           {copy.mode === "credentials" ? (
             <form className={styles.form} onSubmit={handleSignIn}>
-              <label><span>Email address</span><input required type="email" name="email" autoComplete="email" placeholder="you@example.com" /></label>
-              <label><span>Password</span><input required type="password" name="password" autoComplete="current-password" placeholder="Your password" /></label>
-              <button type="submit" disabled={busy || status === "unavailable"}>{busy ? "Signing in…" : "Continue"}</button>
+              <label><span>Email</span><input required type="email" name="email" autoComplete="email" placeholder="you@example.com" /></label>
+              <label><span>Password</span><input required type="password" name="password" autoComplete="current-password" placeholder="Password" /></label>
+              <button type="submit" disabled={busy || status === "unavailable"}>{busy ? "Signing in…" : "Sign in"}</button>
               {error ? <p role="alert">{error}</p> : null}
               {configurationError ? <p role="status">{configurationError}</p> : null}
-              <div className={styles.formLinks}><Link href="/password-recovery">Forgot your password?</Link><Link href="/accept-invitation">Have an invitation?</Link></div>
+              <div className={styles.formLinks}><Link href="/password-recovery">Forgot password?</Link><Link href="/accept-invitation">Have an invitation?</Link></div>
             </form>
           ) : null}
 
-          {copy.mode === "verification" ? <div className={styles.resolving} role="status" aria-live="polite"><span aria-hidden="true" /><div><strong>Additional verification</strong><p>If multi-factor authentication is enabled for this Firebase project, the provider flow will continue from here.</p></div></div> : null}
-          {copy.mode === "resolving" ? <div className={styles.resolving} role="status" aria-live="polite"><span aria-hidden="true" /><div><strong>Your privacy comes first.</strong><p>We only open songs, stories, organizations, and programs this account is allowed to see.</p></div></div> : null}
+          {copy.mode === "verification" ? <div className={styles.resolving} role="status" aria-live="polite"><span aria-hidden="true" /><div><strong>Verify your account</strong></div></div> : null}
+          {copy.mode === "resolving" ? <div className={styles.resolving} role="status" aria-live="polite"><span aria-hidden="true" /><div><strong>Opening SongKeep…</strong></div></div> : null}
 
-          <div className={styles.newHere}><span>New to Honor a Life Song?</span><Link href={safeNext ? `/create-account?next=${encodeURIComponent(safeNext)}` : "/create-account"}>{safeNext ? "Create a secure sign-in" : "Create an organization account"} →</Link></div>
+          <div className={styles.newHere}><span>New to SongKeep?</span><Link href={safeNext ? `/create-account?next=${encodeURIComponent(safeNext)}` : "/create-account"}>{safeNext ? "Create sign-in" : "Create account"} →</Link></div>
         </div>
       </section>
     </main>

@@ -52,28 +52,28 @@ export function AcceptInvitationRoute() {
   }
 
   if (!organizationId || !invitationId) {
-    return <main className="centeredPage"><section className="authCard"><h1>Invitation link incomplete</h1><p>Use the full invitation link provided by your organization.</p><Link href="/login">Sign in</Link></section></main>;
+    return <main className="centeredPage"><section className="authCard"><p className="eyebrow">SongKeep</p><h1>Link incomplete.</h1><Link href="/login">Sign in</Link></section></main>;
   }
 
   const returnPath = `/accept-invitation?org=${encodeURIComponent(organizationId)}&id=${encodeURIComponent(invitationId)}`;
 
-  if (status === "loading") return <main className="centeredPage"><section className="authCard"><p>Opening invitation…</p></section></main>;
+  if (status === "loading") return <main className="centeredPage"><section className="authCard"><p>Opening…</p></section></main>;
   if (status === "signed_out") {
-    return <main className="centeredPage"><section className="authCard"><p className="eyebrow">Organization invitation</p><h1>Sign in to join your organization.</h1><p>Use the same email address the invitation was sent to.</p><Link href={`/login?next=${encodeURIComponent(returnPath)}`}>Sign in</Link><p>New here? <Link href={`/create-account?next=${encodeURIComponent(returnPath)}`}>Create an account</Link></p></section></main>;
+    return <main className="centeredPage"><section className="authCard"><p className="eyebrow">Team invitation</p><h1>Sign in to join.</h1><p>Use the invited email.</p><Link href={`/login?next=${encodeURIComponent(returnPath)}`}>Sign in</Link><p>New here? <Link href={`/create-account?next=${encodeURIComponent(returnPath)}`}>Create account</Link></p></section></main>;
   }
 
   if (user && !user.emailVerified) {
-    return <main className="centeredPage"><section className="authCard"><p className="eyebrow">Verify your email</p><h1>Confirm this address before joining.</h1><p>Organization invitations can only be accepted after the invited email address has been verified.</p><Link href={`/verify-email?next=${encodeURIComponent(returnPath)}`}>Verify email</Link></section></main>;
+    return <main className="centeredPage"><section className="authCard"><p className="eyebrow">SongKeep</p><h1>Verify your email.</h1><Link href={`/verify-email?next=${encodeURIComponent(returnPath)}`}>Verify email</Link></section></main>;
   }
 
-  if (loading && !invitation) return <main className="centeredPage"><section className="authCard"><p>Opening invitation…</p></section></main>;
+  if (loading && !invitation) return <main className="centeredPage"><section className="authCard"><p>Opening…</p></section></main>;
 
   return <main className="centeredPage"><section className="authCard">
-    <p className="eyebrow">Organization invitation</p>
-    <h1>Join your organization</h1>
-    {invitation ? <p>You were invited as <strong>{invitation.role.replaceAll("_", " ")}</strong>. Your own sign-in will be added to the organization without changing its event history.</p> : null}
+    <p className="eyebrow">Team invitation</p>
+    <h1>Join your organization.</h1>
+    {invitation ? <p>{invitation.role.replaceAll("_", " ")}</p> : null}
     {error ? <p role="alert">{error}</p> : null}
-    {invitation?.status === "pending" ? <button type="button" onClick={accept} disabled={loading}>{loading ? "Joining…" : "Accept invitation"}</button> : null}
-    {invitation?.status === "accepted" ? <Link href={`/organization?org=${organizationId}`}>Open organization account</Link> : null}
+    {invitation?.status === "pending" ? <button type="button" onClick={accept} disabled={loading}>{loading ? "Joining…" : "Join"}</button> : null}
+    {invitation?.status === "accepted" ? <Link href={`/organization?org=${organizationId}`}>Open SongKeep</Link> : null}
   </section></main>;
 }

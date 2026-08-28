@@ -27,7 +27,7 @@ import { getNavigation, isWorkspaceId, type NavigationItem, type WorkspaceId } f
 import styles from "./workspace-route.module.css";
 
 function workspaceDisplayName(workspace: WorkspaceId) {
-  if (workspace === "customer") return "My Song";
+  if (workspace === "customer") return "Memories";
   if (workspace === "organization") return "Organization";
   if (workspace === "facility") return "Project Ageless";
   if (workspace === "creator") return "Creator Studio";
@@ -50,7 +50,7 @@ export function WorkspaceRoute() {
   const candidate = parts[0] ?? "";
 
   if (!isWorkspaceId(candidate)) {
-    return <main className="centeredPage"><section className="authCard"><h1>Page not found</h1><p>We couldn’t find the page you were looking for.</p><Link href="/">Return home</Link></section></main>;
+    return <main className="centeredPage"><section className="authCard"><h1>Page not found</h1><Link href="/">Home</Link></section></main>;
   }
 
   const workspace = candidate as WorkspaceId;
@@ -102,7 +102,7 @@ export function WorkspaceRoute() {
     ?? adminRoute?.child;
   const activeNodeLabel = activeNode ? displayNodeLabel(activeNode.id, activeNode.label) : undefined;
   const headingLabel = routeInvalid ? "Page not found" : activeNodeLabel ?? activeItem.label;
-  const headingDescription = routeInvalid ? "This page is not available. Choose another area from the navigation." : activeItem.description;
+  const headingDescription = routeInvalid ? "This page is not available." : activeItem.description;
   const workspaceName = workspaceDisplayName(workspace);
   const eyebrow = facilityRoute && activeNode
     ? `${workspaceName} / ${activeItem.label} / ${facilityRoute.child?.label}${facilityRoute.grandchild ? ` / ${facilityRoute.grandchild.label}` : ""}`
@@ -114,14 +114,15 @@ export function WorkspaceRoute() {
           ? `${workspaceName} / ${activeItem.label} / ${customerRoute.child?.label}${customerRoute.grandchild ? ` / ${customerRoute.grandchild.label}` : ""}`
           : `${workspaceName} / ${activeItem.label}`;
   const accountHref = workspace === "organization" ? "/organization/account" : "/login";
+  const customerFacing = workspace === "organization" || workspace === "customer";
 
   return <div className="workspaceShell">
-    <header className="workspaceHeader"><Link className="brand inverse" href="/">Honor a Life Song</Link><div className="workspaceIdentity"><span>{workspaceName}</span></div><Link href={accountHref}>Account</Link></header>
+    <header className="workspaceHeader"><Link className="brand inverse" href="/">SongKeep</Link><div className="workspaceIdentity"><span>{workspaceName}</span></div><Link href={accountHref}>Account</Link></header>
     <aside className="workspaceNav"><nav aria-label={`${workspaceName} navigation`}>{nav.map((item) => <Link aria-current={activeItem.id === item.id ? "page" : undefined} className={activeItem.id === item.id ? "active" : ""} href={itemHref(item)} key={item.id}><span>{item.label}</span></Link>)}</nav></aside>
     <main className="workspaceMain">
-      <div className="pageHeading"><div><p className="eyebrow">{eyebrow}</p><h1>{headingLabel}</h1><p>{headingDescription}</p></div></div>
+      <div className="pageHeading"><div>{customerFacing ? null : <p className="eyebrow">{eyebrow}</p>}<h1>{headingLabel}</h1>{customerFacing ? null : <p>{headingDescription}</p>}</div></div>
       {routeInvalid
-        ? <section className="unavailable large"><strong>This page isn’t available.</strong><span>Choose another area from the navigation to continue.</span></section>
+        ? <section className="unavailable large"><strong>This page isn’t available.</strong></section>
         : workspace === "admin" && adminRoute
           ? <AdminAccessGate><AdminWorkspace route={adminRoute} /></AdminAccessGate>
           : workspace === "creator" && creatorRoute
@@ -132,7 +133,7 @@ export function WorkspaceRoute() {
                 ? <FacilityWorkspace route={facilityRoute} />
                 : workspace === "organization"
                   ? <OrganizationWorkspace sectionId={activeItem.id} />
-                  : <section className="unavailable large"><strong>{activeItem.label} is coming soon.</strong><span>This area is not available yet.</span></section>}
+                  : <section className="unavailable large"><strong>{activeItem.label} is coming soon.</strong></section>}
     </main>
     <nav className="mobileNav" aria-label={`${workspaceName} mobile navigation`}>
       {nav.slice(0, 3).map((item) => <Link aria-current={activeItem.id === item.id ? "page" : undefined} className={activeItem.id === item.id ? "active" : ""} href={itemHref(item)} key={item.id}>{item.label}</Link>)}

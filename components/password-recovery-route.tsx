@@ -27,11 +27,11 @@ export function PasswordRecoveryRoute() {
   }
 
   return <main className="centeredPage"><section className="authCard">
-    <p className="eyebrow">Account access</p>
-    <h1>Reset your password</h1>
-    {sent ? <><p>If an account can receive password recovery at that address, Firebase has sent the recovery email.</p><Link href="/login">Return to sign in</Link></> : <form onSubmit={submit}>
-      <label><span>Email address</span><input required type="email" name="email" autoComplete="email" /></label>
-      <button disabled={busy || status === "unavailable"} type="submit">{busy ? "Sending…" : "Send reset email"}</button>
+    <p className="eyebrow">SongKeep</p>
+    <h1>Reset password</h1>
+    {sent ? <><p>Check your email.</p><Link href="/login">Back to sign in</Link></> : <form onSubmit={submit}>
+      <label><span>Email</span><input required type="email" name="email" autoComplete="email" /></label>
+      <button disabled={busy || status === "unavailable"} type="submit">{busy ? "Sending…" : "Send reset link"}</button>
       {error ? <p role="alert">{error}</p> : null}
       {configurationError ? <p role="status">{configurationError}</p> : null}
     </form>}

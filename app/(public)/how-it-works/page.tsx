@@ -5,13 +5,10 @@ export default function HowItWorksPage() {
   return (
     <PublicShell>
       <main className="contentPage">
-        <p className="eyebrow">How It Works</p>
-        <h1>From an organization&apos;s idea to songs and memories people can keep</h1>
-        <p className="lede">Your organization chooses an experience and prepares the setting. Participants join in ways that work for them, human songwriters shape what they hear, and the event becomes a bridge to carefully shared post-event memories.</p>
+        <p className="eyebrow">How it works</p>
+        <h1>Choose. Create. Celebrate.</h1>
         <Journey />
-        <div className="callout">
-          <strong>Human from beginning to end:</strong> Stories are interpreted and shaped by people who listen for the details, relationships, and meaning that make each participant&apos;s experience their own.
-        </div>
+        <div className="callout"><strong>Human-made, start to finish.</strong></div>
       </main>
     </PublicShell>
   );
