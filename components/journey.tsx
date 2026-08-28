@@ -7,10 +7,7 @@ export function Journey() {
       {howItWorksSteps.map((step, index) => (
         <li key={step.id}>
           <span>{index + 1}</span>
-          <div>
-            <strong><Link href={step.href}>{step.label}</Link></strong>
-            <small>{step.description}</small>
-          </div>
+          <div><strong><Link href={step.href}>{step.label}</Link></strong></div>
         </li>
       ))}
     </ol>
