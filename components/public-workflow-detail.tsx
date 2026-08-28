@@ -2,7 +2,6 @@ import Link from "next/link";
 import type { PublicWorkflowItem } from "@/lib/public-navigation";
 
 export function PublicWorkflowDetail({
-  eyebrow,
   parentLabel,
   parentHref,
   item,
@@ -21,26 +20,15 @@ export function PublicWorkflowDetail({
   return (
     <main className="contentPage workflowDetail">
       <nav className="breadcrumbs" aria-label="Breadcrumb">
-        <Link href="/">Home</Link><span aria-hidden="true">/</span><Link href={parentHref}>{parentLabel}</Link><span aria-hidden="true">/</span><span aria-current="page">{item.label}</span>
+        <Link href="/">Home</Link><span aria-hidden="true">/</span><Link href={parentHref}>{parentLabel}</Link>
       </nav>
-      <p className="eyebrow">{eyebrow}</p>
       <h1>{item.label}</h1>
       <p className="lede">{item.summary}</p>
 
-      <section className="workflowDetailGrid" aria-labelledby="included-heading">
-        <article className="wideCard">
-          <h2 id="included-heading">What to expect</h2>
-          <ul className="detailList">
-            {item.details.map((detail) => <li key={detail}>{detail}</li>)}
-          </ul>
-        </article>
-        <aside className="workflowContext">
-          <p className="eyebrow">At a glance</p>
-          <strong>{parentLabel}</strong>
-          <p>{item.description}</p>
-          <Link href={parentHref}>Explore {parentLabel.toLowerCase()} →</Link>
-        </aside>
-      </section>
+      <details className="wideCard">
+        <summary>What to expect</summary>
+        <ul className="detailList">{item.details.map((detail) => <li key={detail}>{detail}</li>)}</ul>
+      </details>
 
       <nav className="workflowPager" aria-label={`${parentLabel} sequence`}>
         {previous ? <Link href={previous.href}><small>Previous</small><strong>← {previous.label}</strong></Link> : <span />}
