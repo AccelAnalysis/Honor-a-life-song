@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AdminAccessGate } from "@/components/admin-access-gate";
 import { AdminWorkspace } from "@/components/admin-workspace";
 import { CreatorWorkspace } from "@/components/creator-workspace";
 import { CustomerWorkspace } from "@/components/customer-workspace";
@@ -37,6 +38,12 @@ function flatHref(workspace: WorkspaceId, item: NavigationItem) {
   return `/${workspace}${item.slug ? `/${item.slug}` : ""}`;
 }
 
+function displayNodeLabel(id: string, label: string) {
+  if (id === "people-facilities") return "Organizations";
+  if (id === "people-facility-staff") return "Organization Team";
+  return label;
+}
+
 export function WorkspaceRoute() {
   const pathname = usePathname();
   const parts = pathname.split("/").filter(Boolean);
@@ -69,33 +76,20 @@ export function WorkspaceRoute() {
   const facilityProgramRunId = facilityRoute?.programRunId ?? referenceFacilityContext.programRunId;
 
   const itemHref = (item: NavigationItem) => {
-    if (workspace === "admin") {
-      return buildAdminHref({ parentId: item.id as AdminParentId });
-    }
-
+    if (workspace === "admin") return buildAdminHref({ parentId: item.id as AdminParentId });
     if (workspace === "creator") {
       const parentId = item.id as CreatorParentId;
-      const creativeWorkId = creatorRoute?.creativeWorkId && creatorParentCarriesWorkContext(parentId)
-        ? creatorRoute.creativeWorkId
-        : undefined;
+      const creativeWorkId = creatorRoute?.creativeWorkId && creatorParentCarriesWorkContext(parentId) ? creatorRoute.creativeWorkId : undefined;
       return buildCreatorHref({ parentId, creativeWorkId });
     }
-
     if (workspace === "customer") {
       const parentId = item.id as CustomerParentId;
-      const orderId = customerRoute?.orderId && customerParentCarriesOrderContext(parentId)
-        ? customerRoute.orderId
-        : undefined;
+      const orderId = customerRoute?.orderId && customerParentCarriesOrderContext(parentId) ? customerRoute.orderId : undefined;
       return buildCustomerHref({ parentId, orderId });
     }
-
     if (workspace === "facility") {
-      return buildFacilityHref({
-        parentId: item.id as FacilityParentId,
-        programRunId: facilityProgramRunId
-      });
+      return buildFacilityHref({ parentId: item.id as FacilityParentId, programRunId: facilityProgramRunId });
     }
-
     return flatHref(workspace, item);
   };
 
@@ -106,15 +100,14 @@ export function WorkspaceRoute() {
     ?? customerRoute?.grandchild
     ?? customerRoute?.child
     ?? adminRoute?.child;
-  const headingLabel = routeInvalid ? "Page not found" : activeNode?.label ?? activeItem.label;
-  const headingDescription = routeInvalid
-    ? "This page is not available. Choose another area from the navigation."
-    : activeItem.description;
+  const activeNodeLabel = activeNode ? displayNodeLabel(activeNode.id, activeNode.label) : undefined;
+  const headingLabel = routeInvalid ? "Page not found" : activeNodeLabel ?? activeItem.label;
+  const headingDescription = routeInvalid ? "This page is not available. Choose another area from the navigation." : activeItem.description;
   const workspaceName = workspaceDisplayName(workspace);
   const eyebrow = facilityRoute && activeNode
     ? `${workspaceName} / ${activeItem.label} / ${facilityRoute.child?.label}${facilityRoute.grandchild ? ` / ${facilityRoute.grandchild.label}` : ""}`
     : adminRoute && activeNode
-      ? `${workspaceName} / ${activeItem.label} / ${activeNode.label}`
+      ? `${workspaceName} / ${activeItem.label} / ${activeNodeLabel}`
       : creatorRoute && activeNode
         ? `${workspaceName} / ${activeItem.label} / ${creatorRoute.child?.label}${creatorRoute.grandchild ? ` / ${creatorRoute.grandchild.label}` : ""}`
         : customerRoute && activeNode
@@ -130,7 +123,7 @@ export function WorkspaceRoute() {
       {routeInvalid
         ? <section className="unavailable large"><strong>This page isn’t available.</strong><span>Choose another area from the navigation to continue.</span></section>
         : workspace === "admin" && adminRoute
-          ? <AdminWorkspace route={adminRoute} />
+          ? <AdminAccessGate><AdminWorkspace route={adminRoute} /></AdminAccessGate>
           : workspace === "creator" && creatorRoute
             ? <CreatorWorkspace route={creatorRoute} />
             : workspace === "customer" && customerRoute
