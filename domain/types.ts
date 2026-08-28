@@ -1,7 +1,18 @@
 export type EntityId = string;
 export type ISODateTime = string;
 
-export type OrganizationKind = "platform" | "facility" | "nonprofit" | "sponsor" | "community_partner";
+export type OrganizationKind =
+  | "platform"
+  | "facility"
+  | "nonprofit"
+  | "sponsor"
+  | "community_partner"
+  | "business"
+  | "school"
+  | "healthcare"
+  | "faith_community"
+  | "veterans_organization"
+  | "other";
 export type PersonRole = "customer" | "family_collaborator" | "authorized_representative" | "facility_staff" | "creator" | "admin";
 
 export interface Person { id: EntityId; displayName: string; }
