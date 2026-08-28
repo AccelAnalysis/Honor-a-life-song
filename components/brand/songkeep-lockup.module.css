@@ -1,0 +1,126 @@
+.lockup {
+  --songkeep-word: #141648;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.58rem;
+  min-width: 0;
+  color: var(--songkeep-word);
+}
+
+.mark {
+  display: block;
+  width: 2.15rem;
+  height: 2.15rem;
+  flex: 0 0 auto;
+  overflow: visible;
+}
+
+.words {
+  display: grid;
+  gap: 0.16rem;
+  line-height: 1;
+}
+
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--font-brand-sans, "Avenir Next", Avenir, Inter, ui-sans-serif, system-ui, sans-serif);
+  font-size: 1.34rem;
+  font-weight: 650;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+}
+
+.wordmark span:first-child {
+  color: var(--songkeep-word);
+}
+
+.wordmark span:last-child {
+  color: #1572c6;
+}
+
+.tagline {
+  display: flex;
+  gap: 0.28rem;
+  color: var(--songkeep-word);
+  font-size: 0.49rem;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.tagline em {
+  color: #d53fa3;
+  font-style: normal;
+}
+
+.markOnly,
+.mark {
+  isolation: isolate;
+}
+
+.mark .wordmark,
+.mark .tagline {
+  display: none;
+}
+
+.full {
+  align-items: center;
+  gap: 0.74rem;
+}
+
+.full .mark {
+  width: 3.65rem;
+  height: 3.65rem;
+}
+
+.full .wordmark {
+  font-size: 2rem;
+}
+
+.full .tagline {
+  font-size: 0.56rem;
+}
+
+.inverse {
+  --songkeep-word: #ffffff;
+}
+
+.inverse .wordmark span:last-child {
+  color: #8fd5ff;
+}
+
+.inverse .tagline em {
+  color: #ff8ad1;
+}
+
+@media (max-width: 560px) {
+  .app .mark {
+    width: 1.95rem;
+    height: 1.95rem;
+  }
+
+  .app .wordmark {
+    font-size: 1.18rem;
+  }
+
+  .full {
+    gap: 0.58rem;
+  }
+
+  .full .mark {
+    width: 3.15rem;
+    height: 3.15rem;
+  }
+
+  .full .wordmark {
+    font-size: 1.72rem;
+  }
+
+  .full .tagline {
+    font-size: 0.46rem;
+    letter-spacing: 0.12em;
+  }
+}

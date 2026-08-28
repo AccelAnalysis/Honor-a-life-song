@@ -2,6 +2,7 @@ export { AudioPlayer } from "./audio-player";
 export { AudioPreview } from "./audio-preview";
 export { BrandSensoryReference } from "./brand-sensory-reference";
 export { SongArtwork } from "./song-artwork";
+export { SongKeepLockup } from "./songkeep-lockup";
 export { SonicSignature } from "./sonic-signature";
 export { TrackMetadata } from "./track-metadata";
 export { VoiceRecorder } from "./voice-recorder";

@@ -1,1 +1,29 @@
-.shell{min-height:100vh;display:grid;grid-template-columns:minmax(320px,.9fr) minmax(0,1.1fr);background:#fffdf9}.story{position:relative;min-height:100vh;padding:40px clamp(28px,5vw,72px);display:flex;flex-direction:column;justify-content:space-between;color:#fff;background:linear-gradient(180deg,rgba(25,18,30,.08),rgba(25,18,30,.82)),url("https://images.pexels.com/photos/7551752/pexels-photo-7551752.jpeg?auto=compress&cs=tinysrgb&w=1600") center/cover}.brand{font-family:Georgia,"Times New Roman",serif;font-weight:700;font-size:1.2rem}.storyCopy{max-width:430px;font-family:Georgia,"Times New Roman",serif;font-size:clamp(1.5rem,3vw,2.7rem);line-height:1.15}.wave{height:44px;display:flex;align-items:center;gap:7px}.wave i{display:block;width:3px;border-radius:99px;background:#d4ac68}.wave i:nth-child(1),.wave i:nth-child(6){height:10px}.wave i:nth-child(2),.wave i:nth-child(5){height:24px}.wave i:nth-child(3),.wave i:nth-child(4){height:39px}.claim{display:grid;place-items:center;padding:44px clamp(24px,7vw,100px)}.claimInner{width:min(620px,100%)}.eyebrow{color:#6b496f;text-transform:uppercase;letter-spacing:.15em;font-size:.72rem;font-weight:800}.claim h1{font-size:clamp(2.5rem,5vw,4.7rem);margin:.2em 0}.claim p{color:#67606b;font-size:1.05rem}.host{color:#956d32!important;font-weight:800}.claim button,.claim a:not(.secondary){display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:999px;padding:13px 20px;background:#5b3d63;color:#fff;font:inherit;font-weight:800;cursor:pointer}.claim button:disabled{opacity:.55;cursor:wait}.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:25px}.claim a.secondary{display:inline-flex;padding:12px 18px;border:1px solid #d9d0d7;border-radius:999px;font-weight:750}.accessSummary{margin:26px 0;padding:20px 0;border-block:1px solid #e2dbd5;display:flex;justify-content:space-between;gap:20px}.accessSummary span{color:#756e78}.claim small{display:block;margin-top:22px;color:#7b747e}.error{color:#8d3131!important;font-weight:700}@media(max-width:780px){.shell{grid-template-columns:1fr}.story{min-height:32vh}.storyCopy{font-size:1.65rem}.claim{min-height:68vh;padding-top:50px}.accessSummary{flex-direction:column;gap:6px}}@media print{.story{display:none}.shell{display:block}.claim{padding:0}.claim button,.actions{display:none}}
+.shell { min-height: 100vh; display: grid; grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr); background: #fff; color: #141648; }
+.story { position: relative; min-height: 100vh; padding: 40px clamp(28px, 5vw, 72px); display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; color: #fff; background: linear-gradient(180deg, rgba(20, 22, 72, 0.08), rgba(20, 22, 72, 0.9)), linear-gradient(90deg, rgba(72, 88, 190, 0.2), transparent 58%), url("https://images.pexels.com/photos/7551752/pexels-photo-7551752.jpeg?auto=compress&cs=tinysrgb&w=1600") center / cover; }
+.story::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 82% 18%, rgba(28, 139, 211, 0.2), transparent 24%), radial-gradient(circle at 14% 84%, rgba(213, 63, 163, 0.15), transparent 28%); pointer-events: none; }
+.brand { position: relative; z-index: 1; width: fit-content; }
+.storyCopy { position: relative; z-index: 1; max-width: 460px; font-family: var(--font-brand-sans, "Avenir Next", Avenir, Inter, sans-serif); font-size: clamp(1.7rem, 3vw, 3rem); font-weight: 620; line-height: 1.08; letter-spacing: -0.04em; }
+.wave { height: 44px; display: flex; align-items: center; gap: 7px; }
+.wave i { display: block; width: 4px; border-radius: 99px; background: linear-gradient(180deg, #ff7ccc, #8fd5ff); }
+.wave i:nth-child(1), .wave i:nth-child(6) { height: 10px; }
+.wave i:nth-child(2), .wave i:nth-child(5) { height: 24px; }
+.wave i:nth-child(3), .wave i:nth-child(4) { height: 39px; }
+.claim { display: grid; place-items: center; padding: 44px clamp(24px, 7vw, 100px); background: radial-gradient(circle at 88% 8%, rgba(28, 139, 211, 0.09), transparent 26%), #fff; }
+.claimInner { width: min(620px, 100%); }
+.claimBrand { margin-bottom: 48px; }
+.eyebrow { color: #834ab4; text-transform: uppercase; letter-spacing: 0.15em; font-size: 0.7rem; font-weight: 850; }
+.claim h1 { font-family: var(--font-brand-sans, "Avenir Next", Avenir, Inter, sans-serif); font-size: clamp(2.7rem, 5.2vw, 5rem); font-weight: 650; line-height: 0.94; letter-spacing: -0.055em; margin: 0.2em 0; color: #141648; }
+.claim p { color: #62657a; font-size: 1.02rem; }
+.host { color: #1572c6 !important; font-weight: 820; }
+.claim button,
+.claim a:not(.secondary) { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; border: 0; border-radius: 12px; padding: 12px 20px; background: #1572c6; color: #fff; font: inherit; font-weight: 820; cursor: pointer; box-shadow: 0 10px 24px rgba(21, 114, 198, 0.14); }
+.claim button:hover:not(:disabled), .claim a:not(.secondary):hover { background: #1165b1; }
+.claim button:disabled { opacity: 0.55; cursor: wait; box-shadow: none; }
+.actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 25px; }
+.claim a.secondary { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 12px 18px; border: 1px solid #e1e4f0; border-radius: 12px; font-weight: 760; color: #141648; background: white; }
+.accessSummary { margin: 26px 0; padding: 20px 0; border-block: 1px solid #e1e4f0; display: flex; justify-content: space-between; gap: 20px; }
+.accessSummary span { color: #707487; }
+.claim small { display: block; margin-top: 22px; color: #777a8d; }
+.error { color: #8a3d46 !important; font-weight: 700; }
+@media (max-width: 780px) { .shell { grid-template-columns: 1fr; } .story { min-height: 34vh; } .storyCopy { font-size: 1.9rem; } .claim { min-height: 66vh; padding-top: 50px; } .claimBrand { margin-bottom: 36px; } .accessSummary { flex-direction: column; gap: 6px; } }
+@media print { .story { display: none; } .shell { display: block; } .claim { padding: 0; } .claim button, .actions { display: none; } }

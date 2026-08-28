@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { SongKeepLockup } from "@/components/brand";
 import { createOrganizationAccount } from "@/lib/firebase/organization-account";
 import type { OrganizationKind } from "@/domain/types";
 import { safeReturnPath } from "@/lib/safe-return-path";
@@ -86,7 +87,7 @@ export function CreateAccountRoute() {
 
   return <main className={styles.shell}>
     <section className={styles.story}>
-      <Link href="/" className={styles.brand}>SongKeep</Link>
+      <Link href="/" className={styles.brand} aria-label="SongKeep home"><SongKeepLockup variant="full" inverse /></Link>
       <div>
         <p className={styles.kicker}>{accessOnly ? "Private access" : "SongKeep"}</p>
         <h1>{accessOnly ? "Keep what was shared with you." : "One account. Every experience."}</h1>
@@ -96,6 +97,7 @@ export function CreateAccountRoute() {
 
     <section className={styles.formSide} aria-labelledby="create-account-title">
       <div className={styles.formInner}>
+        <div className={styles.formBrand}><SongKeepLockup variant="app" /></div>
         <p className={styles.kicker}>Account</p>
         <h2 id="create-account-title">{accessOnly ? "Create sign-in." : completingOrganization ? "Finish setup." : "Create your account."}</h2>
 

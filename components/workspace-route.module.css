@@ -1,1 +1,9 @@
-.structuredStatus{background:#e8eff7;color:#315a7a}.mobileMore{position:relative;display:grid;place-items:stretch}.mobileMore summary{display:grid;place-items:center;text-align:center;padding:8px;font-size:.7rem;cursor:pointer;list-style:none}.mobileMore summary::-webkit-details-marker{display:none}.mobileMore div{position:absolute;right:8px;bottom:58px;min-width:210px;max-height:min(60vh,420px);overflow:auto;padding:8px;border:1px solid #ddd6cf;border-radius:14px;background:#fff;box-shadow:0 14px 40px rgba(35,24,39,.16)}.mobileMore div a{display:block;padding:10px 12px;border-radius:9px;text-align:left;font-size:.78rem}.mobileMore div a:hover,.mobileMore div a.active{background:#f1ebf2;color:#5b3d63}@media(min-width:901px){.mobileMore{display:none}}
+.structuredStatus { background: #f0f6fc; color: #315b7e; }
+.mobileMore { position: relative; display: grid; place-items: stretch; }
+.mobileMore summary { display: grid; place-items: center; text-align: center; padding: 8px; font-size: 0.7rem; cursor: pointer; list-style: none; color: #62657a; }
+.mobileMore summary::-webkit-details-marker { display: none; }
+.mobileMore div { position: absolute; right: 8px; bottom: 62px; min-width: 220px; max-height: min(60vh, 420px); overflow: auto; padding: 8px; border: 1px solid #e1e4f0; border-radius: 16px; background: #fff; box-shadow: 0 18px 48px rgba(20, 22, 72, 0.14); }
+.mobileMore div a { display: block; padding: 10px 12px; border-radius: 10px; text-align: left; font-size: 0.78rem; color: #62657a; }
+.mobileMore div a:hover,
+.mobileMore div a.active { background: #f1f6fc; color: #1572c6; }
+@media (min-width: 901px) { .mobileMore { display: none; } }
