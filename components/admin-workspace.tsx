@@ -133,11 +133,11 @@ function MonitoringLeaf() {
   </section>;
 }
 
-function ParentOverview({ route, children }: { route: AdminRouteResolution; children: readonly AdminWorkflowNode[] }) {
+function ParentOverview({ route, items }: { route: AdminRouteResolution; items: readonly AdminWorkflowNode[] }) {
   const parentId = route.parent.id as AdminParentId;
   return <section className={styles.workArea} aria-label={`${route.parent.label} options`}>
     <div className={styles.workflowList}>
-      {children.map((child) => <Link href={buildAdminHref({ parentId, childId: child.id })} key={child.id}>
+      {items.map((child) => <Link href={buildAdminHref({ parentId, childId: child.id })} key={child.id}>
         <span>{child.label}</span><span aria-hidden="true">→</span>
       </Link>)}
     </div>
@@ -162,6 +162,6 @@ export function AdminWorkspace({ route }: AdminWorkspaceProps) {
       ? <MonitoringLeaf />
       : route.child
         ? <WorkflowSurface node={route.child} route={route} />
-        : <ParentOverview route={route} children={children} />}
+        : <ParentOverview route={route} items={children} />}
   </div>;
 }
