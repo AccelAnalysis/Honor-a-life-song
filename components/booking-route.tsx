@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useMemo, useState } from "react";
+import { useAuth } from "@/components/auth-provider";
 import {
   bookingActionIsAvailable,
   bookingSteps,
@@ -33,11 +35,21 @@ const legalDocuments = [
   ["Electronic records", "Your choices for receiving, retaining, and printing electronic records."]
 ] as const;
 
+function validOfferingId(value: string | null): ServiceOfferingId | undefined {
+  if (!value) return undefined;
+  if (value === "individual-song") return "individual-legacy-song";
+  return serviceOfferings.some((offering) => offering.id === value) ? value as ServiceOfferingId : undefined;
+}
+
 export function BookingRoute() {
-  const [activeStep, setActiveStep] = useState<BookingStep>("welcome");
-  const [offeringId, setOfferingId] = useState<ServiceOfferingId | undefined>();
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
+  const searchParams = useSearchParams();
+  const { user, status: authStatus, configurationError } = useAuth();
+  const requestedOffering = validOfferingId(searchParams.get("offering") ?? searchParams.get("service"));
+  const requestedStep = searchParams.get("step") === "account" && requestedOffering ? "account" : "welcome";
+  const organizationId = searchParams.get("organizationId");
+  const sourceExperience = searchParams.get("sourceExperience");
+  const [activeStep, setActiveStep] = useState<BookingStep>(requestedStep);
+  const [offeringId, setOfferingId] = useState<ServiceOfferingId | undefined>(requestedOffering);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [reviewedTerms, setReviewedTerms] = useState(false);
@@ -62,6 +74,15 @@ export function BookingRoute() {
 
   function togglePermission(scope: ConsentScope) {
     setPermissions((current) => current.includes(scope) ? current.filter((item) => item !== scope) : [...current, scope]);
+  }
+
+  function accountReturnPath() {
+    const params = new URLSearchParams();
+    params.set("step", "account");
+    if (offeringId) params.set("offering", offeringId);
+    if (organizationId) params.set("organizationId", organizationId);
+    if (sourceExperience) params.set("sourceExperience", sourceExperience);
+    return `/begin?${params.toString()}`;
   }
 
   return (
@@ -128,14 +149,24 @@ export function BookingRoute() {
           {activeStep === "account" ? (
             <section aria-labelledby="account-title">
               <p className={styles.eyebrow}>Keep everything together</p>
-              <h1 id="account-title">A simple account for your experience.</h1>
-              <p className={styles.lede}>We&apos;ll use your account to keep your date, receipts, forms, song progress, and final keepsake in one private place.</p>
-              <div className={styles.inlineFields}>
-                <label><span>Your name</span><input autoComplete="name" value={fullName} onChange={(event) => setFullName(event.target.value)} /></label>
-                <label><span>Email address</span><input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
-              </div>
-              <p className={styles.serviceNote}>Live account creation is not connected on this page yet, so these details are not submitted or saved.</p>
-              <button className={styles.primaryButton} type="button" disabled={!fullName || !email || !bookingActionIsAvailable("identity")}>Create my account</button>
+              <h1 id="account-title">Use your secure Honor a Life Song account.</h1>
+              <p className={styles.lede}>Your account keeps your organization or family relationship, event history, agreements, song access, and future experiences connected over time.</p>
+              {authStatus === "loading" ? <p className={styles.serviceNote}>Checking your account…</p> : null}
+              {authStatus === "signed_in" && user ? <>
+                <div className={styles.orderLine}>
+                  <div><strong>{user.displayName ?? "Signed in"}</strong><span>{user.email}</span></div>
+                  <b>Account ready</b>
+                </div>
+                <button className={styles.primaryButton} type="button" onClick={nextStep}>Continue with this account</button>
+              </> : null}
+              {authStatus === "signed_out" ? <>
+                <p className={styles.serviceNote}>Create an account or sign in before continuing. Your selected experience will be carried back to this step.</p>
+                <div className={styles.participantActions}>
+                  <Link className={styles.primaryLink} href={`/create-account?next=${encodeURIComponent(accountReturnPath())}`}>Create account</Link>
+                  <Link className={styles.primaryLink} href={`/login?next=${encodeURIComponent(accountReturnPath())}`}>Sign in</Link>
+                </div>
+              </> : null}
+              {authStatus === "unavailable" ? <p className={styles.serviceNote}>{configurationError ?? "Firebase account access is not configured in this environment."}</p> : null}
             </section>
           ) : null}
 
@@ -240,7 +271,7 @@ export function BookingRoute() {
                 <span>Agreements complete</span>
                 <span>Participant forms complete</span>
               </div>
-              <Link className={styles.primaryLink} href="/customer">Continue to your song</Link>
+              <Link className={styles.primaryLink} href={organizationId ? `/organization?org=${organizationId}` : "/customer"}>Continue to your account</Link>
             </section>
           ) : null}
         </div>
