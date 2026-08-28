@@ -1,0 +1,161 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function platformAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.active != false;
+    }
+
+    function organizationMember(orgId) {
+      return signedIn()
+        && exists(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid))
+        && get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.status == 'active';
+    }
+
+    function organizationAdmin(orgId) {
+      return platformAdmin()
+        || (organizationMember(orgId)
+          && get(/databases/$(database)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.role == 'organization_admin');
+    }
+
+    function matchesSignedInEmail(email) {
+      return signedIn()
+        && request.auth.token.email != null
+        && email is string
+        && request.auth.token.email == email;
+    }
+
+    function validMemberRole(role) {
+      return role in ['organization_admin', 'program_coordinator', 'billing_contact', 'event_contact', 'viewer'];
+    }
+
+    function invitedSelfMemberCreate(orgId, userId) {
+      let invitationId = request.resource.data.invitationId;
+      let invitation = get(/databases/$(database)/documents/organizations/$(orgId)/invitations/$(invitationId));
+      return signedIn()
+        && userId == request.auth.uid
+        && invitationId is string
+        && invitation.data.status == 'pending'
+        && matchesSignedInEmail(invitation.data.email)
+        && request.resource.data.email == invitation.data.email
+        && request.resource.data.role == invitation.data.role
+        && validMemberRole(request.resource.data.role)
+        && request.resource.data.status == 'active';
+    }
+
+    function initialOrganizationAdminCreate(orgId, userId) {
+      return signedIn()
+        && userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.role == 'organization_admin'
+        && request.resource.data.status == 'active'
+        && getAfter(/databases/$(database)/documents/organizations/$(orgId)).data.createdBy == request.auth.uid;
+    }
+
+    match /admins/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || platformAdmin());
+      allow create, update, delete: if platformAdmin();
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || platformAdmin());
+      allow create, update: if signedIn() && request.auth.uid == userId;
+      allow delete: if platformAdmin();
+
+      match /organizations/{orgId} {
+        allow read, create, update, delete: if signedIn() && request.auth.uid == userId;
+        allow read: if platformAdmin();
+      }
+    }
+
+    match /organizations/{orgId} {
+      allow create: if signedIn()
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.name is string;
+      allow read: if organizationMember(orgId) || platformAdmin();
+      allow update: if organizationAdmin(orgId);
+      allow delete: if platformAdmin();
+
+      match /members/{userId} {
+        allow read: if organizationMember(orgId) || platformAdmin();
+        allow create: if organizationAdmin(orgId)
+          || initialOrganizationAdminCreate(orgId, userId)
+          || invitedSelfMemberCreate(orgId, userId);
+        allow update, delete: if organizationAdmin(orgId);
+      }
+
+      match /invitations/{invitationId} {
+        allow read: if organizationAdmin(orgId)
+          || platformAdmin()
+          || matchesSignedInEmail(resource.data.email);
+        allow create: if organizationAdmin(orgId)
+          && request.resource.data.status == 'pending'
+          && request.resource.data.invitedBy == request.auth.uid
+          && validMemberRole(request.resource.data.role)
+          && request.resource.data.email is string;
+        allow update: if organizationAdmin(orgId)
+          || (matchesSignedInEmail(resource.data.email)
+            && resource.data.status == 'pending'
+            && request.resource.data.status == 'accepted'
+            && request.resource.data.acceptedBy == request.auth.uid
+            && request.resource.data.email == resource.data.email
+            && request.resource.data.role == resource.data.role
+            && request.resource.data.invitedBy == resource.data.invitedBy);
+        allow delete: if organizationAdmin(orgId);
+      }
+
+      match /agreements/{agreementId} {
+        allow read: if organizationMember(orgId) || platformAdmin();
+        allow create: if platformAdmin()
+          && request.resource.data.status == 'requested'
+          && request.resource.data.organizationId == orgId;
+        allow update: if platformAdmin()
+          || (organizationAdmin(orgId)
+            && resource.data.status == 'requested'
+            && request.resource.data.status == 'signed'
+            && request.resource.data.signedByUserId == request.auth.uid
+            && request.resource.data.electronicRecordsAccepted == true
+            && request.resource.data.organizationId == resource.data.organizationId
+            && request.resource.data.title == resource.data.title
+            && request.resource.data.kind == resource.data.kind
+            && request.resource.data.documentVersion == resource.data.documentVersion
+            && request.resource.data.documentUrl == resource.data.documentUrl
+            && request.resource.data.relatedExperienceId == resource.data.relatedExperienceId
+            && request.resource.data.requestedAt == resource.data.requestedAt);
+        allow delete: if platformAdmin();
+      }
+
+      match /experiences/{experienceId} {
+        allow read: if organizationMember(orgId) || platformAdmin();
+        allow create, update, delete: if platformAdmin();
+      }
+
+      match /suggestedDates/{suggestionId} {
+        allow read: if organizationMember(orgId) || platformAdmin();
+        allow create, delete: if platformAdmin();
+        allow update: if platformAdmin()
+          || (organizationMember(orgId)
+            && request.resource.data.organizationId == resource.data.organizationId
+            && request.resource.data.startsAt == resource.data.startsAt
+            && request.resource.data.label == resource.data.label
+            && request.resource.data.createdAt == resource.data.createdAt
+            && request.resource.data.status in ['interested', 'declined']);
+      }
+
+      match /assets/{assetId} {
+        allow read: if organizationMember(orgId) || platformAdmin();
+        allow create, update, delete: if platformAdmin();
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
