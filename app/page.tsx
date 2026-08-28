@@ -17,12 +17,12 @@ export default function HomePage() {
           </div>
           <SonicSignature inverse label="Hear our sonic signature" />
         </div>
-        <span className="consumerHeroCredit">Reference image: Centre for Ageing Better / Pexels</span>
+        <span className="consumerHeroCredit">Photo: Centre for Ageing Better / Pexels</span>
       </section>
 
       <section className="consumerScene" id="featured-stories-songs" aria-labelledby="listening-title">
         <div className="consumerSceneImage" role="img" aria-label="A woman listening quietly in a sunlit room">
-          <span className="consumerSceneCredit">Reference image: Los Muertos Crew / Pexels</span>
+          <span className="consumerSceneCredit">Photo: Los Muertos Crew / Pexels</span>
         </div>
         <div className="consumerSceneCopy">
           <p className="eyebrow">First, we listen.</p>
@@ -39,9 +39,9 @@ export default function HomePage() {
             <p className="eyebrow">Songs as keepsakes</p>
             <h2 id="song-collection-title">Each story becomes its own musical world.</h2>
           </div>
-          <p>Public examples appear only when the people represented have given the appropriate permission. Until then, these reference covers demonstrate how songs become recognizable visual objects across the platform.</p>
+          <p>A finished song can remain a private family keepsake or, when permission is given, become a story that others can hear and celebrate.</p>
         </div>
-        <div className="songGallery" aria-label="Reference song artwork collection">
+        <div className="songGallery" aria-label="Song artwork collection">
           <article className="songCover">
             <div className="songCoverMeta"><small>Individual song</small><h3>One life, heard closely.</h3><p>Private listening · lyrics · keepsake</p></div>
           </article>
@@ -57,7 +57,7 @@ export default function HomePage() {
       <section className="storyProcess" id="home-how-it-works" aria-labelledby="process-title">
         <div className="storyProcessInner">
           <div className="studioImage" role="img" aria-label="A close recording-studio view of a guitar and microphone">
-            <span className="studioCredit">Reference image: Saulo Leite / Pexels</span>
+            <span className="studioCredit">Photo: Saulo Leite / Pexels</span>
           </div>
           <div className="processCopy">
             <div><p className="eyebrow">Human from beginning to end</p><h2 id="process-title">Story. Song. Something lasting.</h2></div>
@@ -88,7 +88,7 @@ export default function HomePage() {
         <div>
           <p className="eyebrow">Real voices, shared with care</p>
           <h2 id="permission-title">A meaningful story is never marketing material by default.</h2>
-          <p>Participant songs, photographs, and testimonials appear publicly only when the specific permission exists. The emotional experience and the consent boundary belong together.</p>
+          <p>We only share a song, photograph, or testimonial publicly when the person represented—or their authorized representative—has chosen to allow it.</p>
         </div>
       </section>
 
@@ -100,8 +100,6 @@ export default function HomePage() {
           <Link className="button" href="/how-it-works/share-your-story">Begin a song</Link>
         </div>
       </section>
-
-      <section className="referenceNotice consumerBoundary"><strong>Reference boundary:</strong> This experience demonstrates the approved consumer composition. Inquiry persistence, public participant media, and production audio remain permission- and service-gated rather than simulated.</section>
     </PublicShell>
   );
 }
