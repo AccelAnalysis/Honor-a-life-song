@@ -14,122 +14,118 @@ type AdminWorkspaceProps = {
   route: AdminRouteResolution;
 };
 
-const integrityCopy: Record<AdminIntegrityKind, { title: string; body: string }> = {
-  capacity: {
-    title: "Use real workload and capacity",
-    body: "Capacity should reflect assigned work, active commitments, configured limits, and actual staffing rather than estimates presented as facts."
-  },
-  payment: {
-    title: "Use recorded payment status",
-    body: "A payment, refund, or reconciliation should only be treated as complete when the recorded financial activity confirms it."
-  },
-  funding: {
-    title: "Funding does not create participant access",
-    body: "Sponsors, facilities, nonprofits, and grant-supported partners do not receive participant information simply because they fund a program."
-  },
-  scheduling: {
-    title: "Keep one coordinated schedule",
-    body: "Customer interviews, facility activities, creator commitments, and administrative scheduling should stay aligned so the same event is not represented differently in different areas."
-  },
-  communications: {
-    title: "Keep communication together",
-    body: "Send and track customer, family, facility, creator, and program communication from one coordinated place."
-  },
-  consent: {
-    title: "Access and permission are separate",
-    body: "Administrative access never overrides a participant's choices about recording, sharing, performance, photography, publication, or other uses."
-  },
-  reporting: {
-    title: "Report what actually happened",
-    body: "Use real records and timestamps for reporting, and do not turn participation or satisfaction measures into unsupported clinical claims."
-  },
-  export: {
-    title: "Protect information when exporting",
-    body: "Exports should respect the person's access level, the purpose of the export, participant permissions, and applicable retention or deletion requirements."
-  },
-  monitoring: {
-    title: "Use traceable operational information",
-    body: "Alerts and incidents should reflect actual failures, service health, blockers, or operational conditions."
-  },
-  configuration: {
-    title: "Protect high-impact settings",
-    body: "Settings should not override privacy, payment integrity, required approvals, or security protections."
-  },
-  identity: {
-    title: "Keep roles and access clear",
-    body: "Customers, families, facilities, creators, sponsors, partners, and administrators should receive only the access appropriate to their role."
-  }
+const policyCopy: Record<AdminIntegrityKind, string> = {
+  capacity: "Capacity should reflect assigned work, active commitments, configured limits, and actual staffing rather than estimates presented as facts.",
+  payment: "A payment, refund, or reconciliation should only be treated as complete when the recorded financial activity confirms it.",
+  funding: "Sponsors, facilities, nonprofits, and grant-supported partners do not receive participant information simply because they fund a program.",
+  scheduling: "Customer interviews, facility activities, creator commitments, and administrative scheduling should stay aligned so the same event is not represented differently in different areas.",
+  communications: "Send and track customer, family, facility, creator, and program communication from one coordinated place.",
+  consent: "Administrative access never overrides a participant's choices about recording, sharing, performance, photography, publication, or other uses.",
+  reporting: "Use real records and timestamps for reporting, and do not turn participation or satisfaction measures into unsupported clinical claims.",
+  export: "Exports should respect the person's access level, the purpose of the export, participant permissions, and applicable retention or deletion requirements.",
+  monitoring: "Alerts and incidents should reflect actual failures, service health, blockers, or operational conditions.",
+  configuration: "Settings should not override privacy, payment integrity, required approvals, or security protections.",
+  identity: "Customers, families, facilities, creators, sponsors, partners, and administrators should receive only the access appropriate to their role."
 };
 
-function IntegrityNotice({ kind }: { kind?: AdminIntegrityKind }) {
-  if (!kind) return null;
-  const copy = integrityCopy[kind];
-  return <div className={styles.integrity}><strong>{copy.title}</strong><span>{copy.body}</span></div>;
+const columnsByParent: Record<AdminParentId, readonly string[]> = {
+  "admin-home": ["Area", "Status", "Updated"],
+  requests: ["Request", "Type", "Status", "Received"],
+  programs: ["Work", "Customer / Facility", "Status", "Due"],
+  people: ["Name", "Type", "Access", "Activity"],
+  catalog: ["Item", "Type", "Rule / Price", "Status"],
+  finance: ["Reference", "Party", "Status", "Amount"],
+  scheduling: ["Date", "Type", "With", "Status"],
+  communications: ["Recipient", "Channel", "Status", "Sent"],
+  consent: ["Person", "Permission", "Status", "Updated"],
+  reports: ["Report", "Period", "Updated"],
+  monitoring: ["Service", "Status", "Updated"],
+  settings: ["Setting", "Status", "Updated"]
+};
+
+function serviceAvailable(node: AdminWorkflowNode) {
+  if (node.action) return adminServiceConnections[node.action.service];
+  return node.boundaries.some((boundary) => adminServiceConnections[boundary]);
 }
 
-function adminDescription(node: AdminWorkflowNode) {
-  return `Use this area to review or manage ${node.label.toLowerCase()} across Honor a Life Song.`;
-}
-
-function ServiceGate({ node }: { node: AdminWorkflowNode }) {
-  if (!node.action) {
-    const connected = node.boundaries.some((boundary) => adminServiceConnections[boundary]);
-    return connected ? null : <div className={styles.gate}><strong>Data is not available yet.</strong><span>This area will show operational information when it becomes available.</span></div>;
-  }
-
+function ActionArea({ node }: { node: AdminWorkflowNode }) {
+  if (!node.action) return null;
   const connected = adminServiceConnections[node.action.service];
-  if (connected) return <button type="button">{node.action.label}</button>;
-  return <div className={styles.gate}>
-    <strong>This action is currently unavailable.</strong>
-    <span>You can review this area now, but changes cannot be submitted here yet.</span>
-    <button disabled type="button">{node.action.label}</button>
+  return <div className={styles.actionArea}>
+    <button disabled={!connected} type="button">{node.action.label}</button>
+    {!connected && <span>Not available yet</span>}
   </div>;
 }
 
 function RecordContext({ node, route }: { node: AdminWorkflowNode; route: AdminRouteResolution }) {
   if (!node.recordKind || !route.recordId) return null;
-  return <div className={styles.contextPill}>
-    <span>Selected {node.recordKind.replaceAll("_", " ")}</span>
-    <strong>{route.recordId}</strong>
+  return <div className={styles.recordLine}>
+    <span>{node.recordKind.replaceAll("_", " ")}</span>
+    <strong>Selected</strong>
   </div>;
 }
 
-function ProgramTemplateOverlap({ node, route }: { node: AdminWorkflowNode; route: AdminRouteResolution }) {
+function PolicyDetails({ node }: { node: AdminWorkflowNode }) {
+  if (!node.integrity) return null;
+  return <details className={styles.policyDetails}>
+    <summary>Permissions and data rules</summary>
+    <p>{policyCopy[node.integrity]}</p>
+  </details>;
+}
+
+function ProgramTemplateLink({ node, route }: { node: AdminWorkflowNode; route: AdminRouteResolution }) {
   if (node.id !== "catalog-program-templates" && node.id !== "settings-program-templates") return null;
   const target = node.id === "catalog-program-templates"
     ? { parentId: "settings" as const, childId: "settings-program-templates" }
     : { parentId: "catalog" as const, childId: "catalog-program-templates" };
-  return <div className={styles.sharedRecord}>
-    <strong>Program Templates</strong>
-    <span>Program Templates can be opened from both Catalog & Pricing and Settings so operations staff can reach the same program setup from either task.</span>
-    <Link className={styles.primaryLink} href={buildAdminHref({ ...target, recordId: route.recordId })}>Open the other Program Templates view</Link>
+  const label = node.id === "catalog-program-templates" ? "Settings" : "Catalog & Pricing";
+  return <Link className={styles.relatedLink} href={buildAdminHref({ ...target, recordId: route.recordId })}>Also available in {label}</Link>;
+}
+
+function EmptyTable({ parentId, node }: { parentId: AdminParentId; node: AdminWorkflowNode }) {
+  const columns = columnsByParent[parentId];
+  const available = serviceAvailable(node);
+  return <div className={styles.tableWrap}>
+    <table>
+      <thead><tr>{columns.map((column) => <th key={column} scope="col">{column}</th>)}</tr></thead>
+      <tbody><tr><td className={styles.emptyCell} colSpan={columns.length}>{available ? "No items to show." : "No items to show yet."}</td></tr></tbody>
+    </table>
   </div>;
 }
 
 function WorkflowSurface({ node, route }: { node: AdminWorkflowNode; route: AdminRouteResolution }) {
-  return <section className={styles.workflowSurface} aria-labelledby="admin-workflow-heading">
-    <p className={styles.kicker}>Operations</p>
-    <div className={styles.moduleIntro}>
-      <div>
-        <h2 id="admin-workflow-heading">{node.label}</h2>
-        <p>{adminDescription(node)}</p>
+  const parentId = route.parent.id as AdminParentId;
+  return <section className={styles.workArea} aria-label={node.label}>
+    <div className={styles.toolbar}>
+      <div className={styles.utilityLine}>
+        <RecordContext node={node} route={route} />
+        <ProgramTemplateLink node={node} route={route} />
       </div>
-      <RecordContext node={node} route={route} />
+      <ActionArea node={node} />
     </div>
-    <IntegrityNotice kind={node.integrity} />
-    <ProgramTemplateOverlap node={node} route={route} />
-    <ServiceGate node={node} />
+    <EmptyTable parentId={parentId} node={node} />
+    <PolicyDetails node={node} />
   </section>;
 }
 
 function MonitoringLeaf() {
-  return <section className={styles.leafSurface} aria-labelledby="monitoring-heading">
-    <p className={styles.kicker}>Operations</p>
-    <h2 id="monitoring-heading">Monitoring & Incidents</h2>
-    <p>Review service health, failures, incidents, and recovery information that may affect customers, programs, creators, payments, messages, or delivery.</p>
-    <div className={styles.leafNotice}>
-      <strong>No monitoring information is available yet.</strong>
-      <span>Operational alerts and incidents will appear here when monitoring is connected.</span>
+  return <section className={styles.workArea} aria-label="Monitoring & Incidents">
+    <div className={styles.tableWrap}>
+      <table>
+        <thead><tr><th scope="col">Service</th><th scope="col">Status</th><th scope="col">Updated</th></tr></thead>
+        <tbody><tr><td className={styles.emptyCell} colSpan={3}>No monitoring information to show yet.</td></tr></tbody>
+      </table>
+    </div>
+  </section>;
+}
+
+function ParentOverview({ route, items }: { route: AdminRouteResolution; items: readonly AdminWorkflowNode[] }) {
+  const parentId = route.parent.id as AdminParentId;
+  return <section className={styles.workArea} aria-label={`${route.parent.label} options`}>
+    <div className={styles.workflowList}>
+      {items.map((child) => <Link href={buildAdminHref({ parentId, childId: child.id })} key={child.id}>
+        <span>{child.label}</span><span aria-hidden="true">→</span>
+      </Link>)}
     </div>
   </section>;
 }
@@ -152,21 +148,6 @@ export function AdminWorkspace({ route }: AdminWorkspaceProps) {
       ? <MonitoringLeaf />
       : route.child
         ? <WorkflowSurface node={route.child} route={route} />
-        : <>
-          <div className={styles.moduleIntro}>
-            <div>
-              <p className={styles.kicker}>Operations</p>
-              <h2>{route.parent.label}</h2>
-              <p>{route.parent.description}</p>
-            </div>
-          </div>
-          <section className={styles.workflowGrid} aria-label={`${route.parent.label} options`}>
-            {children.map((child) => <article key={child.id}>
-              <h3>{child.label}</h3>
-              <p>{adminDescription(child)}</p>
-              <Link href={buildAdminHref({ parentId, childId: child.id })}>Open {child.label.toLowerCase()}</Link>
-            </article>)}
-          </section>
-        </>}
+        : <ParentOverview route={route} items={children} />}
   </div>;
 }
