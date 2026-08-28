@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { SongKeepLockup } from "@/components/brand";
 import {
   bookingActionIsAvailable,
   bookingSteps,
@@ -104,7 +105,7 @@ export function BookingRoute() {
 
   return <main className={styles.shell}>
     <aside className={styles.imagePanel} aria-label="SongKeep">
-      <Link className={styles.brand} href="/">SongKeep</Link>
+      <Link className={styles.brand} href="/" aria-label="SongKeep home"><SongKeepLockup variant="full" inverse /></Link>
       <div className={styles.imageCopy}>
         <span className={styles.wave} aria-hidden="true"><i /><i /><i /><i /><i /></span>
         <p>Stories become songs worth keeping.</p>
@@ -114,7 +115,7 @@ export function BookingRoute() {
 
     <section className={styles.flow}>
       <header className={styles.flowHeader}>
-        <Link className={styles.mobileBrand} href="/">SongKeep</Link>
+        <Link className={styles.mobileBrand} href="/" aria-label="SongKeep home"><SongKeepLockup variant="app" /></Link>
         <nav className={styles.progress} aria-label="Booking progress">
           {bookingSteps.map((step, index) => <button
             key={step}
