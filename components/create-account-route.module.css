@@ -1,0 +1,176 @@
+.shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(420px, 1.1fr);
+  background: #f7f3ec;
+  color: #241d18;
+}
+
+.story {
+  min-height: 100vh;
+  padding: clamp(2rem, 5vw, 5rem);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background:
+    linear-gradient(180deg, rgba(18, 14, 12, 0.16), rgba(18, 14, 12, 0.62)),
+    url("https://images.pexels.com/photos/3768131/pexels-photo-3768131.jpeg?auto=compress&cs=tinysrgb&w=1600") center / cover;
+  color: white;
+}
+
+.brand {
+  width: fit-content;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.story > div {
+  max-width: 38rem;
+}
+
+.story h1 {
+  margin: 0.5rem 0 1rem;
+  font-size: clamp(2.7rem, 5.5vw, 5.4rem);
+  line-height: 0.96;
+  letter-spacing: -0.045em;
+}
+
+.story p {
+  max-width: 34rem;
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.kicker {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.73rem;
+  font-weight: 800;
+}
+
+.formSide {
+  display: grid;
+  place-items: center;
+  padding: clamp(2rem, 6vw, 6rem);
+}
+
+.formInner {
+  width: min(100%, 36rem);
+}
+
+.formInner h2 {
+  margin: 0.65rem 0 1.8rem;
+  font-size: clamp(2rem, 3.5vw, 3.15rem);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+}
+
+.accountChoice {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.75rem;
+  border-bottom: 1px solid rgba(36, 29, 24, 0.16);
+}
+
+.accountChoice button {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  padding: 0.8rem 0.25rem;
+  margin-right: 1rem;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.accountChoice button[aria-pressed="true"] {
+  border-bottom-color: currentColor;
+}
+
+.form {
+  display: grid;
+  gap: 1rem;
+}
+
+.form label {
+  display: grid;
+  gap: 0.42rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.form input,
+.form select {
+  width: 100%;
+  min-height: 3.15rem;
+  border: 1px solid rgba(36, 29, 24, 0.2);
+  border-radius: 0.7rem;
+  background: rgba(255, 255, 255, 0.76);
+  padding: 0 0.9rem;
+  color: inherit;
+  font: inherit;
+}
+
+.form input:focus,
+.form select:focus {
+  outline: 3px solid rgba(107, 73, 43, 0.18);
+  outline-offset: 2px;
+  border-color: rgba(36, 29, 24, 0.7);
+}
+
+.form > button {
+  min-height: 3.3rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.8rem 1.25rem;
+  background: #241d18;
+  color: white;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.form > button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.legal,
+.signIn {
+  color: #6f6258;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.signIn {
+  margin-top: 1.25rem;
+}
+
+.signIn a {
+  color: inherit;
+  font-weight: 800;
+}
+
+.error {
+  margin: 0;
+  color: #8b2e2e;
+  font-size: 0.88rem;
+}
+
+@media (max-width: 850px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .story {
+    min-height: 34rem;
+  }
+
+  .formSide {
+    padding: 2.2rem 1.25rem 4rem;
+  }
+}
