@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { createOrganizationAccount } from "@/lib/firebase/organization-account";
@@ -24,8 +24,12 @@ const organizationKinds: Array<{ value: OrganizationKind; label: string }> = [
 
 export function CreateAccountRoute() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { createAccount, status, configurationError } = useAuth();
-  const [accountKind, setAccountKind] = useState<AccountKind>("organization");
+  const requestedNext = searchParams.get("next");
+  const safeNext = requestedNext?.startsWith("/") && !requestedNext.startsWith("//") ? requestedNext : null;
+  const joiningOrganization = Boolean(safeNext?.startsWith("/accept-invitation"));
+  const [accountKind, setAccountKind] = useState<AccountKind>(joiningOrganization ? "individual" : "organization");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -43,7 +47,7 @@ export function CreateAccountRoute() {
       setError("The passwords do not match.");
       return;
     }
-    if (accountKind === "organization" && !organizationName) {
+    if (!joiningOrganization && accountKind === "organization" && !organizationName) {
       setError("Enter the organization name.");
       return;
     }
@@ -52,6 +56,10 @@ export function CreateAccountRoute() {
     setError(null);
     try {
       const user = await createAccount({ displayName, email, password });
+      if (safeNext) {
+        router.push(safeNext);
+        return;
+      }
       if (accountKind === "organization") {
         const organizationId = await createOrganizationAccount({
           userId: user.uid,
@@ -75,26 +83,26 @@ export function CreateAccountRoute() {
     <section className={styles.story}>
       <Link href="/" className={styles.brand}>Honor a Life Song</Link>
       <div>
-        <p className={styles.kicker}>One account, every experience</p>
-        <h1>Keep the relationship going long after the event.</h1>
-        <p>Organizations can manage agreements, team access, upcoming experiences, completed events, songs, lyrics, videos, and future dates from one place.</p>
+        <p className={styles.kicker}>{joiningOrganization ? "Join your organization" : "One account, every experience"}</p>
+        <h1>{joiningOrganization ? "Your own sign-in. One shared history." : "Keep the relationship going long after the event."}</h1>
+        <p>{joiningOrganization ? "Create your personal sign-in, then return to the invitation to join the organization's existing experiences and account." : "Organizations can manage agreements, team access, upcoming experiences, completed events, songs, lyrics, videos, and future dates from one place."}</p>
       </div>
     </section>
 
     <section className={styles.formSide} aria-labelledby="create-account-title">
       <div className={styles.formInner}>
         <p className={styles.kicker}>Create your account</p>
-        <h2 id="create-account-title">How will you use Honor a Life Song?</h2>
-        <div className={styles.accountChoice} role="group" aria-label="Account type">
+        <h2 id="create-account-title">{joiningOrganization ? "Create your secure sign-in." : "How will you use Honor a Life Song?"}</h2>
+        {!joiningOrganization ? <div className={styles.accountChoice} role="group" aria-label="Account type">
           <button type="button" aria-pressed={accountKind === "organization"} onClick={() => setAccountKind("organization")}>Organization</button>
           <button type="button" aria-pressed={accountKind === "individual"} onClick={() => setAccountKind("individual")}>Individual or family</button>
-        </div>
+        </div> : null}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <label><span>Your name</span><input required name="displayName" autoComplete="name" /></label>
           <label><span>Email address</span><input required type="email" name="email" autoComplete="email" /></label>
 
-          {accountKind === "organization" ? <>
+          {!joiningOrganization && accountKind === "organization" ? <>
             <label><span>Organization name</span><input required name="organizationName" autoComplete="organization" /></label>
             <label><span>Organization type</span><select name="organizationKind" defaultValue="facility">{organizationKinds.map((kind) => <option key={kind.value} value={kind.value}>{kind.label}</option>)}</select></label>
           </> : null}
@@ -103,11 +111,11 @@ export function CreateAccountRoute() {
           <label><span>Confirm password</span><input required minLength={8} type="password" name="confirmPassword" autoComplete="new-password" /></label>
 
           <p className={styles.legal}>By creating an account, you are creating secure access to the platform. Service agreements, event scopes, participant permissions, and electronic signatures are completed separately when they apply.</p>
-          <button type="submit" disabled={busy || status === "unavailable"}>{busy ? "Creating account…" : accountKind === "organization" ? "Create organization account" : "Create account"}</button>
+          <button type="submit" disabled={busy || status === "unavailable"}>{busy ? "Creating account…" : joiningOrganization ? "Create account and continue" : accountKind === "organization" ? "Create organization account" : "Create account"}</button>
           {error ? <p className={styles.error} role="alert">{error}</p> : null}
           {configurationError ? <p className={styles.error} role="status">{configurationError}</p> : null}
         </form>
-        <p className={styles.signIn}>Already have an account? <Link href="/login">Sign in</Link></p>
+        <p className={styles.signIn}>Already have an account? <Link href={safeNext ? `/login?next=${encodeURIComponent(safeNext)}` : "/login"}>Sign in</Link></p>
       </div>
     </section>
   </main>;
