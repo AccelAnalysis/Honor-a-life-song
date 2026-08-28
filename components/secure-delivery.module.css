@@ -161,7 +161,7 @@
   .actionsFeature { gap: 32px; }
 }
 
-@media (max-width: 720px) {
+@media(max-width:720px) {
   .deliveryShell { padding: 18px 0 40px; background: linear-gradient(180deg, #141648 0, #141648 14%, #f7f8fc 14%); }
   .brandRow { padding: 0 18px; }
   .keepsake { box-shadow: none; border-radius: 0; }
