@@ -17,6 +17,7 @@ import styles from "./booking-route.module.css";
 
 const stepLabels: Record<BookingStep, string> = {
   welcome: "Experience",
+  account: "Sign up",
   schedule: "Date",
   agreement: "Review",
   payment: "Payment",
@@ -35,6 +36,8 @@ const legalDocuments = [
 export function BookingRoute() {
   const [activeStep, setActiveStep] = useState<BookingStep>("welcome");
   const [offeringId, setOfferingId] = useState<ServiceOfferingId | undefined>();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
   const [reviewedTerms, setReviewedTerms] = useState(false);
@@ -96,7 +99,7 @@ export function BookingRoute() {
             <section aria-labelledby="booking-title">
               <p className={styles.eyebrow}>Let&apos;s get your experience ready</p>
               <h1 id="booking-title">Choose what you discussed with us.</h1>
-              <p className={styles.lede}>Your selection carries forward into scheduling, agreements, payment, and participant forms.</p>
+              <p className={styles.lede}>Your selection carries forward into signup, scheduling, agreements, payment, and participant forms.</p>
 
               <div className={styles.offerings} role="radiogroup" aria-label="Honor a Life Song services">
                 {serviceOfferings.map((item) => (
@@ -118,7 +121,21 @@ export function BookingRoute() {
                 ))}
               </div>
 
-              <button className={styles.primaryButton} type="button" disabled={!offering} onClick={nextStep}>Choose a date</button>
+              <button className={styles.primaryButton} type="button" disabled={!offering} onClick={nextStep}>Continue</button>
+            </section>
+          ) : null}
+
+          {activeStep === "account" ? (
+            <section aria-labelledby="account-title">
+              <p className={styles.eyebrow}>Keep everything together</p>
+              <h1 id="account-title">A simple account for your experience.</h1>
+              <p className={styles.lede}>We&apos;ll use your account to keep your date, receipts, forms, song progress, and final keepsake in one private place.</p>
+              <div className={styles.inlineFields}>
+                <label><span>Your name</span><input autoComplete="name" value={fullName} onChange={(event) => setFullName(event.target.value)} /></label>
+                <label><span>Email address</span><input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} /></label>
+              </div>
+              <p className={styles.serviceNote}>Live account creation is not connected on this page yet, so these details are not submitted or saved.</p>
+              <button className={styles.primaryButton} type="button" disabled={!fullName || !email || !bookingActionIsAvailable("identity")}>Create my account</button>
             </section>
           ) : null}
 
