@@ -80,14 +80,17 @@ describe("governing customer model", () => {
   });
 
   it("keeps the primary public acquisition path organization-facing", () => {
-    expect(publicHome).toContain("Bring an unforgettable story-to-song experience to the people you serve");
+    expect(publicHome).toContain("SongKeep creates meaningful music experiences for the people your organization serves.");
     expect(publicHome).toContain("Choose an experience");
+    expect(publicHome).toContain("$200 Group Event");
+    expect(publicHome).toContain("$2,500 Honor a Life Song");
     expect(publicHome).not.toContain("Purchase an individual song");
   });
 
   it("gives participants and families a lightweight private memories path", () => {
-    expect(memoriesHub).toContain("simple, private home");
-    expect(memoriesHub).toContain("permissioned");
+    expect(memoriesHub).toContain("SongKeep");
+    expect(memoriesHub).toContain("entitlementIds.length");
+    expect(memoriesHub).toContain("Private materials only.");
     expect(memoriesHub).not.toContain("Payments & Orders");
     expect(memoriesHub).not.toContain("Customer workspace");
   });
