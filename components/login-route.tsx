@@ -25,7 +25,7 @@ function copyForNode(nodeId?: string): ScreenCopy {
   if (["login-resolve-access", "login-person", "login-memberships", "login-roles", "login-organization", "login-enter-workspace", "login-permitted-workspaces"].includes(nodeId ?? "")) {
     return { eyebrow: "SongKeep", title: "Opening your account.", body: "Finding what belongs to you.", mode: "resolving" };
   }
-  return { eyebrow: "Welcome", title: "Welcome back.", body: "Your stories, songs, and experiences are waiting.", mode: "credentials" };
+  return { eyebrow: "Welcome", title: "Sign in to continue.", body: "Your stories, songs, and experiences are waiting.", mode: "credentials" };
 }
 
 export function LoginRoute() {
