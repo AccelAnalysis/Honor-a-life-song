@@ -16,39 +16,39 @@ export type PublicWorkflowItem = PublicHierarchyItem & {
 export const homeSections = [
   {
     id: "hero-value-proposition",
-    label: "Hero / Value Proposition",
+    label: "Every Life Has a Song",
     href: "/#hero-value-proposition",
-    description: "The core promise: meaningful life stories become human-created songs, shared experiences and lasting keepsakes."
+    description: "Discover how meaningful life stories become human-created songs and lasting keepsakes."
   },
   {
     id: "home-how-it-works",
     label: "How It Works",
     href: "/#home-how-it-works",
-    description: "A public overview of the shared meaning-to-song journey."
+    description: "See how a story moves from first memory to finished song."
   },
   {
     id: "featured-stories-songs",
-    label: "Featured Stories / Songs",
+    label: "Songs & Stories",
     href: "/#featured-stories-songs",
-    description: "Approved songs, stories and media can be surfaced here without fabricating sample participant content."
+    description: "Hear the spirit of the experience through stories and songs shared with permission."
   },
   {
     id: "program-highlights",
-    label: "Program Highlights",
+    label: "Programs",
     href: "/#program-highlights",
-    description: "Highlights of Project Ageless and other program configurations that use the shared platform."
+    description: "Explore individual, family, facility, and community ways to create through music."
   },
   {
     id: "testimonials",
-    label: "Testimonials",
+    label: "What People Share",
     href: "/#testimonials",
-    description: "Approved participant, family or facility testimonials can be presented here when permissioned content is connected."
+    description: "Read experiences shared by participants, families, and partners when permission is given."
   },
   {
     id: "request-a-song",
-    label: "Request a Song CTA",
+    label: "Begin a Song",
     href: "/#request-a-song",
-    description: "A clear acquisition handoff into the canonical request journey rather than a separate marketing-form backend."
+    description: "Start with a person, a memory, or a moment you want to preserve."
   }
 ] as const satisfies readonly PublicHierarchyItem[];
 
@@ -58,41 +58,41 @@ export const howItWorksSteps = [
     label: "Share Your Story",
     slug: "share-your-story",
     href: "/how-it-works/share-your-story",
-    description: "Begin with the person, occasion and meaningful memories that should shape the song.",
-    summary: "The journey starts by identifying the song subject, the reason for the song and the stories, memories and source material that matter most.",
+    description: "Begin with the person, occasion, and memories that should shape the song.",
+    summary: "The journey starts with the person at the heart of the song and the memories, relationships, places, and moments that matter most.",
     details: [
-      "Identify the song subject and occasion or purpose.",
-      "Use guided story prompts to surface people, places, events, values, personality and musical preferences.",
-      "Prepare approved photographs, notes, audio or documents that can support the story.",
-      "Invite family contributions when the authorized service configuration allows them."
+      "Tell us who the song is for and what you are honoring.",
+      "Use guided questions to remember people, places, events, values, personality, and music preferences.",
+      "Share photographs, notes, audio, or documents that help tell the story.",
+      "Invite family members to contribute memories when appropriate."
     ]
   },
   {
     id: "interview-story-capture",
-    label: "Interview / Story Capture",
+    label: "Interview & Story Capture",
     slug: "interview-story-capture",
     href: "/how-it-works/interview-story-capture",
-    description: "Guided interviews and story contributions capture the material that will be shaped into the creative work.",
-    summary: "Honor a Life Song uses human-led interviews and guided story capture to understand the life, relationships, events and meaning behind the song.",
+    description: "A human-led conversation helps uncover the details, emotions, and memories behind the song.",
+    summary: "We listen closely through guided conversation so the song can reflect the life, relationships, and meaning behind the story.",
     details: [
-      "Schedule and prepare for an interview or assisted story-capture session.",
-      "Capture chronology, names, pronunciations, important people, places and events.",
-      "Gather source material and family-contributed memories when authorized.",
-      "Allow story capture to happen across more than one touch when the service or program calls for it."
+      "Schedule a conversation at a time that works for you.",
+      "Share names, places, milestones, sayings, and memories in your own words.",
+      "Bring in family memories or source material when helpful.",
+      "Use more than one conversation when the story needs more time."
     ]
   },
   {
     id: "songwriting-process",
-    label: "Songwriting Process",
+    label: "Songwriting",
     slug: "songwriting-process",
     href: "/how-it-works/songwriting-process",
-    description: "Human interpretation turns captured meaning into themes, lyrics and musical direction.",
-    summary: "The defining service is human-created: captured stories are interpreted, shaped and developed into a song rather than passed through an autonomous song generator.",
+    description: "A human songwriter shapes the story into lyrics and musical direction.",
+    summary: "The heart of Honor a Life Song is human interpretation: a songwriter listens for meaning, selects the details that matter, and begins shaping them into music.",
     details: [
-      "Organize story themes, chronology and meaningful details.",
-      "Shape the narrative around the people, moments and values that should be honored.",
-      "Develop lyrics and musical direction through the creative team.",
-      "Preserve version history as the work moves toward review."
+      "Find the themes and moments that carry the story.",
+      "Shape a clear emotional narrative.",
+      "Develop lyrics and musical direction with care.",
+      "Refine the work as the song takes shape."
     ]
   },
   {
@@ -100,13 +100,13 @@ export const howItWorksSteps = [
     label: "Review & Revisions",
     slug: "review-revisions",
     href: "/how-it-works/review-revisions",
-    description: "Authorized reviewers can respond to drafts, request revisions and approve the work for production.",
-    summary: "Review is a governed part of the service: the current draft can be considered, feedback can be submitted and an authorized approval moves the song forward.",
+    description: "Review the work, share feedback, and approve the song before final production.",
+    summary: "You have a chance to respond to the song as it develops so important details feel right before the work moves forward.",
     details: [
-      "Present the current lyric or creative draft for the appropriate review.",
-      "Collect specific feedback and revision requests.",
-      "Retain previous versions so changes remain traceable.",
-      "Record approval before the work advances into production."
+      "Review the current lyric or creative draft.",
+      "Share specific feedback about details that should change.",
+      "Request revisions within the service you selected.",
+      "Approve the lyrics when they feel ready."
     ]
   },
   {
@@ -114,27 +114,27 @@ export const howItWorksSteps = [
     label: "Production",
     slug: "production",
     href: "/how-it-works/production",
-    description: "Approved creative work moves through composition, recording, editing and quality review.",
-    summary: "Once the creative direction is approved, the song advances through the human production process and a final quality gate.",
+    description: "The approved song is composed, recorded, edited, mixed, and prepared for final listening.",
+    summary: "Once the creative direction is approved, the song becomes a finished recording through composition, performance, recording, and careful final review.",
     details: [
-      "Complete composition and arrangement as required by the creative work.",
-      "Record the performance and supporting musical elements.",
-      "Edit, mix and finalize the recording.",
-      "Complete quality review before final approval and delivery."
+      "Complete the composition and arrangement.",
+      "Record the performance and musical elements.",
+      "Edit, mix, and finalize the recording.",
+      "Complete a final quality review before delivery."
     ]
   },
   {
     id: "delivery-keepsakes",
-    label: "Delivery / Keepsakes",
+    label: "Delivery & Keepsakes",
     slug: "delivery-keepsakes",
     href: "/how-it-works/delivery-keepsakes",
-    description: "Approved final songs and keepsakes are delivered through controlled, permission-aware access.",
-    summary: "The completed work is delivered as an experience and lasting keepsake, with access and sharing governed by the permissions attached to the people and media involved.",
+    description: "Receive the finished song and the keepsakes included with your experience.",
+    summary: "The finished work is delivered as something you can return to, share privately with the people you choose, and keep as part of the story.",
     details: [
-      "Deliver the approved final song securely.",
-      "Provide permitted lyric sheets, song cards, private links or other configured keepsakes.",
-      "Support presentation or event delivery when the service is part of a program.",
-      "Record delivery and preserve the consent and access controls that apply to the final assets."
+      "Listen to the approved final song.",
+      "Receive included lyric sheets, song cards, private links, or other keepsakes.",
+      "Enjoy the song as part of a presentation or event when included in a program.",
+      "Choose how permitted family members receive or share the finished keepsake."
     ]
   }
 ] as const satisfies readonly PublicWorkflowItem[];
@@ -145,13 +145,13 @@ export const projectAgelessSections = [
     label: "Program Overview",
     slug: "program-overview",
     href: "/services/project-ageless/program-overview",
-    description: "Project Ageless is the flagship facility and community-program configuration of Honor a Life Song.",
-    summary: "Project Ageless is a short-form participatory residency that uses the shared Honor a Life Song platform to coordinate stories, songs, family connection, presentation and keepsakes.",
+    description: "A participatory music and storytelling experience designed for facilities and communities.",
+    summary: "Project Ageless brings residents, families, and staff together around stories, songs, shared experiences, and meaningful keepsakes.",
     details: [
-      "A program run is tied to a specific facility, dates, scope, funding and status.",
+      "Programs are planned around the facility, participants, dates, and goals.",
       "An engagement may last approximately two weeks to one month.",
-      "Participants can join different combinations of program touchpoints rather than being forced through one rigid sequence.",
-      "The program uses the same people, story, creative-work, consent, communication, media and delivery boundaries as the rest of Honor a Life Song."
+      "Participants can join the activities that fit their interests and circumstances.",
+      "The experience can include individual stories, group sessions, songs, family participation, and a final presentation."
     ]
   },
   {
@@ -159,13 +159,13 @@ export const projectAgelessSections = [
     label: "Facility Benefits",
     slug: "facility-benefits",
     href: "/services/project-ageless/facility-benefits",
-    description: "Facilities gain a participatory program centered on resident stories, family connection, presentation and measurable completion.",
-    summary: "Project Ageless is designed so residents participate rather than only watch, while facilities gain a structured community experience with approved outputs and outcome reporting.",
+    description: "Create meaningful resident engagement through story, music, family connection, and celebration.",
+    summary: "Project Ageless gives facilities a structured creative experience in which residents participate rather than only watch.",
     details: [
-      "Create meaningful resident engagement around life stories and music.",
-      "Preserve stories as songs and keepsakes that can be shared with authorized families.",
-      "Build community goodwill through a structured program and presentation experience.",
-      "Use approved media and outcome information only within the permissions granted for the program."
+      "Create meaningful engagement around life stories and music.",
+      "Preserve stories as songs and keepsakes for participants and families.",
+      "Bring residents, families, and staff together around a shared creative experience.",
+      "Celebrate the program through an event or presentation when appropriate."
     ]
   },
   {
@@ -173,8 +173,8 @@ export const projectAgelessSections = [
     label: "Participant Experience",
     slug: "participant-experience",
     href: "/services/project-ageless/participant-experience",
-    description: "Participants can take part in the touchpoints that fit their interests, availability and circumstances.",
-    summary: "Participation is flexible by design: a resident or community member can join any appropriate combination of story sharing, interviews, songwriting, listening, presentation and keepsake delivery.",
+    description: "Participants can join the parts of the program that feel comfortable, meaningful, and accessible to them.",
+    summary: "There is no requirement that every participant do every activity. Each person can take part in the parts of the experience that fit them best.",
     details: [
       "Group story-sharing.",
       "One-on-one interviews.",
@@ -191,27 +191,27 @@ export const projectAgelessSections = [
     label: "Family Experience",
     slug: "family-experience",
     href: "/services/project-ageless/family-experience",
-    description: "Authorized family collaborators can contribute memories, help verify details and participate in the experience.",
-    summary: "Families can help strengthen the story and receive meaningful memories and keepsakes without receiving broader access than the participant or representative has authorized.",
+    description: "Families can contribute memories, help verify details, and take part in the celebration.",
+    summary: "Family members can help strengthen the story and share in the experience while respecting the participant's wishes and privacy.",
     details: [
-      "Contribute stories, photographs, names, dates and pronunciations when invited.",
-      "Schedule or join an interview when that participation is part of the program.",
-      "Help review sensitive facts or provide authorization where appropriate.",
-      "Receive permitted recordings and event invitations through the configured family experience."
+      "Contribute stories, photographs, names, dates, and pronunciations when invited.",
+      "Join an interview or family conversation when appropriate.",
+      "Help verify important or sensitive details.",
+      "Receive invitations, songs, and keepsakes when the participant has chosen to share them."
     ]
   },
   {
     id: "concert-presentation",
-    label: "Concert / Presentation",
+    label: "Concert & Presentation",
     slug: "concert-presentation",
     href: "/services/project-ageless/concert-presentation",
-    description: "Programs can culminate in a concert, listening event or presentation built around the completed creative work.",
-    summary: "A Project Ageless run can culminate in a shared presentation that honors participants and connects residents, families and the facility around the stories and songs created during the residency.",
+    description: "Programs can culminate in a concert, listening event, or presentation centered on the stories and songs created together.",
+    summary: "A final presentation can bring participants, residents, families, and staff together to celebrate the people and stories at the heart of the program.",
     details: [
-      "Coordinate the event date, venue and run of show.",
-      "Prepare the participant list and family invitations.",
-      "Address accessibility needs as part of event readiness.",
-      "Apply photography, video, performance and public-use permissions before media or stories are used beyond the private event."
+      "Plan the event date, location, and flow.",
+      "Invite participants and families.",
+      "Plan for accessibility and comfort.",
+      "Honor each participant's choices about photography, video, performance, and sharing."
     ]
   },
   {
@@ -219,13 +219,13 @@ export const projectAgelessSections = [
     label: "Sponsorship",
     slug: "sponsorship",
     href: "/services/project-ageless/sponsorship",
-    description: "Facilities and community partners can coordinate permitted sponsorship without exposing participant records to funders.",
-    summary: "A Project Ageless program can be supported by facilities, local partners, nonprofits, sponsors or grant-funded organizations while keeping participant access and funding restrictions separate.",
+    description: "Community partners can help make Project Ageless possible through program sponsorship and support.",
+    summary: "Facilities, nonprofits, local businesses, community partners, and grant-funded organizations can help support an engagement while participant privacy remains protected.",
     details: [
-      "Support can cover a program, song, concert, legacy songwriting, refreshments, holiday events or other approved program components.",
-      "Each program run should preserve the paying party, service recipient, funding source, amount, allocation and restrictions.",
-      "Sponsor recognition must follow the permissions attached to the program and participants.",
-      "Funding a program does not give a sponsor access to participant details."
+      "Support an entire program or a specific part of the experience.",
+      "Coordinate recognition that fits the program and the sponsor's contribution.",
+      "Respect participant privacy and sharing choices at every stage.",
+      "Create a clear understanding of what the sponsorship supports."
     ]
   },
   {
@@ -233,15 +233,14 @@ export const projectAgelessSections = [
     label: "Request a Facility Program",
     slug: "request-facility-program",
     href: "/services/project-ageless/request-facility-program",
-    description: "The public acquisition path for a facility that wants to discuss and scope a Project Ageless program.",
-    summary: "The request path is the public handoff into the canonical Program Lead workflow: consultation, scope and funding, contracting, facility onboarding and participant enrollment.",
+    description: "Start a conversation about bringing Project Ageless to your facility or community.",
+    summary: "Tell us about your facility, community, participants, timing, and goals so we can discuss a Project Ageless experience that fits.",
     details: [
-      "Begin with the facility and program need rather than creating a separate Project Ageless application.",
-      "Move the lead through consultation and scope-and-funding decisions.",
-      "Create the program run only after the engagement is contracted and ready for facility onboarding.",
-      "Keep participant enrollment, consent and touchpoint activity inside the facility workspace after onboarding."
-    ],
-    integrationNote: "The operating chassis reserves this public handoff for a canonical Program Lead / Inquiry service. Authoritative request persistence is not connected in this hierarchy slice, so the public experience does not fabricate a separate form backend or pretend a request has been submitted."
+      "Share the facility or community you represent.",
+      "Tell us what you hope participants and families will experience.",
+      "Discuss timing, scope, sponsorship, and funding possibilities.",
+      "Plan the next steps together after the consultation."
+    ]
   }
 ] as const satisfies readonly PublicWorkflowItem[];
 
@@ -250,20 +249,20 @@ const serviceChildren: readonly PublicHierarchyItem[] = [
     id: "individual-family-songs",
     label: "Individual & Family Songs",
     href: "/services#individual-family-songs",
-    description: "The direct-to-family or individual configuration of the shared meaning-to-song journey."
+    description: "Create a personal song from the memories and meaning of one life or family story."
   },
   {
     id: "project-ageless",
     label: "Project Ageless",
     href: "/services/project-ageless",
-    description: "The flagship facility and community-program configuration.",
+    description: "A facility and community program built around participation, storytelling, music, and connection.",
     children: projectAgelessSections
   },
   {
     id: "community-programs",
     label: "Community Programs",
     href: "/services#community-programs",
-    description: "Future program templates built on the same platform rather than separate applications."
+    description: "Custom song experiences for cohorts, veterans, hospice, schools, nonprofits, and mission-driven communities."
   }
 ];
 
@@ -272,21 +271,21 @@ export const publicNavigation: readonly PublicHierarchyItem[] = [
     id: "home",
     label: "Home",
     href: "/",
-    description: "Honor a Life Song public home.",
+    description: "Discover Honor a Life Song.",
     children: homeSections
   },
   {
     id: "how-it-works",
     label: "How It Works",
     href: "/how-it-works",
-    description: "The six-step public meaning-to-song journey.",
+    description: "Follow the story-to-song journey from first memory to finished keepsake.",
     children: howItWorksSteps
   },
   {
     id: "services",
     label: "Services",
     href: "/services",
-    description: "Individual, Project Ageless and future community-program configurations.",
+    description: "Explore songs and programs for individuals, families, facilities, and communities.",
     children: serviceChildren
   }
 ] as const;
