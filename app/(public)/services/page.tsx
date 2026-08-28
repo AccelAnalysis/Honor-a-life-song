@@ -18,7 +18,7 @@ export default function ServicesPage() {
             <p className="eyebrow">$2,500</p>
             <h2>Honor a Life Song Experience</h2>
             <p>Resident stories, multiple songs, and a follow-up concert.</p>
-            <Link href="/begin?offering=honor-a-life-song-experience">Choose this experience →</Link>
+            <div><Link href="/services/project-ageless">Explore →</Link> <Link href="/begin?offering=honor-a-life-song-experience">Choose →</Link></div>
           </article>
         </div>
       </main>
