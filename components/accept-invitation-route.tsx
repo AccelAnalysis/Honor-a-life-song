@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
-import type { OrganizationAccount, OrganizationInvitation } from "@/domain/organization-account";
-import { getOrganization, getOrganizationInvitation } from "@/lib/firebase/organization-account";
+import type { OrganizationInvitation } from "@/domain/organization-account";
+import { getOrganizationInvitation } from "@/lib/firebase/organization-account";
 import { acceptOrganizationInvitationSecure } from "@/lib/firebase/organization-invitations";
 
 export function AcceptInvitationRoute() {
@@ -14,7 +14,6 @@ export function AcceptInvitationRoute() {
   const { user, status } = useAuth();
   const organizationId = searchParams.get("org");
   const invitationId = searchParams.get("id");
-  const [organization, setOrganization] = useState<OrganizationAccount | null>(null);
   const [invitation, setInvitation] = useState<OrganizationInvitation | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -23,12 +22,8 @@ export function AcceptInvitationRoute() {
     if (!organizationId || !invitationId || status !== "signed_in" || !user) return;
     let cancelled = false;
     setLoading(true);
-    Promise.all([getOrganization(organizationId), getOrganizationInvitation(organizationId, invitationId)])
-      .then(([nextOrganization, nextInvitation]) => {
-        if (cancelled) return;
-        setOrganization(nextOrganization);
-        setInvitation(nextInvitation);
-      })
+    getOrganizationInvitation(organizationId, invitationId)
+      .then((nextInvitation) => { if (!cancelled) setInvitation(nextInvitation); })
       .catch((loadError) => {
         if (!cancelled) setError(loadError instanceof Error ? loadError.message : "We could not open this invitation.");
       })
@@ -70,7 +65,7 @@ export function AcceptInvitationRoute() {
 
   return <main className="centeredPage"><section className="authCard">
     <p className="eyebrow">Organization invitation</p>
-    <h1>{organization ? `Join ${organization.name}` : "Join this organization"}</h1>
+    <h1>Join your organization</h1>
     {invitation ? <p>You were invited as <strong>{invitation.role.replaceAll("_", " ")}</strong>. Your own sign-in will be added to the organization without changing its event history.</p> : null}
     {error ? <p role="alert">{error}</p> : null}
     {invitation?.status === "pending" ? <button type="button" onClick={accept} disabled={loading}>{loading ? "Joining…" : "Accept invitation"}</button> : null}
