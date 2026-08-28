@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
+import { SongKeepLockup } from "@/components/brand";
 import type { ExperienceAccessInvitation } from "@/domain/organization-account";
 import {
   acceptExperienceAccessInvitationSecure,
@@ -63,7 +64,7 @@ export function ExperienceAccessClaim() {
 
   return <main className={styles.shell}>
     <section className={styles.story}>
-      <Link className={styles.brand} href="/">SongKeep</Link>
+      <Link className={styles.brand} href="/" aria-label="SongKeep home"><SongKeepLockup variant="full" inverse /></Link>
       <div className={styles.storyCopy}>
         <span className={styles.wave} aria-hidden="true"><i /><i /><i /><i /><i /><i /></span>
         <p>Your songs. Your memories.</p>
@@ -72,6 +73,7 @@ export function ExperienceAccessClaim() {
 
     <section className={styles.claim} aria-labelledby="claim-title">
       <div className={styles.claimInner}>
+        <div className={styles.claimBrand}><SongKeepLockup variant="app" /></div>
         <p className={styles.eyebrow}>Private access</p>
         {!completeLink ? <><h1 id="claim-title">Link incomplete.</h1><p>Use the full link you received.</p><Link className={styles.secondary} href="/">Home</Link></> : null}
         {completeLink && status === "loading" ? <h1 id="claim-title">Opening…</h1> : null}
