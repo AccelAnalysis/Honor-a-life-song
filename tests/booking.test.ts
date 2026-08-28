@@ -37,8 +37,9 @@ describe("post-engagement catalog", () => {
 });
 
 describe("booking truthfulness", () => {
-  it("fails closed for services that are not connected", () => {
-    expect(bookingActionIsAvailable("identity")).toBe(false);
+  it("uses connected Firebase identity while failing closed for unconnected services", () => {
+    expect(bookingActionIsAvailable("identity")).toBe(true);
+    expect(bookingActionIsAvailable("invitationResolution")).toBe(true);
     expect(bookingActionIsAvailable("scheduling")).toBe(false);
     expect(bookingActionIsAvailable("agreementPersistence")).toBe(false);
     expect(bookingActionIsAvailable("payments")).toBe(false);
@@ -46,7 +47,8 @@ describe("booking truthfulness", () => {
   });
 
   it("does not simulate live transactional success", () => {
-    expect(bookingSource).toContain("details are not submitted or saved");
+    expect(bookingSource).toContain("Continue with this account");
+    expect(bookingSource).toContain("date entered here is not held or saved");
     expect(bookingSource).toContain("no payment success is simulated");
     expect(bookingSource).toContain("No checkbox on this page creates a legal acceptance record");
     expect(bookingSource).toContain("Nothing entered on this page is saved yet");
