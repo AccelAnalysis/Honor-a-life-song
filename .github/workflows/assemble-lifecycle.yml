@@ -53,7 +53,7 @@ jobs:
 
       - name: Verify application
         run: |
-          npm ci
+          npm install --no-audit --no-fund --package-lock=false
           npm run lint
           npm run typecheck
           npm test
