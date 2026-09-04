@@ -39,12 +39,18 @@ export function MemoriesHub() {
 
   return <main className={styles.shell}>
     <header><Link className={styles.brand} href="/" aria-label="SongKeep home"><SongKeepLockup variant="app" /></Link><span>Memories</span></header>
-    <section className={styles.intro}><p className={styles.eyebrow}>Your collection</p><h1>Songs worth keeping.</h1><p>Your private songs and shared memories live here.</p></section>
+    <section className={styles.intro}><p className={styles.eyebrow}>Your collection</p><h1>Songs worth keeping.</h1><p>Your private songs, shared memories, and products created from organization experiences live here.</p></section>
     {error ? <p className={styles.error} role="alert">{error}</p> : null}
     {access.length ? <section className={styles.list} aria-label="Claimed experiences">{access.map((item) => <article key={item.id}>
       <div><p className={styles.eyebrow}>{item.organizationName}</p><h2>{item.experienceTitle}</h2><p>{item.participantName} · {formatDate(item.acceptedAt)}</p></div>
-      <div className={styles.itemAction}><span>{item.entitlementIds.length} {item.entitlementIds.length === 1 ? "item" : "items"}</span>{item.deliveryToken ? <Link className={styles.primary} href={`/song/${item.deliveryToken}`}>Open</Link> : <small>Being prepared</small>}</div>
-    </article>)}</section> : <section className={styles.empty}><h2>Nothing here yet.</h2><p>Use a private SongKeep invitation to add memories.</p></section>}
-    <footer>Private materials only.</footer>
+      <div className={styles.itemAction}>
+        <span>{item.entitlementIds.length} {item.entitlementIds.length === 1 ? "item" : "items"}</span>
+        <div className={styles.actionRow}>
+          {item.deliveryToken ? <Link className={styles.primary} href={`/song/${item.deliveryToken}`}>Open</Link> : <small>Materials are being prepared</small>}
+          <Link className={styles.secondary} href={`/memories/store?access=${item.id}`}>Products from this experience</Link>
+        </div>
+      </div>
+    </article>)}</section> : <section className={styles.empty}><h2>Nothing here yet.</h2><p>Use a private SongKeep invitation to add memories from an organization experience.</p></section>}
+    <footer>Private materials only. Product access follows the permissions connected to each experience.</footer>
   </main>;
 }
