@@ -1,0 +1,54 @@
+/*
+ * Audience imagery for the shared SongKeep experience.
+ *
+ * The master brand represents life stories across generations. Project Ageless
+ * may use older-adult imagery in its own program context, but universal entry
+ * points should not imply that SongKeep is only for seniors.
+ */
+
+.consumerHeroMedia {
+  background-image:
+    linear-gradient(90deg, rgba(20, 22, 72, 0.88) 0%, rgba(20, 22, 72, 0.56) 46%, rgba(20, 22, 72, 0.16) 100%),
+    linear-gradient(0deg, rgba(20, 22, 72, 0.56), transparent 58%),
+    url("https://images.pexels.com/photos/7922179/pexels-photo-7922179.jpeg?auto=compress&cs=tinysrgb&w=2200");
+}
+
+.consumerSceneImage {
+  background-image:
+    linear-gradient(0deg, rgba(20, 22, 72, 0.34), transparent 55%),
+    url("https://images.pexels.com/photos/8460034/pexels-photo-8460034.jpeg?auto=compress&cs=tinysrgb&w=1800");
+}
+
+.programTile:nth-child(1) {
+  background-image: url("https://images.pexels.com/photos/8065098/pexels-photo-8065098.jpeg?auto=compress&cs=tinysrgb&w=1600");
+}
+
+.closingScene {
+  background-image:
+    linear-gradient(90deg, rgba(20, 22, 72, 0.94), rgba(20, 22, 72, 0.4)),
+    url("https://images.pexels.com/photos/6393113/pexels-photo-6393113.jpeg?auto=compress&cs=tinysrgb&w=2200");
+}
+
+/* Login: a younger adult couple, while retaining the existing visual treatment. */
+main > section[aria-label="SongKeep"] {
+  background-image:
+    linear-gradient(0deg, rgba(20, 22, 72, 0.9), rgba(20, 22, 72, 0.08) 68%),
+    linear-gradient(90deg, rgba(72, 88, 190, 0.3), transparent 58%),
+    url("https://images.pexels.com/photos/8907169/pexels-photo-8907169.jpeg?auto=compress&cs=tinysrgb&w=1800");
+}
+
+/* Booking: a family activity rather than another senior-only portrait. */
+main > aside[aria-label="SongKeep"] {
+  background-image:
+    linear-gradient(0deg, rgba(20, 22, 72, 0.92), rgba(20, 22, 72, 0.08) 66%),
+    linear-gradient(90deg, rgba(72, 88, 190, 0.26), transparent 58%),
+    url("https://images.pexels.com/photos/8065098/pexels-photo-8065098.jpeg?auto=compress&cs=tinysrgb&w=1800");
+}
+
+@media (max-width: 720px) {
+  .consumerHeroMedia {
+    background-image:
+      linear-gradient(0deg, rgba(20, 22, 72, 0.91), rgba(20, 22, 72, 0.18) 72%),
+      url("https://images.pexels.com/photos/7922179/pexels-photo-7922179.jpeg?auto=compress&cs=tinysrgb&w=1200");
+  }
+}
