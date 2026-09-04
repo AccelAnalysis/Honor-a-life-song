@@ -6,18 +6,25 @@ on:
 permissions:
   contents: read
 jobs:
-  snapshot:
+  tools:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - name: Export repository source only
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install isolated official test tools
         run: |
-          mkdir -p /tmp/source-review
-          git archive HEAD | gzip > /tmp/source-review/source.tar.gz
-          git rev-parse HEAD > /tmp/source-review/head.txt
+          mkdir -p /tmp/browser-tools /tmp/source-review
+          cd /tmp/browser-tools
+          npm init -y >/dev/null
+          npm install --save-exact firebase-tools@15 @playwright/test@1 --no-audit --no-fund
+          tar -czf /tmp/source-review/test-tools.tar.gz package.json package-lock.json node_modules
+      - name: Check public Firebase hosting setup
+        run: |
+          curl -L --max-time 15 -s -w '\nHTTP %{http_code}\n' https://songify-cc2c5.web.app/__/firebase/init.json > /tmp/source-review/hosting-public-setup.txt || true
       - uses: actions/upload-artifact@v4
         with:
-          name: songkeep-account-first-source
+          name: songkeep-browser-test-tools
           path: /tmp/source-review
           retention-days: 2
