@@ -16,8 +16,8 @@
 
 | Surface | Responsibility |
 | --- | --- |
-| `/admin/requests` | Connect invoices, confirm payment, and create the organization experience. |
-| `/admin/catalog` | Publish participant/family products with optional price and checkout link. |
+| `/admin/requests` | Open native invoices and reconcile requests through trusted backend operations. |
+| `/admin/catalog` | Publish participant/family products with server-controlled prices and permission-aware checkout. |
 | `/admin/communications` | View state-driven nurture queues and next actions. |
 | `/admin/consent` | Review submitted permission responses and activate versioned consent. |
 | `/admin/reports` | Review organization request, promoter, recovery, referral, and individual-commerce indicators. |
@@ -51,12 +51,12 @@ users/{userId}
 | --- | --- |
 | Awareness → Consideration | Acquisition context is carried into the identified organization request. |
 | Decision Ready → Booking | An organization account and selected offering exist. |
-| Booking → Paid | An administrator records authoritative payment confirmation. |
+| Booking → Paid | A verified provider confirmation or authorized manual reconciliation records payment. |
 | Paid → Story Capture | The package-aware `OrganizationExperience` is created. |
 | Participant onboarding | A verified invitation response is reviewed into active consent. |
 | Experience Complete → Loyalty | Organization feedback and next-experience options become available. |
 | Promoter → Advocacy | A score of 9–10 unlocks an attributed referral record. |
-| Experience → Individual customer | Accepted experience access authorizes a source-attributed product request. |
+| Experience → Individual customer | Accepted access plus current consent, entitlements, and required assets authorize a source-attributed product request. |
 
 ## Interface principles
 
@@ -70,3 +70,11 @@ The experience follows an Apple-style interaction hierarchy:
 - explicit separation of destructive or authoritative actions;
 - no color-only status communication; and
 - reduced-motion behavior.
+
+## Reconciled finance and creator release
+
+See `PR_21_24_RECONCILIATION.md` for the scope decision and `NATIVE_INVOICING.md`
+for native invoices, payment integrity, deployment configuration, and migration.
+Customer invoices are at `/organization/invoices`; administrators use
+`/admin/invoices` and `/admin/deliverables`; assigned creators use
+`/creator/deliverables`. Financial and consent mutations are backend-owned.

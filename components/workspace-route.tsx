@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { InvoiceSurface } from "@/components/invoice-surface";
+import { CreatorDeliverySurface } from "@/components/creator-delivery-surface";
 import { usePathname } from "next/navigation";
 import { AdminAccessGate } from "@/components/admin-access-gate";
 import { AdminWorkspace } from "@/components/admin-workspace";
@@ -55,6 +57,8 @@ export function WorkspaceRoute() {
   }
 
   const workspace = candidate as WorkspaceId;
+  if (workspace === "admin" && parts[1] === "finance" && (!parts[2] || ["invoices", "payments", "refunds", "reconciliation"].includes(parts[2]))) return <AdminAccessGate><InvoiceSurface admin /></AdminAccessGate>;
+  if (workspace === "creator" && parts.length === 1) return <CreatorDeliverySurface />;
   const nav = getNavigation(workspace);
   const nestedParts = parts.slice(1);
   const adminRoute = workspace === "admin" ? resolveAdminRoute(nestedParts) : undefined;

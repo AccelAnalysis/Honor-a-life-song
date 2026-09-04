@@ -23,6 +23,7 @@ export interface OrganizationRelationshipProfile {
     email: string;
     title?: string;
     phone?: string;
+    preferredContactMethod?: "email" | "phone" | "text";
     relationshipRole: OrganizationContactRole;
     primary: boolean;
   };
@@ -84,6 +85,8 @@ export interface OrganizationExperienceRequest {
   sourceExperienceId?: EntityId;
   replacesRequestId?: EntityId;
   experienceId?: EntityId;
+  invoiceId?: EntityId;
+  invoiceNumber?: string;
   invoiceUrl?: string;
   invoiceDueAt?: ISODateTime;
   nurtureTrack: NurtureTrack;

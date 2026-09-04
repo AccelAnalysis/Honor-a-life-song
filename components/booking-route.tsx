@@ -1,15 +1,15 @@
 "use client";
 
+import { nativeCheckoutEnabled } from "@/lib/firebase/native-services";
+
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { SongKeepLockup } from "@/components/brand";
 import {
   bookingSteps,
-  buildOfferingPaymentLink,
   formatOfferingPrice,
-  getOfferingPaymentLink,
   getServiceOffering,
   serviceOfferings,
   type BookingStep,
@@ -71,7 +71,7 @@ export function BookingRoute() {
   const [venue, setVenue] = useState("");
   const [participantEstimate, setParticipantEstimate] = useState("");
   const [organizationGoal, setOrganizationGoal] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "invoice">("card");
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "invoice">(nativeCheckoutEnabled ? "card" : "invoice");
   const [authorized, setAuthorized] = useState(false);
   const [saving, setSaving] = useState(false);
   const [requestId, setRequestId] = useState<string | null>(null);
@@ -81,7 +81,8 @@ export function BookingRoute() {
   const offering = useMemo(() => offeringId ? getServiceOffering(offeringId) : undefined, [offeringId]);
   const selectedOrganization = organizations.find((organization) => organization.id === selectedOrganizationId);
   const currentIndex = bookingSteps.indexOf(activeStep);
-  const cardAvailable = offeringId ? Boolean(getOfferingPaymentLink(offeringId)) : false;
+  const cardAvailable = nativeCheckoutEnabled;
+  const intent = useRef<{ signature: string; key: string } | null>(null);
 
   useEffect(() => {
     if (isStaticPreview || !user) {
@@ -149,7 +150,10 @@ export function BookingRoute() {
     setSaving(true);
     setError(null);
     try {
+      const signature = JSON.stringify({ offeringId, selectedOrganizationId, preferredDate, preferredTime, venue, participantEstimate, organizationGoal, paymentMethod, sourceExperienceId, replacesRequestId });
+      if (intent.current?.signature !== signature) intent.current = { signature, key: crypto.randomUUID() };
       const request = await createOrganizationExperienceRequest({
+        idempotencyKey: intent.current.key,
         organizationId: selectedOrganization.id,
         createdByUserId: user.uid,
         offeringId: offering.id,
@@ -173,15 +177,7 @@ export function BookingRoute() {
       setRequestId(request.id);
       setSubmittedMethod(paymentMethod);
       if (paymentMethod === "card") {
-        const paymentLink = buildOfferingPaymentLink(offering.id, {
-          experienceRequestId: request.id,
-          customerEmail: user.email ?? undefined
-        });
-        if (!paymentLink) {
-          setError("Card checkout is not configured for this experience yet. Your request was saved; choose invoice to continue or contact SongKeep.");
-          return;
-        }
-        window.location.assign(paymentLink);
+        window.location.assign(`/organization/invoices?organization=${encodeURIComponent(selectedOrganization.id)}&invoice=${encodeURIComponent(request.id)}`);
         return;
       }
       continueTo("ready");

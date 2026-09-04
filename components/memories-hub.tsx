@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { nativeCheckoutEnabled, openIndividualCheckout } from "@/lib/firebase/native-services";
+import { PrivateExperienceMaterials } from "@/components/authorized-asset";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { SongKeepLockup } from "@/components/brand";
@@ -81,8 +83,9 @@ export function MemoriesHub() {
         productId: product.id
       });
       await refreshPurchases();
-      if (result.checkoutUrl) {
-        window.location.assign(result.checkoutUrl);
+      if (nativeCheckoutEnabled && product.priceCents) {
+        const checkout = await openIndividualCheckout(result.request.id);
+        if (checkout.url) window.location.assign(checkout.url);
         return;
       }
       setNotice(`${product.name} was requested. SongKeep will connect pricing or an invoice to this account.`);
@@ -109,7 +112,7 @@ export function MemoriesHub() {
       return <article className={styles.experience} key={item.id}>
         <div className={styles.experienceHeading}>
           <div><p className={styles.eyebrow}>{item.organizationName}</p><h2>{item.experienceTitle}</h2><p>{item.participantName} · Added {formatDate(item.acceptedAt)}</p></div>
-          <div className={styles.itemAction}><span>{item.entitlementIds.length} {item.entitlementIds.length === 1 ? "private item" : "private items"}</span>{item.deliveryToken ? <Link className={styles.primary} href={`/song/${item.deliveryToken}`}>Open memories</Link> : <small>Materials are being prepared</small>}</div>
+          <div className={styles.itemAction}><PrivateExperienceMaterials accessId={item.id} /></div>
         </div>
 
         <section className={styles.store} aria-labelledby={`store-${item.id}`}>
@@ -118,7 +121,7 @@ export function MemoriesHub() {
             const existing = itemPurchases.find((purchase) => purchase.productId === product.id && !["cancelled", "refunded"].includes(purchase.status));
             return <div className={styles.product} key={product.id}>
               <div><small>{titleize(product.kind)}</small><strong>{product.name}</strong><p>{product.description}</p></div>
-              <div className={styles.productAction}><b>{formatLifecycleMoney(product.priceCents)}</b>{existing ? <span>{titleize(existing.status)}</span> : <button type="button" disabled={busy === `${item.id}-${product.id}`} onClick={() => handlePurchase(item, product)}>{busy === `${item.id}-${product.id}` ? "Saving…" : product.checkoutUrl ? "Purchase" : "Request"}</button>}</div>
+              <div className={styles.productAction}><b>{formatLifecycleMoney(product.priceCents)}</b>{existing && (!["invoice_requested", "payment_pending"].includes(existing.status) || !nativeCheckoutEnabled) ? <span>{titleize(existing.status)}</span> : <button type="button" disabled={busy === `${item.id}-${product.id}`} onClick={() => handlePurchase(item, product)}>{busy === `${item.id}-${product.id}` ? "Saving…" : nativeCheckoutEnabled && product.priceCents ? (existing ? "Resume payment" : "Purchase") : "Request"}</button>}</div>
             </div>;
           })}</div> : <p className={styles.quiet}>SongKeep has not released any individual products for this experience yet.</p>}
           <p className={styles.integrityNote}>A checkout return does not mark an item paid. SongKeep confirms payment before fulfillment.</p>

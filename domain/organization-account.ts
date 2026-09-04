@@ -9,6 +9,8 @@ export type OrganizationMemberRole =
   | "event_contact"
   | "viewer";
 
+export type PreferredContactMethod = "email" | "phone" | "text";
+
 export type OrganizationAgreementKind =
   | "terms"
   | "privacy"
@@ -16,6 +18,7 @@ export type OrganizationAgreementKind =
   | "event_scope"
   | "payment_cancellation"
   | "media"
+  | "album_release"
   | "other";
 
 export type OrganizationAgreementStatus = "requested" | "signed" | "superseded" | "void";
@@ -30,7 +33,17 @@ export type OrganizationExperienceStatus =
   | "closed"
   | "cancelled";
 
-export type OrganizationAssetKind = "song" | "lyrics" | "event_video" | "photo" | "report" | "keepsake" | "other";
+export type OrganizationAssetKind = "song" | "lyrics" | "event_video" | "photo" | "report" | "keepsake" | "album_artwork" | "release_link" | "other";
+export type OrganizationAssetWorkflowStatus =
+  | "uploading"
+  | "submitted"
+  | "changes_requested"
+  | "approved"
+  | "released"
+  | "rejected"
+  | "upload_failed";
+export type CreatorAssignmentRole = "interviewer" | "songwriter" | "artist" | "producer";
+export type CreatorAssignmentStatus = "assigned" | "in_progress" | "submitted" | "complete" | "cancelled";
 
 export interface OrganizationAccount {
   id: EntityId;
@@ -39,19 +52,31 @@ export interface OrganizationAccount {
   createdBy: EntityId;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
+  organizationEmail?: string;
   billingEmail?: string;
   phone?: string;
   website?: string;
   address?: string;
+  primaryContactUserId?: EntityId;
 }
 
 export interface OrganizationMember {
   userId: EntityId;
   email: string;
   displayName: string;
+  title?: string;
+  directPhone?: string;
+  preferredContactMethod?: PreferredContactMethod;
+  isPrimaryContact?: boolean;
   role: OrganizationMemberRole;
   status: "active" | "inactive";
   joinedAt: ISODateTime;
+}
+
+export interface PlatformUserSummary {
+  userId: EntityId;
+  email: string;
+  displayName: string;
 }
 
 export interface OrganizationInvitation {
@@ -98,6 +123,9 @@ export interface OrganizationExperience {
   participantExpectedCount?: number;
   billingStatus?: "not_started" | "deposit_due" | "deposit_paid" | "balance_due" | "paid" | "refunded";
   invoiceUrl?: string;
+  requestedPaymentMethod?: "card" | "invoice";
+  dateStatus?: "requested" | "confirmed";
+  createdByUserId?: EntityId;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
 }
@@ -112,6 +140,8 @@ export interface ExperienceParticipant {
   displayName: string;
   participationStatus: ExperienceParticipantStatus;
   permissionReadiness: ExperiencePermissionReadiness;
+  participantEmail?: string;
+  participantPhone?: string;
   familyContactName?: string;
   familyContactEmail?: string;
   createdAt: ISODateTime;
@@ -202,6 +232,25 @@ export interface OrganizationSuggestedDate {
   createdAt: ISODateTime;
 }
 
+export interface CreatorAssignment {
+  id: EntityId;
+  assignedUserId: EntityId;
+  assignedUserName: string;
+  assignedUserEmail?: string;
+  organizationId: EntityId;
+  organizationName: string;
+  experienceId: EntityId;
+  experienceTitle: string;
+  participantId?: EntityId;
+  participantName?: string;
+  role: CreatorAssignmentRole;
+  status: CreatorAssignmentStatus;
+  dueAt?: ISODateTime;
+  createdByUserId: EntityId;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
 export interface OrganizationAsset {
   id: EntityId;
   organizationId: EntityId;
@@ -213,5 +262,19 @@ export interface OrganizationAsset {
   participantId?: EntityId;
   storagePath?: string;
   downloadUrl?: string;
+  workflowStatus?: OrganizationAssetWorkflowStatus;
+  assignmentId?: EntityId;
+  submittedByUserId?: EntityId;
+  submittedByName?: string;
+  submittedByRole?: CreatorAssignmentRole;
+  notes?: string;
+  reviewNotes?: string;
+  mimeType?: string;
+  fileName?: string;
+  version?: number;
+  reviewedByUserId?: EntityId;
+  reviewedAt?: ISODateTime;
+  releasedAt?: ISODateTime;
   createdAt: ISODateTime;
+  updatedAt?: ISODateTime;
 }

@@ -1,3 +1,4 @@
+import { nativeAction } from "./native-services";
 import {
   collection,
   collectionGroup,
@@ -28,7 +29,7 @@ import {
 } from "@/domain/customer-lifecycle";
 import { getExperienceOffering, type ExperienceOfferingId } from "@/domain/experience";
 import type { OrganizationKind } from "@/domain/types";
-import { createAdminParticipantConsent, listUserOrganizations } from "./organization-account";
+import { listUserOrganizations } from "./organization-account";
 import { getFirebaseFirestore } from "./client";
 
 function toIso(value: unknown): string {
@@ -65,6 +66,8 @@ function experienceRequestFrom(organizationId: string, data: ReturnType<typeof d
     sourceExperienceId: data.sourceExperienceId ?? undefined,
     replacesRequestId: data.replacesRequestId ?? undefined,
     experienceId: data.experienceId ?? undefined,
+    invoiceId: data.invoiceId ?? undefined,
+    invoiceNumber: data.invoiceNumber ?? undefined,
     invoiceUrl: data.invoiceUrl ?? undefined,
     invoiceDueAt: data.invoiceDueAt ? toIso(data.invoiceDueAt) : undefined,
     nurtureTrack: data.nurtureTrack ?? "payment_reconciliation",
@@ -186,6 +189,7 @@ export async function createOrganizationWithPrimaryContact(input: {
   displayName: string;
   contactTitle?: string;
   contactPhone?: string;
+  preferredContactMethod?: "email" | "phone" | "text";
   organizationName: string;
   organizationKind: OrganizationKind;
   organizationEmail?: string;
@@ -205,35 +209,9 @@ export async function createOrganizationWithPrimaryContact(input: {
   const db = getFirebaseFirestore();
   const normalizedEmail = input.email.trim().toLowerCase();
 
-  if (existing) {
-    const batch = writeBatch(db);
-    batch.set(doc(db, "organizations", existing.id), {
-      organizationEmail: input.organizationEmail?.trim().toLowerCase() || null,
-      billingEmail: input.organizationEmail?.trim().toLowerCase() || normalizedEmail,
-      phone: input.organizationPhone?.trim() || null,
-      website: input.website?.trim() || null,
-      address: input.address?.trim() || null,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-    batch.set(doc(db, "organizations", existing.id, "members", input.userId), {
-      userId: input.userId,
-      email: normalizedEmail,
-      displayName: input.displayName.trim(),
-      title: input.contactTitle?.trim() || null,
-      phone: input.contactPhone?.trim() || null,
-      relationshipRole: "primary_contact",
-      primaryContact: true,
-      role: "organization_admin",
-      status: "active"
-    }, { merge: true });
-    batch.set(doc(db, "users", input.userId), {
-      email: normalizedEmail,
-      displayName: input.displayName.trim(),
-      updatedAt: serverTimestamp()
-    }, { merge: true });
-    await batch.commit();
-    return existing.id;
-  }
+  // Reuse the explicitly matching account without rewriting a shared organization's
+  // profile, promoting a member, or replacing its primary contact.
+  if (existing) return existing.id;
 
   const organizationRef = doc(collection(db, "organizations"));
   const batch = writeBatch(db);
@@ -255,6 +233,7 @@ export async function createOrganizationWithPrimaryContact(input: {
     displayName: input.displayName.trim(),
     title: input.contactTitle?.trim() || null,
     phone: input.contactPhone?.trim() || null,
+    preferredContactMethod: input.preferredContactMethod ?? "email",
     relationshipRole: "primary_contact",
     primaryContact: true,
     role: "organization_admin",
@@ -298,7 +277,8 @@ export async function listOrganizationRelationshipProfiles(userId: string): Prom
         displayName: memberData.displayName ?? memberData.email ?? "Primary contact",
         email: memberData.email ?? "",
         title: memberData.title ?? undefined,
-        phone: memberData.phone ?? undefined,
+        phone: memberData.phone ?? memberData.directPhone ?? undefined,
+        preferredContactMethod: memberData.preferredContactMethod ?? "email",
         relationshipRole: memberData.relationshipRole ?? "primary_contact",
         primary: memberData.primaryContact !== false
       }
@@ -307,78 +287,16 @@ export async function listOrganizationRelationshipProfiles(userId: string): Prom
 }
 
 export async function createOrganizationExperienceRequest(input: {
-  organizationId: string;
-  createdByUserId: string;
-  offeringId: ExperienceOfferingId;
-  preferredDate: string;
-  preferredTime: string;
-  venue?: string;
-  participantEstimate?: number;
-  organizationGoal?: string;
-  requestedPaymentMethod: "card" | "invoice";
-  agreementAcknowledged: boolean;
-  sourceExperienceId?: string;
-  replacesRequestId?: string;
-  acquisition?: AcquisitionContext;
+  organizationId: string; createdByUserId: string; offeringId: ExperienceOfferingId;
+  preferredDate: string; preferredTime: string; venue?: string; participantEstimate?: number;
+  organizationGoal?: string; requestedPaymentMethod: "card" | "invoice"; agreementAcknowledged: boolean;
+  sourceExperienceId?: string; replacesRequestId?: string; acquisition?: AcquisitionContext; idempotencyKey?: string;
 }): Promise<OrganizationExperienceRequest> {
-  const offering = getExperienceOffering(input.offeringId);
-  if (!offering) throw new Error("Choose an available SongKeep experience.");
-  if (!input.organizationId) throw new Error("Choose your organization.");
-  if (!input.preferredDate || !input.preferredTime) throw new Error("Choose a preferred date and time.");
-  if (!input.agreementAcknowledged) throw new Error("Confirm that you are authorized to plan for the organization.");
   const preferredStartsAt = new Date(`${input.preferredDate}T${input.preferredTime}`);
-  if (Number.isNaN(preferredStartsAt.valueOf())) throw new Error("Choose a valid preferred date and time.");
-  const db = getFirebaseFirestore();
-  const organizationSnapshot = await getDoc(doc(db, "organizations", input.organizationId));
-  if (!organizationSnapshot.exists()) throw new Error("This organization account could not be found.");
-  const organizationName = organizationSnapshot.data().name ?? "Organization";
-  const requestRef = doc(collection(db, "organizations", input.organizationId, "experienceRequests"));
-  const invoice = input.requestedPaymentMethod === "invoice";
-  const acquisitionEntries = Object.entries(input.acquisition ?? {}).filter(([, value]) => Boolean(value));
-  const acquisition = acquisitionEntries.length ? Object.fromEntries(acquisitionEntries) as AcquisitionContext : undefined;
-  const now = new Date().toISOString();
-  const nextRequest: OrganizationExperienceRequest = {
-    id: requestRef.id,
-    organizationId: input.organizationId,
-    organizationName,
-    createdByUserId: input.createdByUserId,
-    offeringId: offering.id,
-    offeringName: offering.name,
-    amountCents: offering.priceCents,
-    currency: "USD",
-    status: invoice ? "invoice_requested" : "payment_pending",
-    financialStatus: invoice ? "invoice_requested" : "payment_pending",
-    requestedPaymentMethod: input.requestedPaymentMethod,
-    preferredStartsAt: preferredStartsAt.toISOString(),
-    venue: input.venue?.trim() || undefined,
-    participantEstimate: input.participantEstimate,
-    organizationGoal: input.organizationGoal?.trim() || undefined,
-    agreementAcknowledged: true,
-    agreementVersion: "organization-planning-v1",
-    sourceExperienceId: input.sourceExperienceId,
-    replacesRequestId: input.replacesRequestId,
-    nurtureTrack: invoice ? "invoice_payment" : "payment_reconciliation",
-    nextAction: invoice
-      ? "SongKeep will prepare the invoice and keep the primary contact updated."
-      : "Complete secure checkout. SongKeep will activate the experience after payment is confirmed.",
-    acquisition,
-    createdAt: now,
-    updatedAt: now
-  };
-  const { id: _requestId, ...requestData } = nextRequest;
-  await setDoc(requestRef, {
-    ...requestData,
-    preferredStartsAt,
-    venue: nextRequest.venue ?? null,
-    participantEstimate: nextRequest.participantEstimate ?? null,
-    organizationGoal: nextRequest.organizationGoal ?? null,
-    sourceExperienceId: nextRequest.sourceExperienceId ?? null,
-    replacesRequestId: nextRequest.replacesRequestId ?? null,
-    acquisition: nextRequest.acquisition ?? null,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
+  if (!Number.isFinite(preferredStartsAt.valueOf())) throw new Error("Choose a valid preferred date and time.");
+  return nativeAction<OrganizationExperienceRequest>("createRequest", {
+    ...input, preferredStartsAt: preferredStartsAt.toISOString(), idempotencyKey: input.idempotencyKey ?? crypto.randomUUID()
   });
-  return nextRequest;
 }
 
 export async function listOrganizationExperienceRequests(organizationId: string): Promise<OrganizationExperienceRequest[]> {
@@ -394,101 +312,6 @@ export async function listAdminExperienceRequests(): Promise<OrganizationExperie
     const organizationId = snapshot.ref.parent.parent?.id ?? snapshot.data().organizationId ?? "";
     return experienceRequestFrom(organizationId, dataOf(snapshot));
   }).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-
-export async function adminAdvanceExperienceRequest(input: {
-  organizationId: string;
-  requestId: string;
-  action: "invoice_sent" | "payment_confirmed" | "cancel" | "refund";
-  invoiceUrl?: string;
-  invoiceDueAt?: string;
-}): Promise<string | undefined> {
-  const db = getFirebaseFirestore();
-  const requestRef = doc(db, "organizations", input.organizationId, "experienceRequests", input.requestId);
-  const snapshot = await getDoc(requestRef);
-  if (!snapshot.exists()) throw new Error("This experience request could not be found.");
-  const request = experienceRequestFrom(input.organizationId, { id: snapshot.id, ...snapshot.data() });
-
-  if (input.action === "invoice_sent") {
-    if (!input.invoiceUrl?.trim()) throw new Error("Add the invoice link before marking it sent.");
-    await updateDoc(requestRef, {
-      status: "invoice_open",
-      financialStatus: "invoice_open",
-      invoiceUrl: input.invoiceUrl.trim(),
-      invoiceDueAt: input.invoiceDueAt ? new Date(input.invoiceDueAt) : null,
-      nurtureTrack: "invoice_payment",
-      nextAction: "Pay the invoice from the organization account.",
-      updatedAt: serverTimestamp()
-    });
-    return undefined;
-  }
-
-  if (input.action === "cancel") {
-    await updateDoc(requestRef, {
-      status: "cancelled",
-      financialStatus: "cancelled",
-      nextAction: "This request was cancelled.",
-      updatedAt: serverTimestamp()
-    });
-    return undefined;
-  }
-
-  if (input.action === "refund") {
-    await updateDoc(requestRef, {
-      financialStatus: "refunded",
-      nextAction: "The payment was refunded. SongKeep will confirm any remaining closeout steps.",
-      updatedAt: serverTimestamp()
-    });
-    return request.experienceId;
-  }
-
-  if (request.experienceId) {
-    await updateDoc(requestRef, {
-      status: "converted",
-      financialStatus: "paid",
-      nurtureTrack: "customer_onboarding",
-      nextAction: "Open the experience and invite participants.",
-      paidAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-    return request.experienceId;
-  }
-
-  const offering = getExperienceOffering(request.offeringId);
-  if (!offering) throw new Error("The selected offering is no longer available.");
-  const experienceRef = doc(collection(db, "organizations", input.organizationId, "experiences"));
-  const batch = writeBatch(db);
-  batch.set(experienceRef, {
-    organizationId: input.organizationId,
-    title: offering.name,
-    offeringId: offering.id,
-    templateKind: offering.templateKind,
-    participantMode: offering.participantMode,
-    status: "preparing",
-    startsAt: new Date(request.preferredStartsAt),
-    venue: request.venue ?? null,
-    nextAction: offering.participantMode === "group"
-      ? "Confirm event details and prepare the shared story session."
-      : offering.participantMode === "album_subject"
-        ? "Confirm the album subject, collaborators, and story-session plan."
-        : "Add participants and send their individual permission links.",
-    participantExpectedCount: request.participantEstimate ?? null,
-    billingStatus: "paid",
-    sourceExperienceRequestId: request.id,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  });
-  batch.update(requestRef, {
-    status: "converted",
-    financialStatus: "paid",
-    experienceId: experienceRef.id,
-    nurtureTrack: "customer_onboarding",
-    nextAction: "Open the experience and complete the first preparation step.",
-    paidAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  });
-  await batch.commit();
-  return experienceRef.id;
 }
 
 export async function submitOrganizationFeedback(input: {
@@ -700,89 +523,19 @@ export async function listAdminPermissionInvitations(): Promise<ParticipantPermi
 }
 
 export async function submitParticipantPermissionResponse(input: {
-  organizationId: string;
-  experienceId: string;
-  invitationId: string;
-  userId: string;
-  userEmail: string;
-  emailVerified: boolean;
-  signatureName: string;
-  authorityBasis: "self" | "authorized_representative";
-  scopes: ConsentScope[];
-  restrictions?: string[];
-  participantDeliveryEmail?: string;
-  designatedFamilyEmails?: string[];
+  organizationId: string; experienceId: string; invitationId: string; userId: string; userEmail: string;
+  emailVerified: boolean; signatureName: string; authorityBasis: "self" | "authorized_representative";
+  scopes: ConsentScope[]; restrictions?: string[]; participantDeliveryEmail?: string; designatedFamilyEmails?: string[];
 }) {
-  if (!input.emailVerified) throw new Error("Verify your email before submitting permissions.");
-  if (!input.signatureName.trim()) throw new Error("Enter the name of the person completing this form.");
-  if (!input.scopes.includes("participation") || !input.scopes.includes("internal_creative_use")) {
-    throw new Error("Participation and creative-use permission are required to take part digitally.");
+  if (input.scopes.includes("designated_family_sharing") && !input.designatedFamilyEmails?.length) {
+    throw new Error("Add at least one designated family email address.");
   }
-  const invitation = await getParticipantPermissionInvitation(input.organizationId, input.experienceId, input.invitationId);
-  if (!invitation) throw new Error("This permission invitation could not be found.");
-  if (invitation.status !== "pending") throw new Error("This permission invitation is no longer available.");
-  if (invitation.recipientEmail.toLowerCase() !== input.userEmail.toLowerCase()) {
-    throw new Error("Sign in with the verified email address that received this invitation.");
-  }
-  const designatedFamilyEmails = [...new Set((input.designatedFamilyEmails ?? [])
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean))];
-  await updateDoc(doc(
-    getFirebaseFirestore(),
-    "organizations",
-    input.organizationId,
-    "experiences",
-    input.experienceId,
-    "permissionInvitations",
-    input.invitationId
-  ), {
-    status: "submitted",
-    submittedAt: serverTimestamp(),
-    submittedByUserId: input.userId,
-    signatureName: input.signatureName.trim(),
-    authorityBasis: input.authorityBasis,
-    scopes: input.scopes,
-    restrictions: (input.restrictions ?? []).map((item) => item.trim()).filter(Boolean),
-    participantDeliveryEmail: input.participantDeliveryEmail?.trim().toLowerCase() || input.userEmail.toLowerCase(),
-    designatedFamilyEmails
-  });
+  return nativeAction("submitPermission", input);
 }
 
-export async function approveParticipantPermissionResponse(input: {
-  invitation: ParticipantPermissionInvitation;
-}) {
-  const invitation = input.invitation;
-  if (invitation.status !== "submitted" || !invitation.signatureName || !invitation.authorityBasis || !invitation.scopes) {
-    throw new Error("Only a complete submitted permission response can be approved.");
-  }
-  const restrictions = invitation.restrictions ?? [];
-  const consentRecordId = await createAdminParticipantConsent({
-    organizationId: invitation.organizationId,
-    experienceId: invitation.experienceId,
-    participantId: invitation.participantId,
-    state: restrictions.length ? "active_with_restrictions" : "active",
-    scopes: invitation.scopes,
-    restrictions,
-    authorityBasis: invitation.authorityBasis,
-    signedByName: invitation.signatureName,
-    source: "electronic",
-    participantDeliveryEmail: invitation.participantDeliveryEmail,
-    designatedFamilyEmails: invitation.designatedFamilyEmails
-  });
-  await updateDoc(doc(
-    getFirebaseFirestore(),
-    "organizations",
-    invitation.organizationId,
-    "experiences",
-    invitation.experienceId,
-    "permissionInvitations",
-    invitation.id
-  ), {
-    status: "approved",
-    consentRecordId,
-    reviewedAt: serverTimestamp()
-  });
-  return consentRecordId;
+export async function approveParticipantPermissionResponse(input: { invitation: ParticipantPermissionInvitation }) {
+  const { organizationId, experienceId, id: invitationId } = input.invitation;
+  return nativeAction<string>("approvePermission", { organizationId, experienceId, invitationId });
 }
 
 export async function listPostExperienceProducts(options?: { includeInactive?: boolean }): Promise<PostExperienceProduct[]> {
@@ -823,63 +576,9 @@ export async function createPostExperienceProduct(input: {
 }
 
 export async function createIndividualPurchaseRequest(input: {
-  userId: string;
-  accessId: string;
-  productId: string;
+  userId: string; accessId: string; productId: string;
 }): Promise<{ request: IndividualPurchaseRequest; checkoutUrl?: string }> {
-  const db = getFirebaseFirestore();
-  const [accessSnapshot, productSnapshot] = await Promise.all([
-    getDoc(doc(db, "users", input.userId, "experienceAccess", input.accessId)),
-    getDoc(doc(db, "postExperienceProducts", input.productId))
-  ]);
-  if (!accessSnapshot.exists()) throw new Error("Open this product from an experience shared with you.");
-  if (!productSnapshot.exists() || productSnapshot.data().status !== "active") throw new Error("This product is not currently available.");
-  const access = accessSnapshot.data();
-  const product = productFrom({ id: productSnapshot.id, ...productSnapshot.data() });
-  if (!product.audiences.includes(access.recipient ?? "participant")) {
-    throw new Error("This product is not available for this type of access.");
-  }
-  const card = Boolean(product.checkoutUrl);
-  const requestRef = doc(collection(db, "users", input.userId, "purchaseRequests"));
-  const now = new Date().toISOString();
-  const request: IndividualPurchaseRequest = {
-    id: requestRef.id,
-    userId: input.userId,
-    accessId: input.accessId,
-    organizationId: access.organizationId ?? "",
-    organizationName: access.organizationName ?? "Organization",
-    experienceId: access.experienceId ?? "",
-    experienceTitle: access.experienceTitle ?? "SongKeep experience",
-    participantId: access.participantId ?? "",
-    participantName: access.participantName ?? "Participant",
-    recipient: access.recipient ?? "participant",
-    productId: product.id,
-    productName: product.name,
-    priceCents: product.priceCents,
-    currency: "USD",
-    requestedPaymentMethod: card ? "card" : "invoice",
-    status: card ? "payment_pending" : "invoice_requested",
-    createdAt: now,
-    updatedAt: now
-  };
-  const { id: _purchaseRequestId, ...purchaseRequestData } = request;
-  await setDoc(requestRef, {
-    ...purchaseRequestData,
-    priceCents: request.priceCents ?? null,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  });
-  let checkoutUrl: string | undefined;
-  if (product.checkoutUrl) {
-    try {
-      const url = new URL(product.checkoutUrl);
-      url.searchParams.set("client_reference_id", request.id);
-      checkoutUrl = url.toString();
-    } catch {
-      checkoutUrl = undefined;
-    }
-  }
-  return { request, checkoutUrl };
+  return nativeAction<{ request: IndividualPurchaseRequest; checkoutUrl?: string }>("purchase", input);
 }
 
 export async function listUserPurchaseRequests(userId: string): Promise<IndividualPurchaseRequest[]> {
@@ -897,12 +596,5 @@ export async function listAdminIndividualPurchaseRequests(): Promise<IndividualP
 }
 
 export async function adminUpdateIndividualPurchaseRequest(input: {
-  userId: string;
-  requestId: string;
-  status: IndividualPurchaseRequestStatus;
-}) {
-  await updateDoc(doc(getFirebaseFirestore(), "users", input.userId, "purchaseRequests", input.requestId), {
-    status: input.status,
-    updatedAt: serverTimestamp()
-  });
-}
+  userId: string; requestId: string; status: IndividualPurchaseRequestStatus; reference?: string; confirmed?: boolean;
+}) { return nativeAction("updatePurchase", input); }

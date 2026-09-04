@@ -11,6 +11,7 @@ import { safeReturnPath } from "../lib/safe-return-path";
 const organizationDomain = readFileSync(resolve(process.cwd(), "domain/organization-account.ts"), "utf8");
 const lifecycleDomain = readFileSync(resolve(process.cwd(), "domain/customer-lifecycle.ts"), "utf8");
 const organizationRepository = readFileSync(resolve(process.cwd(), "lib/firebase/organization-account.ts"), "utf8");
+const trustedLifecycle = readFileSync(resolve(process.cwd(), "functions/lifecycle.js"), "utf8");
 const lifecycleRepository = readFileSync(resolve(process.cwd(), "lib/firebase/customer-lifecycle.ts"), "utf8");
 const invitationRepository = readFileSync(resolve(process.cwd(), "lib/firebase/organization-invitations.ts"), "utf8");
 const firestoreRules = readFileSync(resolve(process.cwd(), "firestore.rules"), "utf8");
@@ -71,7 +72,9 @@ describe("governing customer model", () => {
     expect(organizationRepository).toContain('record.state === "active"');
     expect(organizationRepository).toContain("requiredScopes.every");
     expect(organizationRepository).toContain("authorizedRecipientEmails.includes(recipientEmail)");
-    expect(organizationRepository).toContain("Every material permission revision invalidates earlier releases");
+    expect(organizationRepository).toContain('nativeAction<string>("saveConsent"');
+    expect(trustedLifecycle).toContain("consentInTransaction");
+    expect(trustedLifecycle).toContain("status:'revoked'");
   });
 
   it("requires verified invited email for organization, experience, and permission claims", () => {
@@ -100,7 +103,8 @@ describe("governing customer model", () => {
   it("turns accepted participant/family access into source-attributed individual commerce", () => {
     expect(memoriesHub).toContain("createIndividualPurchaseRequest");
     expect(memoriesHub).toContain("Every purchase stays connected to the organization event");
-    expect(lifecycleRepository).toContain("accessId: input.accessId");
+    expect(lifecycleRepository).toContain('nativeAction<{ request: IndividualPurchaseRequest; checkoutUrl?: string }>("purchase"');
+    expect(trustedLifecycle).toContain("accessId:input.accessId");
     expect(firestoreRules).toContain("validPurchaseRequestCreate");
     expect(memoriesHub).not.toContain("Payments & Orders");
   });

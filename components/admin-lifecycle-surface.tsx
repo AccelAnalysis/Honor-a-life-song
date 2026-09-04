@@ -13,7 +13,6 @@ import {
   type PostExperienceProductKind
 } from "@/domain/customer-lifecycle";
 import {
-  adminAdvanceExperienceRequest,
   adminUpdateIndividualPurchaseRequest,
   approveParticipantPermissionResponse,
   createPostExperienceProduct,
@@ -96,37 +95,6 @@ export function AdminLifecycleSurface({ area }: AdminLifecycleSurfaceProps) {
     individualOrders: purchases.length
   }), [feedback, purchases, referrals.length, requests]);
 
-  async function runRequestAction(request: OrganizationExperienceRequest, action: "invoice_sent" | "payment_confirmed" | "cancel" | "refund", form?: HTMLFormElement) {
-    const data = form ? new FormData(form) : undefined;
-    setBusy(`${request.id}-${action}`);
-    setError(null);
-    setNotice(null);
-    try {
-      const experienceId = await adminAdvanceExperienceRequest({
-        organizationId: request.organizationId,
-        requestId: request.id,
-        action,
-        invoiceUrl: data ? String(data.get("invoiceUrl") ?? "") : undefined,
-        invoiceDueAt: data ? String(data.get("invoiceDueAt") ?? "") : undefined
-      });
-      setNotice(action === "payment_confirmed"
-        ? `Payment confirmed. ${experienceId ? "The organization experience is ready for onboarding." : "The request was updated."}`
-        : action === "invoice_sent"
-          ? "Invoice connected to the organization account and payment follow-up queue."
-          : `Request ${action === "cancel" ? "cancelled" : "refunded"}.`);
-      await load();
-    } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : "The request could not be updated.");
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function handleInvoice(event: FormEvent<HTMLFormElement>, request: OrganizationExperienceRequest) {
-    event.preventDefault();
-    await runRequestAction(request, "invoice_sent", event.currentTarget);
-  }
-
   async function handleCreateProduct(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formElement = event.currentTarget;
@@ -179,7 +147,9 @@ export function AdminLifecycleSurface({ area }: AdminLifecycleSurfaceProps) {
       await adminUpdateIndividualPurchaseRequest({
         userId: purchase.userId,
         requestId: purchase.id,
-        status: String(form.get("status") ?? purchase.status) as IndividualPurchaseRequest["status"]
+        status: String(form.get("status") ?? purchase.status) as IndividualPurchaseRequest["status"],
+        reference: String(form.get("reference") ?? ""),
+        confirmed: form.has("confirmed")
       });
       setNotice("Individual purchase status updated.");
       await load();
@@ -197,7 +167,7 @@ export function AdminLifecycleSurface({ area }: AdminLifecycleSurfaceProps) {
       <Link href="/admin">← Operations</Link>
       <div><p>SongKeep</p><strong>Customer lifecycle</strong></div>
     </header>
-    <nav className={styles.areaNav} aria-label="Lifecycle operations">{areas.map((item) => <Link key={item.id} aria-current={area === item.id ? "page" : undefined} href={`/admin/${item.id}`}>{item.label}</Link>)}</nav>
+    <nav className={styles.areaNav} aria-label="Lifecycle operations"><Link href="/admin/invoices">Invoices & payments</Link><Link href="/admin/deliverables">Creator delivery</Link>{areas.map((item) => <Link key={item.id} aria-current={area === item.id ? "page" : undefined} href={`/admin/${item.id}`}>{item.label}</Link>)}</nav>
     <div className={styles.content}>
       {error ? <div className={styles.alert} role="alert"><strong>Action required</strong><span>{error}</span></div> : null}
       {notice ? <div className={styles.notice} role="status"><strong>Saved</strong><span>{notice}</span></div> : null}
@@ -207,9 +177,7 @@ export function AdminLifecycleSurface({ area }: AdminLifecycleSurfaceProps) {
         <section className={styles.records}>{requests.length ? requests.map((request) => <article key={request.id}>
           <div className={styles.recordHeading}><div><span className={styles.status}>{titleize(request.financialStatus)}</span><h2>{request.organizationName}</h2><p>{request.offeringName} · {formatLifecycleMoney(request.amountCents)} · {formatDate(request.preferredStartsAt)}</p></div><Link href={`/admin/people/facilities/${request.organizationId}`}>Organization</Link></div>
           <p className={styles.nextAction}>{request.nextAction}</p>
-          {request.financialStatus === "invoice_requested" ? <form className={styles.inlineForm} onSubmit={(event) => handleInvoice(event, request)}><label><span>Invoice link</span><input required type="url" name="invoiceUrl" /></label><label><span>Due date</span><input type="date" name="invoiceDueAt" /></label><button disabled={busy === `${request.id}-invoice_sent`} type="submit">{busy === `${request.id}-invoice_sent` ? "Saving…" : "Connect invoice"}</button></form> : null}
-          {request.financialStatus === "invoice_open" && request.invoiceUrl ? <a className={styles.invoiceLink} href={request.invoiceUrl} target="_blank" rel="noreferrer">Open invoice</a> : null}
-          {!["paid", "refunded", "cancelled"].includes(request.financialStatus) ? <div className={styles.recordActions}><button disabled={busy === `${request.id}-payment_confirmed`} type="button" onClick={() => runRequestAction(request, "payment_confirmed")}>Confirm payment &amp; create experience</button><details><summary>More</summary><button className={styles.destructive} type="button" onClick={() => runRequestAction(request, "cancel")}>Cancel request</button></details></div> : null}
+          <div className={styles.recordActions}><Link href={`/admin/invoices?organization=${request.organizationId}&invoice=${request.invoiceId ?? request.id}`}>Open invoice & payment history</Link>{request.experienceId ? <Link href={`/organization?org=${request.organizationId}&experience=${request.experienceId}`}>Open experience</Link> : null}</div>
         </article>) : <p className={styles.empty}>No organization purchase requests yet.</p>}</section>
       </> : null}
 
@@ -222,7 +190,7 @@ export function AdminLifecycleSurface({ area }: AdminLifecycleSurfaceProps) {
             <label><span>Description</span><textarea required name="description" rows={4} /></label>
             <label><span>Type</span><select name="kind" defaultValue="printed_lyrics"><option value="digital_song">Digital song</option><option value="printed_lyrics">Printed lyrics</option><option value="song_card">Song card</option><option value="event_video">Event video</option><option value="photo_music_package">Photo + music package</option><option value="additional_copy">Additional copy</option><option value="personalized_follow_on">Personalized follow-on</option><option value="other">Other</option></select></label>
             <label><span>Price in dollars <small>Leave blank for invoice/quote</small></span><input min="0" step="0.01" inputMode="decimal" name="price" /></label>
-            <label><span>Secure checkout link <small>Optional</small></span><input type="url" name="checkoutUrl" /></label>
+            <p>Online payment uses the saved product price and a secure, source-attributed SongKeep checkout. Public payment links are not used.</p>
             <fieldset><legend>Eligible audience</legend><label className={styles.check}><input type="checkbox" name="audiences" value="participant" defaultChecked /><span>Participant</span></label><label className={styles.check}><input type="checkbox" name="audiences" value="designated_family" defaultChecked /><span>Designated family</span></label></fieldset>
             <button disabled={busy === "product"} type="submit">{busy === "product" ? "Publishing…" : "Publish product"}</button>
           </form>
@@ -260,7 +228,7 @@ export function AdminLifecycleSurface({ area }: AdminLifecycleSurfaceProps) {
           <h2>Individual commerce</h2>
           {purchases.length ? purchases.map((purchase) => <article key={purchase.id}>
             <div className={styles.recordHeading}><div><span className={styles.status}>{titleize(purchase.status)}</span><h2>{purchase.productName}</h2><p>{purchase.participantName} · {purchase.experienceTitle} · {purchase.organizationName}</p></div><b>{formatLifecycleMoney(purchase.priceCents)}</b></div>
-            <form className={styles.statusForm} onSubmit={(event) => handlePurchaseStatus(event, purchase)}><select name="status" defaultValue={purchase.status}><option value="invoice_requested">Invoice requested</option><option value="payment_pending">Payment pending</option><option value="paid">Paid</option><option value="in_fulfillment">In fulfillment</option><option value="fulfilled">Fulfilled</option><option value="cancelled">Cancelled</option><option value="refunded">Refunded</option></select><button disabled={busy === `purchase-${purchase.id}`} type="submit">Update</button></form>
+            <form className={styles.statusForm} onSubmit={(event) => handlePurchaseStatus(event, purchase)}><select name="status" defaultValue={purchase.status}><option value="invoice_requested">Invoice requested</option><option value="payment_pending">Payment pending</option><option value="paid">Paid</option><option value="in_fulfillment">In fulfillment</option><option value="fulfilled">Fulfilled</option><option value="cancelled">Cancelled</option><option value="refunded">Refunded</option></select><label><span>Payment / refund reference</span><input name="reference" placeholder="Required for a confirmed payment or refund" /></label><label><input name="confirmed" type="checkbox" />I verified the payment or refund when changing a financial status.</label><button disabled={busy === `purchase-${purchase.id}`} type="submit">Update</button></form>
           </article>) : <p className={styles.empty}>No individual purchase requests yet.</p>}
         </section>
       </> : null}

@@ -1,3 +1,4 @@
+import { nativeAction } from "./native-services";
 import {
   collection,
   doc,
@@ -75,6 +76,10 @@ function memberFrom(data: ReturnType<typeof dataOf>): OrganizationMember {
     userId: data.userId ?? data.id,
     email: data.email ?? "",
     displayName: data.displayName ?? data.email ?? "Team member",
+    title: data.title,
+    directPhone: data.directPhone ?? data.phone,
+    preferredContactMethod: data.preferredContactMethod,
+    isPrimaryContact: data.isPrimaryContact ?? data.primaryContact,
     role: data.role ?? "viewer",
     status: data.status ?? "active",
     joinedAt: toIso(data.joinedAt)
@@ -491,93 +496,7 @@ export async function createAdminParticipantConsent(input: {
   participantDeliveryEmail?: string;
   designatedFamilyEmails?: string[];
 }) {
-  const participantDeliveryEmail = input.participantDeliveryEmail?.trim().toLowerCase() || undefined;
-  const designatedFamilyEmails = [...new Set((input.designatedFamilyEmails ?? [])
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean))];
-  if (!input.signedByName.trim()) throw new Error("Record who completed this permission form.");
-  if (["active", "active_with_restrictions"].includes(input.state) && input.scopes.length === 0) {
-    throw new Error("Choose at least one permission scope for active consent.");
-  }
-  if (input.state === "active_with_restrictions" && !input.restrictions?.some((item) => item.trim())) {
-    throw new Error("Describe the restrictions that apply to this consent.");
-  }
-  if (["active", "active_with_restrictions"].includes(input.state)
-    && input.scopes.includes("designated_family_sharing")
-    && designatedFamilyEmails.length === 0) {
-    throw new Error("Record the family email address or addresses the participant designated.");
-  }
-  const db = getFirebaseFirestore();
-  const existing = await listExperienceConsentRecords(input.organizationId, input.experienceId, input.participantId);
-  const [existingEntitlements, existingInvitations] = await Promise.all([
-    getDocs(query(
-      collection(db, "organizations", input.organizationId, "experiences", input.experienceId, "entitlements"),
-      where("participantId", "==", input.participantId)
-    )),
-    getDocs(query(
-      collection(db, "organizations", input.organizationId, "experiences", input.experienceId, "accessInvitations"),
-      where("participantId", "==", input.participantId)
-    ))
-  ]);
-  const consentRef = doc(collection(
-    db,
-    "organizations",
-    input.organizationId,
-    "experiences",
-    input.experienceId,
-    "participants",
-    input.participantId,
-    "consents"
-  ));
-  const participantRef = doc(
-    db,
-    "organizations",
-    input.organizationId,
-    "experiences",
-    input.experienceId,
-    "participants",
-    input.participantId
-  );
-  const readiness = input.state === "active"
-    ? "ready"
-    : input.state === "active_with_restrictions"
-      ? "restricted"
-      : input.state === "withdrawn"
-        ? "withdrawn"
-        : "pending";
-  const batch = writeBatch(db);
-  batch.set(consentRef, {
-    organizationId: input.organizationId,
-    experienceId: input.experienceId,
-    participantId: input.participantId,
-    state: input.state,
-    scopes: input.scopes,
-    restrictions: input.restrictions ?? [],
-    authorityBasis: input.authorityBasis,
-    signedByName: input.signedByName.trim(),
-    source: input.source,
-    participantDeliveryEmail: participantDeliveryEmail ?? null,
-    designatedFamilyEmails,
-    version: (existing[0]?.version ?? 0) + 1,
-    effectiveAt: input.state === "active" || input.state === "active_with_restrictions" ? serverTimestamp() : null,
-    withdrawnAt: input.state === "withdrawn" ? serverTimestamp() : null,
-    createdAt: serverTimestamp()
-  });
-  batch.update(participantRef, { permissionReadiness: readiness, updatedAt: serverTimestamp() });
-  // Every material permission revision invalidates earlier releases. Operations must
-  // deliberately re-release assets against the new consent record before sharing again.
-  existingEntitlements.docs.forEach((entitlement) => {
-    if (entitlement.data().status !== "revoked") {
-      batch.update(entitlement.ref, { status: "revoked", revokedAt: serverTimestamp() });
-    }
-  });
-  existingInvitations.docs.forEach((invitation) => {
-    if (invitation.data().status === "pending") {
-      batch.update(invitation.ref, { status: "revoked", revokedAt: serverTimestamp() });
-    }
-  });
-  await batch.commit();
-  return consentRef.id;
+  return nativeAction<string>("saveConsent", input);
 }
 
 export async function listExperienceEntitlements(organizationId: string, experienceId: string): Promise<ExperienceAssetEntitlement[]> {

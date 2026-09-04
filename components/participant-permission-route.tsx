@@ -122,7 +122,7 @@ export function ParticipantPermissionRoute() {
           </label>)}
         </fieldset>
 
-        {selectedScopes.includes("designated_family_sharing") ? <label className={styles.field}><span>Designated family email addresses</span><textarea name="designatedFamilyEmails" rows={3} placeholder="One per line or separated by commas" /></label> : null}
+        {selectedScopes.includes("designated_family_sharing") ? <label className={styles.field}><span>Designated family email addresses</span><textarea required={selectedScopes.includes("designated_family_sharing")} name="designatedFamilyEmails" rows={3} placeholder="One per line or separated by commas" /></label> : null}
         <label className={styles.field}><span>Email for private delivery</span><input required type="email" name="participantDeliveryEmail" defaultValue={user.email ?? invitation.recipientEmail} /></label>
         <label className={styles.field}><span>Restrictions or details SongKeep should follow <small>Optional</small></span><textarea name="restrictions" rows={4} placeholder="For example: private performance only; do not use photographs publicly." /></label>
         <div className={styles.twoColumns}>

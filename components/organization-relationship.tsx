@@ -105,12 +105,13 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
     ?? null;
   const activeRequests = requests.filter((request) => request.status !== "cancelled");
   const latestFeedbackByExperience = new Map<string, ExperienceFeedback>();
-  feedback.forEach((item) => {
+  feedback.filter((item) => item.submittedByUserId === user?.uid).forEach((item) => {
     if (!latestFeedbackByExperience.has(item.experienceId)) latestFeedbackByExperience.set(item.experienceId, item);
   });
+  useEffect(() => { setFeedbackResult(null); }, [organization?.id, user?.uid]);
   const promoterFeedback = feedbackResult?.branch === "promoter"
     ? feedbackResult
-    : feedback.find((item) => item.branch === "promoter");
+    : feedback.find((item) => item.branch === "promoter" && item.submittedByUserId === user?.uid);
   const focusOffering = focusExperience ? getExperienceOffering(focusExperience.offeringId) : undefined;
 
   useEffect(() => {
@@ -304,6 +305,7 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
         <Link aria-current={view === "home" ? "page" : undefined} href={`/organization?org=${organization.id}`}>Home</Link>
         <Link href={`/organization?org=${organization.id}${focusExperience ? `&experience=${focusExperience.id}` : ""}#experience-readiness`}>Experiences</Link>
         <Link href={`/organization/library?org=${organization.id}`}>Songs &amp; memories</Link>
+        <Link href={`/organization/invoices?organization=${organization.id}`}>Invoices</Link>
         <Link aria-current={view === "account" ? "page" : undefined} href={`/organization/account?org=${organization.id}`}>Account</Link>
       </nav>
       <span>{organization.name}</span>
@@ -345,7 +347,7 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
         </section>
         <section className={styles.surface}>
           <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>Commercial record</p><h2>Invoices, payments &amp; agreements</h2></div></div>
-          <div className={styles.rows}>{activeRequests.length ? activeRequests.map((request) => <div className={styles.row} key={request.id}><div><strong>{request.offeringName}</strong><span>{formatOfferingPrice(request.amountCents)} · {titleize(request.financialStatus)}</span></div>{request.invoiceUrl ? <a href={request.invoiceUrl} target="_blank" rel="noreferrer">Open invoice</a> : <span>{request.nextAction}</span>}</div>) : <p className={styles.quiet}>No purchase requests yet.</p>}</div>
+          <div className={styles.rows}>{activeRequests.length ? activeRequests.map((request) => <div className={styles.row} key={request.id}><div><strong>{request.offeringName}</strong><span>{formatOfferingPrice(request.amountCents)} · {titleize(request.financialStatus)}</span></div><Link href={`/organization/invoices?organization=${organization.id}&invoice=${request.invoiceId ?? request.id}`}>Open invoice</Link></div>) : <p className={styles.quiet}>No purchase requests yet.</p>}</div>
           <div className={styles.rows}>{agreements.map((agreement) => <div className={styles.row} key={agreement.id}><div><strong>{agreement.title}</strong><span>Version {agreement.documentVersion}</span></div><span>{titleize(agreement.status)}</span></div>)}</div>
         </section>
       </> : <>
@@ -360,7 +362,7 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
           <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>Commercial status</p><h2 id="commercial-heading">Requests &amp; payment</h2></div></div>
           <div className={styles.requestList}>{activeRequests.map((request) => <article data-tone={requestTone(request)} className={request.id === highlightedRequestId ? styles.highlighted : ""} key={request.id}>
             <div><span className={styles.statusPill}>{titleize(request.financialStatus)}</span><h3>{request.offeringName}</h3><p>{formatDate(request.preferredStartsAt)} · {formatOfferingPrice(request.amountCents)}</p><small>{request.nextAction}</small></div>
-            <div className={styles.requestActions}>{request.invoiceUrl ? <a className={styles.primaryAction} href={request.invoiceUrl} target="_blank" rel="noreferrer">Pay invoice</a> : null}{request.status !== "converted" ? <Link href={`/begin?organizationId=${organization.id}&offering=${request.offeringId}&replacesRequest=${request.id}`}>Change experience</Link> : request.experienceId ? <Link href={`/organization?org=${organization.id}&experience=${request.experienceId}#experience-readiness`}>Open experience</Link> : null}</div>
+            <div className={styles.requestActions}><Link className={styles.primaryAction} href={`/organization/invoices?organization=${organization.id}&invoice=${request.invoiceId ?? request.id}`}>{request.requestedPaymentMethod === "card" ? "Resume secure payment" : "View invoice"}</Link>{request.status !== "converted" ? <Link href={`/begin?organizationId=${organization.id}&offering=${request.offeringId}&replacesRequest=${request.id}`}>Change experience</Link> : request.experienceId ? <Link href={`/organization?org=${organization.id}&experience=${request.experienceId}#experience-readiness`}>Open experience</Link> : null}</div>
           </article>)}</div>
         </section> : null}
 

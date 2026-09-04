@@ -4,6 +4,8 @@ import { describe, expect, it } from "vitest";
 import { branchForNps, formatLifecycleMoney } from "../domain/customer-lifecycle";
 
 const lifecycleRepository = readFileSync(resolve(process.cwd(), "lib/firebase/customer-lifecycle.ts"), "utf8");
+const billing = readFileSync(resolve(process.cwd(), "functions/billing.js"), "utf8");
+const invoiceScreen = readFileSync(resolve(process.cwd(), "components/invoice-surface.tsx"), "utf8");
 const rules = readFileSync(resolve(process.cwd(), "firestore.rules"), "utf8");
 const organizationExperience = readFileSync(resolve(process.cwd(), "components/organization-relationship.tsx"), "utf8");
 const adminExperience = readFileSync(resolve(process.cwd(), "components/admin-lifecycle-surface.tsx"), "utf8");
@@ -27,10 +29,11 @@ describe("post-experience growth branching", () => {
 
 describe("commercial integrity", () => {
   it("persists invoice or payment-pending states before external checkout", () => {
-    expect(lifecycleRepository).toContain('status: invoice ? "invoice_requested" : "payment_pending"');
-    expect(lifecycleRepository).toContain('financialStatus: invoice ? "invoice_requested" : "payment_pending"');
-    expect(lifecycleRepository).toContain("adminAdvanceExperienceRequest");
-    expect(lifecycleRepository).toContain('billingStatus: "paid"');
+    expect(lifecycleRepository).toContain('nativeAction<OrganizationExperienceRequest>("createRequest"');
+    expect(billing).toContain("status:invoiceMethod?'invoice_requested':'payment_pending'");
+    expect(billing).toContain("db.runTransaction");
+    expect(billing).toContain("billingStatus:'paid'");
+    expect(lifecycleRepository).not.toContain("adminAdvanceExperienceRequest");
   });
 
   it("protects catalog prices, financial state, and source attribution in Firestore rules", () => {
@@ -51,7 +54,8 @@ describe("complete relationship experience", () => {
   });
 
   it("gives operations direct lifecycle controls", () => {
-    expect(adminExperience).toContain("Confirm payment &amp; create experience");
+    expect(invoiceScreen).toContain("recordPayment");
+    expect(adminExperience).toContain("invoice");
     expect(adminExperience).toContain("Publish products created from organization experiences");
     expect(adminExperience).toContain("Review each person’s choices");
     expect(adminExperience).toContain("Individual commerce");

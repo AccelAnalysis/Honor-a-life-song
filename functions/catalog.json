@@ -1,0 +1,5 @@
+{
+  "single-song-group-event": {"name":"Single-Song Group Event","priceCents":20000,"currency":"USD","templateKind":"group_event","participantMode":"group","scope":"Shared group story conversation, one shared song, and event presentation."},
+  "honor-a-life-song-experience": {"name":"Honor a Life Song Experience","priceCents":250000,"currency":"USD","templateKind":"full_program","participantMode":"named_roster","scope":"Participant interviews and family contributions, multiple participant songs, and follow-up concert."},
+  "songkeep-legacy-album": {"name":"SongKeep Legacy Album","priceCents":600000,"currency":"USD","templateKind":"legacy_album","participantMode":"album_subject","scope":"Extended story discovery, a cohesive multi-track album, artwork, release preparation, and approved digital distribution."}
+}

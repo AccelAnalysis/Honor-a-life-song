@@ -67,6 +67,7 @@ export function CreateAccountRoute() {
         displayName: user.displayName ?? displayName,
         contactTitle: String(form.get("contactTitle") ?? ""),
         contactPhone: String(form.get("contactPhone") ?? ""),
+        preferredContactMethod: String(form.get("preferredContactMethod") ?? "email") as "email" | "phone" | "text",
         organizationName: String(form.get("organizationName") ?? ""),
         organizationKind: String(form.get("organizationKind") ?? "facility") as OrganizationKind,
         organizationEmail: String(form.get("organizationEmail") ?? ""),
@@ -125,6 +126,7 @@ export function CreateAccountRoute() {
               <label><span>Email</span><input required type="email" name="email" autoComplete="email" defaultValue={completingOrganization ? signedInUser?.email ?? "" : ""} readOnly={completingOrganization} /></label>
               {!accessOnly ? <label><span>Direct phone</span><input required type="tel" name="contactPhone" autoComplete="tel" /></label> : null}
             </div>
+            {!accessOnly ? <label><span>Preferred contact method</span><select name="preferredContactMethod" defaultValue="email"><option value="email">Email</option><option value="phone">Phone call</option><option value="text">Text message</option></select><small>This preference is not consent to marketing messages.</small></label> : null}
           </fieldset>
 
           {!accessOnly ? <fieldset>
