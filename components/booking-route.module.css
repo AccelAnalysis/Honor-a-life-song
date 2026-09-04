@@ -195,7 +195,7 @@
 .secondaryLink:focus-visible,
 .offering:focus-within,
 .organizationChoice:focus-within,
-input:focus-visible { outline: 3px solid rgba(21, 114, 198, 0.28); outline-offset: 3px; }
+.content input:focus-visible { outline: 3px solid rgba(21, 114, 198, 0.28); outline-offset: 3px; }
 
 @media (max-width: 980px) {
   .shell { grid-template-columns: 1fr; }
