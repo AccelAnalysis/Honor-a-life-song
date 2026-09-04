@@ -6,23 +6,26 @@ on:
 permissions:
   contents: read
 jobs:
-  inspect:
+  dependencies:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          fetch-depth: 0
-      - name: Capture source-only review evidence
+          node-version: 22
+      - name: Prepare verification dependencies without application secrets
         run: |
-          mkdir -p /tmp/songkeep-review
-          git archive 26c0296a95b53d274d838de6c0cefa7c5204b503 | gzip > /tmp/songkeep-review/pr21.tar.gz
-          git archive c898d85704c944e34a84cebe3e57a4f457a4e3ef | gzip > /tmp/songkeep-review/pr24.tar.gz
-          git archive origin/main | gzip > /tmp/songkeep-review/main.tar.gz
-          git diff 26c0296a95b53d274d838de6c0cefa7c5204b503 c898d85704c944e34a84cebe3e57a4f457a4e3ef > /tmp/songkeep-review/comparison.diff
-          git log --oneline --left-right 26c0296a95b53d274d838de6c0cefa7c5204b503...c898d85704c944e34a84cebe3e57a4f457a4e3ef > /tmp/songkeep-review/commits.txt
+          npm install --no-audit --no-fund
+          mkdir -p functions
+          cat > functions/package.json <<'JSON'
+          {"name":"songkeep-services","private":true,"main":"index.js","engines":{"node":"22"},"scripts":{"test":"node --test test/domain.test.js","test:integration":"node --test test/integration.test.js"},"dependencies":{"firebase-admin":"^13.0.0","firebase-functions":"^6.0.0","pdfkit":"^0.17.0","stripe":"^18.0.0","@fontsource/manrope":"^5.2.0"},"devDependencies":{"@firebase/rules-unit-testing":"^5.0.0","firebase":"^12.18.0"}}
+          JSON
+          npm --prefix functions install --no-audit --no-fund
+          mkdir -p /tmp/dependencies
+          tar -czf /tmp/dependencies/dependencies.tar.gz node_modules functions/node_modules package-lock.json functions/package-lock.json
       - uses: actions/upload-artifact@v4
         with:
-          name: lifecycle-reconciliation-sources
-          path: /tmp/songkeep-review
-          retention-days: 2
+          name: songkeep-verification-dependencies
+          path: /tmp/dependencies
+          retention-days: 1
