@@ -1,1 +1,0 @@
-Review checklist: desktop readability; phone reflow; keyboard navigation; stage-menu navigation; return-to-pipeline behavior; fullscreen entry/exit; light/dark appearance; reduced-motion preference; VoiceOver/assistive-technology semantics; and visual consistency with SongKeep brand authority.

@@ -1,1 +1,0 @@
-Open pull request for `design/hig-customer-pipeline-presentation` against `main` and use the repository Pages preview workflow for visual acceptance.
