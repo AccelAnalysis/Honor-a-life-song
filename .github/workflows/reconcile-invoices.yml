@@ -1,0 +1,28 @@
+name: Reconcile lifecycle and invoices
+on:
+  push:
+    branches: [feature/organization-to-individual-lifecycle]
+    paths: [.github/workflows/reconcile-invoices.yml]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Capture source-only review evidence
+        run: |
+          mkdir -p /tmp/songkeep-review
+          git archive 26c0296a95b53d274d838de6c0cefa7c5204b503 | gzip > /tmp/songkeep-review/pr21.tar.gz
+          git archive c898d85704c944e34a84cebe3e57a4f457a4e3ef | gzip > /tmp/songkeep-review/pr24.tar.gz
+          git archive origin/main | gzip > /tmp/songkeep-review/main.tar.gz
+          git diff 26c0296a95b53d274d838de6c0cefa7c5204b503 c898d85704c944e34a84cebe3e57a4f457a4e3ef > /tmp/songkeep-review/comparison.diff
+          git log --oneline --left-right 26c0296a95b53d274d838de6c0cefa7c5204b503...c898d85704c944e34a84cebe3e57a4f457a4e3ef > /tmp/songkeep-review/commits.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lifecycle-reconciliation-sources
+          path: /tmp/songkeep-review
+          retention-days: 2
