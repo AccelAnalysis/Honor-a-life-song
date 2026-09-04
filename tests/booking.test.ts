@@ -16,17 +16,19 @@ const authSource = readFileSync(resolve(process.cwd(), "components/auth-provider
 const organizationSource = readFileSync(resolve(process.cwd(), "components/organization-workspace.tsx"), "utf8");
 const organizationCss = readFileSync(resolve(process.cwd(), "components/organization-workspace.module.css"), "utf8");
 
-describe("post-engagement catalog", () => {
-  it("locks the two current customer prices", () => {
+describe("organization experience catalog", () => {
+  it("locks the three organization prices and offering types", () => {
     expect(serviceOfferings).toEqual([
-      expect.objectContaining({ id: "single-song-group-event", priceCents: 20_000, buyer: "organization", creativeOutput: "One shared song" }),
-      expect.objectContaining({ id: "honor-a-life-song-experience", priceCents: 250_000, buyer: "organization", creativeOutput: "Multiple participant songs" })
+      expect.objectContaining({ id: "single-song-group-event", priceCents: 20_000, buyer: "organization", creativeOutput: "One original shared song" }),
+      expect.objectContaining({ id: "honor-a-life-song-experience", priceCents: 250_000, buyer: "organization", creativeOutput: "Multiple original participant songs" }),
+      expect.objectContaining({ id: "songkeep-legacy-album", priceCents: 600_000, buyer: "organization", templateKind: "legacy_album", requiresConsultation: true })
     ]);
     expect(formatOfferingPrice(20_000)).toBe("$200");
     expect(formatOfferingPrice(250_000)).toBe("$2,500");
+    expect(formatOfferingPrice(600_000)).toBe("$6,000");
   });
 
-  it("uses the shortened facility planning journey in the intended order", () => {
+  it("uses the shortened organization planning journey in the intended order", () => {
     expect(bookingSteps).toEqual([
       "experience",
       "details",
@@ -39,19 +41,26 @@ describe("post-engagement catalog", () => {
     expect(servicesSource).toContain('href={`/begin?offering=${experience.id}&step=details`}');
     expect(bookingSource).toContain('const requestedStep: BookingStep = requestedOffering ? "details" : "experience"');
     expect(bookingSource).toContain("Selected experience");
-    expect(bookingSource).toContain('<Link href="/services">Change</Link>');
+    expect(bookingSource).toContain("Change experience");
+  });
+
+  it("adds album-specific scope and release review without creating a separate application", () => {
+    expect(bookingSource).toContain("Includes a scope conversation.");
+    expect(bookingSource).toContain("Album release terms");
+    expect(bookingSource).toContain("album story planning");
+    expect(bookingSource).not.toContain("Legacy Album app");
   });
 });
 
 describe("booking truthfulness", () => {
-  it("uses connected Firebase identity and request persistence without claiming unavailable services", () => {
+  it("uses connected identity, request persistence, participant persistence, and consent boundaries", () => {
     expect(bookingActionIsAvailable("identity")).toBe(true);
     expect(bookingActionIsAvailable("invitationResolution")).toBe(false);
     expect(bookingActionIsAvailable("scheduling")).toBe(false);
     expect(bookingActionIsAvailable("agreementPersistence")).toBe(false);
-    expect(bookingActionIsAvailable("payments")).toBe(false);
     expect(bookingActionIsAvailable("invoiceRequest")).toBe(true);
-    expect(bookingActionIsAvailable("consentPersistence")).toBe(false);
+    expect(bookingActionIsAvailable("participantPersistence")).toBe(true);
+    expect(bookingActionIsAvailable("consentPersistence")).toBe(true);
     expect(bookingActionIsAvailable("experiencePersistence")).toBe(true);
   });
 
