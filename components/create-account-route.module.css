@@ -17,7 +17,7 @@
   background:
     linear-gradient(180deg, rgba(20, 22, 72, 0.12), rgba(20, 22, 72, 0.88)),
     linear-gradient(90deg, rgba(72, 88, 190, 0.2), transparent 60%),
-    url("https://images.pexels.com/photos/3768131/pexels-photo-3768131.jpeg?auto=compress&cs=tinysrgb&w=1600") center / cover;
+    url("https://images.pexels.com/photos/6849623/pexels-photo-6849623.jpeg?auto=compress&cs=tinysrgb&w=1600") center / cover;
   color: white;
 }
 .story::after {
