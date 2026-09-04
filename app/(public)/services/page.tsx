@@ -60,7 +60,7 @@ export default function ServicesPage() {
                 <div><dt>Presentation</dt><dd>{experience.presentation}</dd></div>
                 <div><dt>Afterward</dt><dd>{experience.afterward}</dd></div>
               </dl>
-              <Link className={styles.primaryAction} href={`/begin?offering=${experience.id}`}>
+              <Link className={styles.primaryAction} href={`/begin?offering=${experience.id}&step=details`}>
                 {experience.cta}
               </Link>
               {index === 1 ? <Link className={styles.detailLink} href="/services/project-ageless">See the full experience</Link> : null}
