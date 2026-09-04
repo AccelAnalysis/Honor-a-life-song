@@ -6,26 +6,17 @@ on:
 permissions:
   contents: read
 jobs:
-  dependencies:
+  emulator:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Prepare verification dependencies without application secrets
+      - name: Download official Firestore test runtime
         run: |
-          npm install --no-audit --no-fund
-          mkdir -p functions
-          cat > functions/package.json <<'JSON'
-          {"name":"songkeep-services","private":true,"main":"index.js","engines":{"node":"22"},"scripts":{"test":"node --test test/domain.test.js","test:integration":"node --test test/integration.test.js"},"dependencies":{"firebase-admin":"^13.0.0","firebase-functions":"^6.0.0","pdfkit":"^0.17.0","stripe":"^18.0.0","@fontsource/manrope":"^5.2.0"},"devDependencies":{"@firebase/rules-unit-testing":"^5.0.0","firebase":"^12.18.0"}}
-          JSON
-          npm --prefix functions install --no-audit --no-fund
-          mkdir -p /tmp/dependencies
-          tar -czf /tmp/dependencies/dependencies.tar.gz node_modules functions/node_modules package-lock.json functions/package-lock.json
+          mkdir -p /tmp/emulator
+          curl --fail --location --retry 3 https://storage.googleapis.com/firebase-preview-drop/emulator/cloud-firestore-emulator-v1.22.0.jar -o /tmp/emulator/firestore-emulator.jar
+          echo '9b6498b7f62714d67f48f59b3818883cd682dbcd46b9f59511de81c97bb5166c  /tmp/emulator/firestore-emulator.jar' | sha256sum --check
       - uses: actions/upload-artifact@v4
         with:
-          name: songkeep-verification-dependencies
-          path: /tmp/dependencies
+          name: songkeep-firestore-emulator
+          path: /tmp/emulator
           retention-days: 1
