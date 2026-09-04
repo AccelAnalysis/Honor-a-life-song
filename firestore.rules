@@ -35,6 +35,14 @@ service cloud.firestore {
       return platformAdmin() || organizationRole(orgId, ['organization_admin', 'program_coordinator', 'event_contact']);
     }
 
+    function assignedCreator(assignmentId) {
+      return signedIn()
+        && assignmentId is string
+        && exists(/databases/$(database)/documents/creatorAssignments/$(assignmentId))
+        && get(/databases/$(database)/documents/creatorAssignments/$(assignmentId)).data.assignedUserId == request.auth.uid
+        && get(/databases/$(database)/documents/creatorAssignments/$(assignmentId)).data.status != 'cancelled';
+    }
+
     function matchesVerifiedSignedInEmail(email) {
       return verifiedEmail()
         && request.auth.token.email != null
@@ -106,8 +114,95 @@ service cloud.firestore {
         && membership.data.status == 'active';
     }
 
+    function organizationExperienceRequestCreate(orgId) {
+      return organizationAdmin(orgId)
+        && request.resource.data.keys().hasOnly([
+          'organizationId', 'title', 'offeringId', 'templateKind', 'participantMode',
+          'status', 'startsAt', 'venue', 'nextAction', 'billingStatus',
+          'requestedPaymentMethod', 'dateStatus', 'createdByUserId', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.organizationId == orgId
+        && request.resource.data.createdByUserId == request.auth.uid
+        && request.resource.data.status == 'inquiry'
+        && request.resource.data.billingStatus == 'not_started'
+        && request.resource.data.dateStatus == 'requested'
+        && request.resource.data.requestedPaymentMethod in ['card', 'invoice']
+        && request.resource.data.startsAt is timestamp
+        && request.resource.data.title is string
+        && request.resource.data.nextAction is string
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && (
+          (request.resource.data.offeringId == 'single-song-group-event'
+            && request.resource.data.templateKind == 'group_event'
+            && request.resource.data.participantMode == 'group')
+          ||
+          (request.resource.data.offeringId == 'honor-a-life-song-experience'
+            && request.resource.data.templateKind == 'full_program'
+            && request.resource.data.participantMode == 'named_roster')
+        );
+    }
+
+    function creatorSubmissionCreate(orgId, assetId) {
+      let assignmentId = request.resource.data.assignmentId;
+      let assignment = get(/databases/$(database)/documents/creatorAssignments/$(assignmentId));
+      return assignedCreator(assignmentId)
+        && request.resource.data.keys().hasOnly([
+          'organizationId', 'experienceId', 'title', 'kind', 'status', 'workflowStatus',
+          'organizationVisible', 'assignmentId', 'participantId', 'submittedByUserId',
+          'submittedByName', 'submittedByRole', 'notes', 'reviewNotes', 'storagePath',
+          'downloadUrl', 'fileName', 'mimeType', 'version', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.organizationId == orgId
+        && request.resource.data.organizationId == assignment.data.organizationId
+        && request.resource.data.experienceId == assignment.data.experienceId
+        && request.resource.data.submittedByUserId == request.auth.uid
+        && request.resource.data.submittedByRole == assignment.data.role
+        && request.resource.data.participantId == assignment.data.participantId
+        && request.resource.data.kind in ['song', 'lyrics', 'event_video', 'photo', 'report', 'keepsake', 'other']
+        && request.resource.data.title.size() > 0
+        && request.resource.data.storagePath == 'organizations/' + orgId + '/creator-submissions/' + assignmentId + '/' + assetId + '/' + request.resource.data.fileName
+        && request.resource.data.status == 'processing'
+        && request.resource.data.workflowStatus == 'uploading'
+        && request.resource.data.organizationVisible == false
+        && request.resource.data.downloadUrl == null
+        && request.resource.data.title is string
+        && request.resource.data.storagePath is string
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function creatorSubmissionUpdate(orgId) {
+      return assignedCreator(resource.data.assignmentId)
+        && resource.data.organizationId == orgId
+        && resource.data.submittedByUserId == request.auth.uid
+        && resource.data.workflowStatus == 'uploading'
+        && request.resource.data.organizationId == resource.data.organizationId
+        && request.resource.data.experienceId == resource.data.experienceId
+        && request.resource.data.assignmentId == resource.data.assignmentId
+        && request.resource.data.submittedByUserId == resource.data.submittedByUserId
+        && request.resource.data.organizationVisible == false
+        && request.resource.data.workflowStatus in ['submitted', 'upload_failed']
+        && (
+          (request.resource.data.workflowStatus == 'submitted'
+            && request.resource.data.status == 'ready'
+            && request.resource.data.downloadUrl is string
+            && request.resource.data.downloadUrl.matches('https://firebasestorage.googleapis.com/.*'))
+          ||
+          (request.resource.data.workflowStatus == 'upload_failed'
+            && request.resource.data.status == 'restricted')
+        )
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'workflowStatus', 'downloadUrl', 'updatedAt']);
+    }
+
     match /admins/{userId} {
       allow read: if signedIn() && (request.auth.uid == userId || platformAdmin());
+      allow create, update, delete: if platformAdmin();
+    }
+
+    match /creatorAssignments/{assignmentId} {
+      allow read: if platformAdmin() || (signedIn() && resource.data.assignedUserId == request.auth.uid);
       allow create, update, delete: if platformAdmin();
     }
 
@@ -189,7 +284,8 @@ service cloud.firestore {
 
       match /experiences/{experienceId} {
         allow read: if organizationMember(orgId) || platformAdmin();
-        allow create, update, delete: if platformAdmin();
+        allow create: if platformAdmin() || organizationExperienceRequestCreate(orgId);
+        allow update, delete: if platformAdmin();
 
         match /participants/{participantId} {
           allow read: if organizationExperienceManager(orgId);
@@ -257,8 +353,13 @@ service cloud.firestore {
 
       match /assets/{assetId} {
         allow read: if platformAdmin()
-          || (organizationMember(orgId) && resource.data.organizationVisible == true);
-        allow create, update, delete: if platformAdmin();
+          || (organizationMember(orgId) && resource.data.organizationVisible == true)
+          || (signedIn()
+            && resource.data.submittedByUserId == request.auth.uid
+            && assignedCreator(resource.data.assignmentId));
+        allow create: if platformAdmin() || creatorSubmissionCreate(orgId, assetId);
+        allow update: if platformAdmin() || creatorSubmissionUpdate(orgId);
+        allow delete: if platformAdmin();
       }
     }
 

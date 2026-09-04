@@ -8,7 +8,9 @@ import { SongKeepLockup } from "@/components/brand";
 import {
   bookingActionIsAvailable,
   bookingSteps,
+  buildOfferingPaymentLink,
   formatOfferingPrice,
+  getOfferingPaymentLink,
   getServiceOffering,
   serviceOfferings,
   type BookingStep,
@@ -16,28 +18,61 @@ import {
 } from "@/domain/booking";
 import { normalizeExperienceOfferingId } from "@/domain/experience";
 import type { OrganizationAccount } from "@/domain/organization-account";
+import { createOrganizationExperienceRequest } from "@/lib/firebase/booking";
 import { listUserOrganizations } from "@/lib/firebase/organization-account";
 import styles from "./booking-route.module.css";
 
 const stepLabels: Record<BookingStep, string> = {
-  experience: "Plan",
-  organization: "Account",
-  schedule: "Date",
-  agreement: "Review",
-  payment: "Pay",
-  setup: "Setup",
-  ready: "Done"
+  experience: "Experience",
+  details: "Facility & date",
+  checkout: "Agreement & payment",
+  ready: "Next steps"
+};
+
+const offeringDetails: Record<ServiceOfferingId, readonly string[]> = {
+  "single-song-group-event": [
+    "Shared group story conversation",
+    "One original shared song",
+    "Event presentation",
+    "Song and approved event materials afterward"
+  ],
+  "honor-a-life-song-experience": [
+    "Several participant interviews",
+    "Multiple original participant songs",
+    "Follow-up concert",
+    "Songs, lyrics, approved video, photos, reports, and keepsakes"
+  ]
 };
 
 const legalDocuments = [
-  ["Service agreement", "Experience scope and terms."],
+  ["Service agreement", "Experience scope, responsibilities, and deliverables."],
   ["Cancellation policy", "Cancellation and rescheduling terms."],
-  ["Privacy notice", "How information and files are handled."],
-  ["Electronic records", "Electronic document choices."]
+  ["Privacy notice", "How organization information and submitted files are handled."],
+  ["Electronic records", "Your choice to receive and sign documents electronically."]
 ] as const;
 
 function validOfferingId(value: string | null): ServiceOfferingId | undefined {
   return normalizeExperienceOfferingId(value);
+}
+
+function invoiceHref(input: {
+  offeringName: string;
+  organizationName: string;
+  preferredDate: string;
+  preferredTime: string;
+  requestId: string;
+}) {
+  const subject = `Invoice request — ${input.offeringName}`;
+  const body = [
+    "Please send an invoice for this SongKeep experience.",
+    "",
+    `Organization: ${input.organizationName}`,
+    `Experience: ${input.offeringName}`,
+    `Preferred date: ${input.preferredDate}`,
+    `Preferred time: ${input.preferredTime}`,
+    `Request: ${input.requestId}`
+  ].join("\n");
+  return `mailto:help@honoralifesong.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 export function BookingRoute() {
@@ -46,7 +81,7 @@ export function BookingRoute() {
   const requestedOffering = validOfferingId(searchParams.get("offering") ?? searchParams.get("service"));
   const requestedOrganizationId = searchParams.get("organizationId");
   const sourceExperience = searchParams.get("sourceExperience");
-  const requestedStep: BookingStep = searchParams.get("step") === "organization" && requestedOffering ? "organization" : "experience";
+  const requestedStep: BookingStep = searchParams.get("step") === "details" && requestedOffering ? "details" : "experience";
   const [activeStep, setActiveStep] = useState<BookingStep>(requestedStep);
   const [furthestStep, setFurthestStep] = useState(bookingSteps.indexOf(requestedStep));
   const [offeringId, setOfferingId] = useState<ServiceOfferingId | undefined>(requestedOffering);
@@ -55,10 +90,16 @@ export function BookingRoute() {
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | undefined>(requestedOrganizationId ?? undefined);
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [venue, setVenue] = useState("");
   const [reviewedTerms, setReviewedTerms] = useState(false);
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [requestedPaymentMethod, setRequestedPaymentMethod] = useState<"card" | "invoice" | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const offering = useMemo(() => offeringId ? getServiceOffering(offeringId) : undefined, [offeringId]);
   const selectedOrganization = organizations.find((organization) => organization.id === selectedOrganizationId);
+  const paymentLinkAvailable = offeringId ? Boolean(getOfferingPaymentLink(offeringId)) : false;
   const stepIndex = bookingSteps.indexOf(activeStep);
 
   useEffect(() => {
@@ -74,6 +115,7 @@ export function BookingRoute() {
         setOrganizations(items);
         setSelectedOrganizationId((current) => items.some((item) => item.id === current) ? current : items[0]?.id);
       })
+      .catch(() => { if (!cancelled) setError("We couldn’t load your organization account."); })
       .finally(() => { if (!cancelled) setOrganizationLoading(false); });
     return () => { cancelled = true; };
   }, [user]);
@@ -82,26 +124,71 @@ export function BookingRoute() {
     const index = bookingSteps.indexOf(step);
     if (index > furthestStep) return;
     setActiveStep(step);
+    setError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function nextStep() {
-    const next = bookingSteps[stepIndex + 1];
-    if (!next) return;
-    const nextIndex = stepIndex + 1;
-    setFurthestStep((current) => Math.max(current, nextIndex));
-    setActiveStep(next);
+  function continueTo(step: BookingStep) {
+    const index = bookingSteps.indexOf(step);
+    setFurthestStep((current) => Math.max(current, index));
+    setActiveStep(step);
+    setError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function organizationReturnPath() {
     const params = new URLSearchParams();
-    params.set("step", "organization");
+    params.set("step", "details");
     if (offeringId) params.set("offering", offeringId);
     if (requestedOrganizationId) params.set("organizationId", requestedOrganizationId);
     if (sourceExperience) params.set("sourceExperience", sourceExperience);
     return `/begin?${params.toString()}`;
   }
+
+  async function savePlan(paymentMethod: "card" | "invoice") {
+    if (!user || !offering || !selectedOrganization || !date || !time || !reviewedTerms) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const nextRequestId = requestId ?? await createOrganizationExperienceRequest({
+        organizationId: selectedOrganization.id,
+        createdByUserId: user.uid,
+        offeringId: offering.id,
+        preferredDate: date,
+        preferredTime: time,
+        venue,
+        requestedPaymentMethod: paymentMethod
+      });
+      setRequestId(nextRequestId);
+      setRequestedPaymentMethod(paymentMethod);
+
+      if (paymentMethod === "card") {
+        const paymentLink = buildOfferingPaymentLink(offering.id, {
+          experienceRequestId: nextRequestId,
+          customerEmail: user.email ?? undefined
+        });
+        if (!paymentLink) throw new Error("Card checkout is not configured here yet. Request an invoice to continue today.");
+        window.location.assign(paymentLink);
+        return;
+      }
+
+      continueTo("ready");
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "We couldn’t save this plan.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const invoiceLink = requestId && offering && selectedOrganization
+    ? invoiceHref({
+        offeringName: offering.name,
+        organizationName: selectedOrganization.name,
+        preferredDate: date,
+        preferredTime: time,
+        requestId
+      })
+    : undefined;
 
   return <main className={styles.shell}>
     <aside className={styles.imagePanel} aria-label="SongKeep">
@@ -116,7 +203,7 @@ export function BookingRoute() {
     <section className={styles.flow}>
       <header className={styles.flowHeader}>
         <Link className={styles.mobileBrand} href="/" aria-label="SongKeep home"><SongKeepLockup variant="app" /></Link>
-        <nav className={styles.progress} aria-label="Booking progress">
+        <nav className={styles.progress} aria-label="Planning progress">
           {bookingSteps.map((step, index) => <button
             key={step}
             type="button"
@@ -129,89 +216,91 @@ export function BookingRoute() {
       </header>
 
       <div className={styles.content}>
+        {error ? <p className={styles.error} role="alert">{error}</p> : null}
+
         {activeStep === "experience" ? <section aria-labelledby="booking-title">
-          <p className={styles.eyebrow}>Choose</p>
-          <h1 id="booking-title">Pick your experience.</h1>
+          <p className={styles.eyebrow}>Choose an experience</p>
+          <h1 id="booking-title">What fits your community?</h1>
+          <p className={styles.lede}>Compare the story experience, music, presentation, and materials your organization receives afterward.</p>
           <div className={styles.offerings} role="radiogroup" aria-label="SongKeep experiences">
             {serviceOfferings.map((item) => <label key={item.id} className={styles.offering}>
               <input type="radio" name="offering" value={item.id} checked={offeringId === item.id} onChange={() => setOfferingId(item.id)} />
               <span className={styles.choiceMark} aria-hidden="true" />
-              <span className={styles.offeringText}><strong>{item.name}</strong><small>{item.creativeOutput} · {item.presentation}</small></span>
-              <b>{formatOfferingPrice(item.priceCents)}</b>
+              <span className={styles.offeringText}>
+                <span className={styles.offeringHeading}><strong>{item.name}</strong><b>{formatOfferingPrice(item.priceCents)}</b></span>
+                <small>{item.description}</small>
+                <span className={styles.inclusions}>{offeringDetails[item.id].map((detail) => <span key={detail}>{detail}</span>)}</span>
+              </span>
             </label>)}
           </div>
-          <button className={styles.primaryButton} type="button" disabled={!offering} onClick={nextStep}>Continue</button>
+          <button className={styles.primaryButton} type="button" disabled={!offering} onClick={() => continueTo("details")}>Continue with this experience</button>
         </section> : null}
 
-        {activeStep === "organization" ? <section aria-labelledby="organization-title">
-          <p className={styles.eyebrow}>Account</p>
-          <h1 id="organization-title">Choose your organization.</h1>
-          {authStatus === "loading" || organizationLoading ? <p className={styles.serviceNote}>Checking account…</p> : null}
-          {authStatus === "signed_out" ? <div className={styles.participantActions}>
-            <Link className={styles.primaryLink} href={`/create-account?next=${encodeURIComponent(organizationReturnPath())}`}>Create account</Link>
-            <Link className={styles.primaryLink} href={`/login?next=${encodeURIComponent(organizationReturnPath())}`}>Sign in</Link>
+        {activeStep === "details" ? <section aria-labelledby="details-title">
+          <p className={styles.eyebrow}>Facility &amp; preferred date</p>
+          <h1 id="details-title">Where should the music happen?</h1>
+          {authStatus === "loading" || organizationLoading ? <p className={styles.serviceNote}>Checking your account…</p> : null}
+          {authStatus === "signed_out" ? <div className={styles.signInPanel}>
+            <p>Create or sign in to your organization account. Your selected experience will be waiting when you return.</p>
+            <div><Link className={styles.primaryLink} href={`/create-account?next=${encodeURIComponent(organizationReturnPath())}`}>Create organization account</Link><Link className={styles.secondaryLink} href={`/login?next=${encodeURIComponent(organizationReturnPath())}`}>Sign in</Link></div>
           </div> : null}
           {authStatus === "signed_in" && user && organizations.length > 0 ? <>
-            <div className={styles.offerings} role="radiogroup" aria-label="Choose organization">
-              {organizations.map((organization) => <label key={organization.id} className={styles.offering}>
+            <div className={styles.organizationChoices} role="radiogroup" aria-label="Choose organization">
+              {organizations.map((organization) => <label key={organization.id} className={styles.organizationChoice}>
                 <input type="radio" name="organization" value={organization.id} checked={selectedOrganizationId === organization.id} onChange={() => setSelectedOrganizationId(organization.id)} />
-                <span className={styles.choiceMark} aria-hidden="true" />
-                <span className={styles.offeringText}><strong>{organization.name}</strong><small>{user.email}</small></span>
+                <span><strong>{organization.name}</strong><small>{user.email}</small></span>
               </label>)}
             </div>
-            <button className={styles.primaryButton} type="button" disabled={!selectedOrganization} onClick={nextStep}>Continue</button>
+            <div className={styles.inlineFields}>
+              <label><span>Preferred date</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
+              <label><span>Preferred start time</span><input type="time" value={time} onChange={(event) => setTime(event.target.value)} /></label>
+            </div>
+            <label className={styles.fullField}><span>Venue or room <small>Optional</small></span><input value={venue} onChange={(event) => setVenue(event.target.value)} placeholder="Community room" /></label>
+            <p className={styles.serviceNote}>This is your preferred time. The Honor a Life Song team will confirm availability before the experience is contracted.</p>
+            <button className={styles.primaryButton} type="button" disabled={!selectedOrganization || !date || !time} onClick={() => continueTo("checkout")}>Review agreement &amp; payment</button>
           </> : null}
-          {authStatus === "signed_in" && user && !organizationLoading && organizations.length === 0 ? <Link className={styles.primaryLink} href="/create-account?complete=organization">Finish setup</Link> : null}
+          {authStatus === "signed_in" && user && !organizationLoading && organizations.length === 0 ? <Link className={styles.primaryLink} href="/create-account?complete=organization">Finish organization setup</Link> : null}
           {authStatus === "unavailable" ? <p className={styles.serviceNote}>{configurationError ?? "Account access is unavailable here."}</p> : null}
         </section> : null}
 
-        {activeStep === "schedule" ? <section aria-labelledby="schedule-title">
-          <p className={styles.eyebrow}>Date</p>
-          <h1 id="schedule-title">Choose a date.</h1>
-          <div className={styles.inlineFields}><label><span>Date</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><label><span>Time</span><input type="time" value={time} onChange={(event) => setTime(event.target.value)} /></label></div>
-          <p className={styles.serviceNote}>Live scheduling isn’t connected yet.</p>
-          <button className={styles.primaryButton} type="button" disabled={!date || !time || !bookingActionIsAvailable("scheduling")} onClick={nextStep}>Check availability</button>
-        </section> : null}
-
-        {activeStep === "agreement" ? <section aria-labelledby="agreement-title">
-          <p className={styles.eyebrow}>Review</p>
-          <h1 id="agreement-title">Review &amp; sign.</h1>
+        {activeStep === "checkout" ? <section aria-labelledby="checkout-title">
+          <p className={styles.eyebrow}>Agreement &amp; payment</p>
+          <h1 id="checkout-title">Review your plan.</h1>
+          <div className={styles.orderLine}>
+            <div><strong>{offering?.name ?? "SongKeep experience"}</strong><span>{selectedOrganization?.name ?? "Organization"}{date && time ? ` · ${date} at ${time}` : ""}</span></div>
+            <b>{offering ? formatOfferingPrice(offering.priceCents) : "—"}</b>
+          </div>
           <dl className={styles.documentList}>{legalDocuments.map(([title, description]) => <div key={title}><dt>{title}</dt><dd>{description}</dd></div>)}</dl>
-          <label className={styles.checkLine}><input type="checkbox" checked={reviewedTerms} onChange={(event) => setReviewedTerms(event.target.checked)} /><span>I’m authorized to review these documents.</span></label>
-          <p className={styles.serviceNote}>Electronic signing isn’t connected yet.</p>
-          <button className={styles.primaryButton} type="button" disabled={!reviewedTerms || !bookingActionIsAvailable("agreementPersistence")} onClick={nextStep}>Continue</button>
-        </section> : null}
-
-        {activeStep === "payment" ? <section aria-labelledby="payment-title">
-          <p className={styles.eyebrow}>Payment</p>
-          <h1 id="payment-title">Complete payment.</h1>
-          <div className={styles.orderLine}><div><strong>{offering?.name ?? "SongKeep experience"}</strong><span>{selectedOrganization?.name ?? "Organization"}{date && time ? ` · ${date} · ${time}` : ""}</span></div><b>{offering ? formatOfferingPrice(offering.priceCents) : "—"}</b></div>
-          <p className={styles.serviceNote}>Secure checkout isn’t connected yet.</p>
-          <button className={styles.primaryButton} type="button" disabled={!bookingActionIsAvailable("payments")} onClick={nextStep}>Pay securely</button>
-        </section> : null}
-
-        {activeStep === "setup" ? <section aria-labelledby="setup-title">
-          <p className={styles.eyebrow}>Setup</p>
-          <h1 id="setup-title">Get ready.</h1>
-          {offering?.participantMode === "group" ? <>
-            <p className={styles.lede}>A simple event with one shared song.</p>
-            <div className={styles.readiness}><span>Event details</span><span>Group</span><span>Permissions</span><span>Song</span></div>
-          </> : <>
-            <p className={styles.lede}>Participants, interviews, songs, and a follow-up concert.</p>
-            <div className={styles.readiness}><span>Participants</span><span>Interviews</span><span>Songs</span><span>Concert</span></div>
-          </>}
-          <p className={styles.serviceNote}>Participants don’t need SongKeep accounts.</p>
-          <button className={styles.primaryButton} type="button" disabled={!bookingActionIsAvailable("experiencePersistence")} onClick={nextStep}>Create experience</button>
+          <label className={styles.checkLine}><input type="checkbox" checked={reviewedTerms} onChange={(event) => setReviewedTerms(event.target.checked)} /><span>I’m authorized to plan this experience for the organization and review the final documents when issued.</span></label>
+          <p className={styles.serviceNote}>Reviewing this summary does not replace the final service agreement or participant permission forms.</p>
+          <div className={styles.paymentChoices}>
+            <button className={styles.primaryButton} type="button" disabled={!reviewedTerms || saving || !paymentLinkAvailable || !bookingActionIsAvailable("experiencePersistence")} onClick={() => savePlan("card")}>
+              {saving && requestedPaymentMethod === "card" ? "Opening secure payment…" : `Pay securely${offering ? ` — ${formatOfferingPrice(offering.priceCents)}` : ""}`}
+            </button>
+            <button className={styles.secondaryButton} type="button" disabled={!reviewedTerms || saving || !bookingActionIsAvailable("invoiceRequest")} onClick={() => savePlan("invoice")}>
+              {saving && requestedPaymentMethod === "invoice" ? "Saving…" : "Save plan & request invoice"}
+            </button>
+          </div>
+          {!paymentLinkAvailable ? <p className={styles.paymentNotice}>Secure checkout isn’t connected yet. Request an invoice to continue today.</p> : <p className={styles.paymentNotice}>Card payment opens Stripe’s secure checkout. Payment is confirmed only after Stripe reports it to the Honor a Life Song team.</p>}
         </section> : null}
 
         {activeStep === "ready" ? <section aria-labelledby="ready-title">
-          <p className={styles.eyebrow}>Done</p>
-          <h1 id="ready-title">You’re ready.</h1>
-          <Link className={styles.primaryLink} href={selectedOrganizationId ? `/organization/experiences?org=${selectedOrganizationId}` : "/organization"}>Open experience</Link>
+          <p className={styles.eyebrow}>Plan saved</p>
+          <h1 id="ready-title">Your experience is taking shape.</h1>
+          <p className={styles.lede}>Your preferred date and experience are saved. The team will confirm availability, issue the final agreement, and verify payment before marking the event booked.</p>
+          <div className={styles.confirmationCard}>
+            <span>Request</span><strong>{requestId}</strong>
+            <span>Experience</span><strong>{offering?.name}</strong>
+            <span>Preferred date</span><strong>{date} at {time}</strong>
+          </div>
+          <div className={styles.readyActions}>
+            {requestedPaymentMethod === "invoice" && invoiceLink ? <a className={styles.primaryLink} href={invoiceLink}>Email invoice request</a> : null}
+            <Link className={styles.secondaryLink} href={selectedOrganizationId ? `/organization/experiences?org=${selectedOrganizationId}` : "/organization"}>Open organization account</Link>
+          </div>
         </section> : null}
       </div>
 
-      <footer className={styles.flowFooter}><span>Need help? Contact us.</span></footer>
+      <footer className={styles.flowFooter}><span>Need help? <a href="mailto:help@honoralifesong.com">Contact Honor a Life Song</a>.</span></footer>
     </section>
   </main>;
 }

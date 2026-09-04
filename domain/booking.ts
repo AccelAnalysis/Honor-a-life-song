@@ -9,15 +9,12 @@ import type { EntityId, ISODateTime } from "./types";
 export const serviceOfferings = experienceOfferings;
 export type ServiceOfferingId = ExperienceOfferingId;
 
-export const bookingSteps = [
-  "experience",
-  "organization",
-  "schedule",
-  "agreement",
-  "payment",
-  "setup",
-  "ready"
-] as const;
+/**
+ * Facility booking is intentionally short and outcome-oriented. Account setup,
+ * preferred date, agreement review, and payment choice are composed inside four
+ * meaningful customer steps rather than exposed as seven internal stages.
+ */
+export const bookingSteps = ["experience", "details", "checkout", "ready"] as const;
 export type BookingStep = (typeof bookingSteps)[number];
 
 export const bookingServiceCapabilities = {
@@ -26,14 +23,43 @@ export const bookingServiceCapabilities = {
   scheduling: false,
   agreementPersistence: false,
   payments: false,
+  invoiceRequest: true,
   participantPersistence: false,
   consentPersistence: false,
   notifications: false,
-  experiencePersistence: false
+  experiencePersistence: true
 } as const;
 export type BookingServiceCapability = keyof typeof bookingServiceCapabilities;
 
+export function getOfferingPaymentLink(id: ServiceOfferingId): string | undefined {
+  const value = id === "single-song-group-event"
+    ? process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_SINGLE_SONG_GROUP_EVENT
+    : process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_HONOR_A_LIFE_SONG_EXPERIENCE;
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.toString() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function buildOfferingPaymentLink(
+  id: ServiceOfferingId,
+  context: { experienceRequestId: string; customerEmail?: string }
+): string | undefined {
+  const configured = getOfferingPaymentLink(id);
+  if (!configured) return undefined;
+  const url = new URL(configured);
+  url.searchParams.set("client_reference_id", context.experienceRequestId);
+  if (context.customerEmail) url.searchParams.set("prefilled_email", context.customerEmail);
+  return url.toString();
+}
+
 export function bookingActionIsAvailable(capability: BookingServiceCapability): boolean {
+  if (capability === "payments") {
+    return serviceOfferings.some((offering) => Boolean(getOfferingPaymentLink(offering.id)));
+  }
   return bookingServiceCapabilities[capability];
 }
 

@@ -18,6 +18,19 @@ service firebase.storage {
         && firestore.get(/databases/(default)/documents/organizations/$(orgId)/members/$(request.auth.uid)).data.status == 'active';
     }
 
+    function assignedCreator(orgId, assignmentId) {
+      return signedIn()
+        && firestore.exists(/databases/(default)/documents/creatorAssignments/$(assignmentId))
+        && firestore.get(/databases/(default)/documents/creatorAssignments/$(assignmentId)).data.assignedUserId == request.auth.uid
+        && firestore.get(/databases/(default)/documents/creatorAssignments/$(assignmentId)).data.organizationId == orgId
+        && firestore.get(/databases/(default)/documents/creatorAssignments/$(assignmentId)).data.status != 'cancelled';
+    }
+
+    function allowedCreatorFile() {
+      return request.resource.size < 250 * 1024 * 1024
+        && request.resource.contentType.matches('audio/.*|video/.*|image/.*|application/pdf|text/plain|application/msword|application/vnd.openxmlformats-officedocument.wordprocessingml.document|application/octet-stream');
+    }
+
     match /organizations/{orgId}/organization/{allPaths=**} {
       allow read: if organizationMember(orgId) || platformAdmin();
       allow write: if platformAdmin();
@@ -25,6 +38,16 @@ service firebase.storage {
 
     match /organizations/{orgId}/participants/{participantId}/{allPaths=**} {
       allow read, write: if platformAdmin();
+    }
+
+    match /organizations/{orgId}/creator-submissions/{assignmentId}/{assetId}/{fileName} {
+      allow read: if platformAdmin() || assignedCreator(orgId, assignmentId);
+      allow create: if platformAdmin()
+        || (assignedCreator(orgId, assignmentId)
+          && request.resource.metadata.assignmentId == assignmentId
+          && request.resource.metadata.submittedByUserId == request.auth.uid
+          && allowedCreatorFile());
+      allow update, delete: if platformAdmin();
     }
 
     match /{allPaths=**} {
