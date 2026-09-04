@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SonicSignature } from "@/components/brand";
 import { PublicShell } from "@/components/public-shell";
+import offerStyles from "./home-offers.module.css";
 
 export default function HomePage() {
   return (
@@ -75,10 +76,10 @@ export default function HomePage() {
         <div className="visualIntro">
           <div><p className="eyebrow">Three ways to begin</p><h2 id="program-title">Choose your experience.</h2></div>
         </div>
-        <div className="programMosaic">
-          <Link className="programTile" href="/begin?offering=single-song-group-event"><div><h3>$200 Group Event</h3><p>One shared story. One original song.</p></div></Link>
-          <Link className="programTile" href="/begin?offering=honor-a-life-song-experience"><div><h3>$2,500 Honor a Life Song</h3><p>Participant stories, songs, and a follow-up concert.</p></div></Link>
-          <Link className="programTile" href="/begin?offering=songkeep-legacy-album"><div><h3>$6,000 Legacy Album</h3><p>A complete musical life story developed for release.</p></div></Link>
+        <div className={offerStyles.mosaic}>
+          <Link className={`${offerStyles.tile} ${offerStyles.group}`} href="/begin?offering=single-song-group-event"><div><h3>$200 Group Event</h3><p>One shared story. One original song.</p></div></Link>
+          <Link className={`${offerStyles.tile} ${offerStyles.full}`} href="/begin?offering=honor-a-life-song-experience"><div><h3>$2,500 Honor a Life Song</h3><p>Participant stories, songs, and a follow-up concert.</p></div></Link>
+          <Link className={`${offerStyles.tile} ${offerStyles.album}`} href="/begin?offering=songkeep-legacy-album"><div><h3>$6,000 Legacy Album</h3><p>A complete musical life story developed for release.</p></div></Link>
         </div>
       </section>
 
