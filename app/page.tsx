@@ -49,7 +49,7 @@ export default function HomePage() {
             <div className="songCoverMeta"><small>Group event</small><h3>One shared song.</h3><p>Stories brought together.</p></div>
           </article>
           <article className="songCover">
-            <div className="songCoverMeta"><small>Full experience</small><h3>A community in music.</h3><p>Stories · songs · concert</p></div>
+            <div className="songCoverMeta"><small>Legacy album</small><h3>A life in tracks.</h3><p>Story · album · release</p></div>
           </article>
         </div>
       </section>
@@ -60,10 +60,10 @@ export default function HomePage() {
             <span className="studioCredit">Photo: Saulo Leite / Pexels</span>
           </div>
           <div className="processCopy">
-            <div><p className="eyebrow">Human from start to finish</p><h2 id="process-title">From story to song.</h2></div>
+            <div><p className="eyebrow">Human-led at every step</p><h2 id="process-title">From story to song.</h2></div>
             <div className="processSteps">
-              <div className="processStep"><strong>01</strong><div><h3>Choose.</h3><p>Pick the experience that fits your community.</p></div></div>
-              <div className="processStep"><strong>02</strong><div><h3>Listen.</h3><p>We gather stories and shape them into music.</p></div></div>
+              <div className="processStep"><strong>01</strong><div><h3>Choose.</h3><p>Pick the experience that fits your organization.</p></div></div>
+              <div className="processStep"><strong>02</strong><div><h3>Listen.</h3><p>We gather stories, direct the creative process, and shape them into music.</p></div></div>
               <div className="processStep"><strong>03</strong><div><h3>Celebrate.</h3><p>Share the music, then keep what was created.</p></div></div>
             </div>
             <Link className="button primary" href="/how-it-works">How it works</Link>
@@ -73,11 +73,12 @@ export default function HomePage() {
 
       <section className="visualSection" id="program-highlights" aria-labelledby="program-title">
         <div className="visualIntro">
-          <div><p className="eyebrow">Two ways to begin</p><h2 id="program-title">Choose your experience.</h2></div>
+          <div><p className="eyebrow">Three ways to begin</p><h2 id="program-title">Choose your experience.</h2></div>
         </div>
         <div className="programMosaic">
-          <Link className="programTile" href="/begin?offering=single-song-group-event"><div><h3>$200 Group Event</h3><p>One shared song.</p></div></Link>
-          <Link className="programTile" href="/begin?offering=honor-a-life-song-experience"><div><h3>$2,500 Honor a Life Song</h3><p>Stories, songs, and a follow-up concert.</p></div></Link>
+          <Link className="programTile" href="/begin?offering=single-song-group-event"><div><h3>$200 Group Event</h3><p>One shared story. One original song.</p></div></Link>
+          <Link className="programTile" href="/begin?offering=honor-a-life-song-experience"><div><h3>$2,500 Honor a Life Song</h3><p>Participant stories, songs, and a follow-up concert.</p></div></Link>
+          <Link className="programTile" href="/begin?offering=songkeep-legacy-album"><div><h3>$6,000 Legacy Album</h3><p>A complete musical life story developed for release.</p></div></Link>
         </div>
       </section>
 
