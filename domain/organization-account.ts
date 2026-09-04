@@ -9,6 +9,8 @@ export type OrganizationMemberRole =
   | "event_contact"
   | "viewer";
 
+export type PreferredContactMethod = "email" | "phone" | "text";
+
 export type OrganizationAgreementKind =
   | "terms"
   | "privacy"
@@ -16,6 +18,7 @@ export type OrganizationAgreementKind =
   | "event_scope"
   | "payment_cancellation"
   | "media"
+  | "album_release"
   | "other";
 
 export type OrganizationAgreementStatus = "requested" | "signed" | "superseded" | "void";
@@ -30,7 +33,7 @@ export type OrganizationExperienceStatus =
   | "closed"
   | "cancelled";
 
-export type OrganizationAssetKind = "song" | "lyrics" | "event_video" | "photo" | "report" | "keepsake" | "other";
+export type OrganizationAssetKind = "song" | "lyrics" | "event_video" | "photo" | "report" | "keepsake" | "album_artwork" | "release_link" | "other";
 export type OrganizationAssetWorkflowStatus =
   | "uploading"
   | "submitted"
@@ -49,16 +52,22 @@ export interface OrganizationAccount {
   createdBy: EntityId;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
+  organizationEmail?: string;
   billingEmail?: string;
   phone?: string;
   website?: string;
   address?: string;
+  primaryContactUserId?: EntityId;
 }
 
 export interface OrganizationMember {
   userId: EntityId;
   email: string;
   displayName: string;
+  title?: string;
+  directPhone?: string;
+  preferredContactMethod?: PreferredContactMethod;
+  isPrimaryContact?: boolean;
   role: OrganizationMemberRole;
   status: "active" | "inactive";
   joinedAt: ISODateTime;
@@ -131,6 +140,8 @@ export interface ExperienceParticipant {
   displayName: string;
   participationStatus: ExperienceParticipantStatus;
   permissionReadiness: ExperiencePermissionReadiness;
+  participantEmail?: string;
+  participantPhone?: string;
   familyContactName?: string;
   familyContactEmail?: string;
   createdAt: ISODateTime;
