@@ -11,6 +11,8 @@ import {
 
 const bookingSource = readFileSync(resolve(process.cwd(), "components/booking-route.tsx"), "utf8");
 const bookingRepositorySource = readFileSync(resolve(process.cwd(), "lib/firebase/booking.ts"), "utf8");
+const servicesSource = readFileSync(resolve(process.cwd(), "app/(public)/services/page.tsx"), "utf8");
+const authSource = readFileSync(resolve(process.cwd(), "components/auth-provider.tsx"), "utf8");
 const organizationSource = readFileSync(resolve(process.cwd(), "components/organization-workspace.tsx"), "utf8");
 const organizationCss = readFileSync(resolve(process.cwd(), "components/organization-workspace.module.css"), "utf8");
 
@@ -32,6 +34,13 @@ describe("post-engagement catalog", () => {
       "ready"
     ]);
   });
+
+  it("does not ask for the package twice after selection", () => {
+    expect(servicesSource).toContain('href={`/begin?offering=${experience.id}&step=details`}');
+    expect(bookingSource).toContain('const requestedStep: BookingStep = requestedOffering ? "details" : "experience"');
+    expect(bookingSource).toContain("Selected experience");
+    expect(bookingSource).toContain('<Link href="/services">Change</Link>');
+  });
 });
 
 describe("booking truthfulness", () => {
@@ -47,15 +56,24 @@ describe("booking truthfulness", () => {
   });
 
   it("records a preferred-date inquiry and never simulates booking or payment confirmation", () => {
-    expect(bookingSource).toContain("This is your preferred time.");
-    expect(bookingSource).toContain("confirm availability before the experience is contracted");
-    expect(bookingSource).toContain("does not replace the final service agreement or participant permission forms");
-    expect(bookingSource).toContain("Payment is confirmed only after Stripe reports it");
+    expect(bookingSource).toContain("Your preferred time is confirmed with the Honor a Life Song team before the experience is booked.");
+    expect(bookingSource).toContain("Participant permission forms are completed separately");
+    expect(bookingSource).toContain("Payment is confirmed before the experience is marked booked.");
     expect(bookingSource).toContain("buildOfferingPaymentLink");
     expect(bookingRepositorySource).toContain('status: "inquiry"');
     expect(bookingRepositorySource).toContain('dateStatus: "requested"');
     expect(bookingSource).not.toContain("Payment successful");
     expect(bookingSource).not.toContain("Your experience is booked");
+  });
+
+  it("keeps infrastructure details out of the customer-facing fallback", () => {
+    expect(authSource).not.toContain('return error instanceof Error ? error.message');
+    expect(authSource).toContain("Account access isn’t available in this preview");
+    expect(bookingSource).not.toContain("NEXT_PUBLIC_FIREBASE_API_KEY");
+    expect(bookingSource).not.toContain("Firebase client configuration");
+    expect(bookingSource).not.toContain(">Preview mode<");
+    expect(bookingSource).not.toContain("Preview Community");
+    expect(bookingSource).not.toContain("Preview only");
   });
 });
 
