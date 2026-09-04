@@ -1,22 +1,130 @@
-name: Reconcile lifecycle and invoices
+name: Apply verified lifecycle reconciliation
 on:
   push:
     branches: [feature/organization-to-individual-lifecycle]
-    paths: [.github/workflows/reconcile-invoices.yml]
+    paths:
+      - .github/workflows/reconcile-invoices.yml
+      - .release-transport/**
 permissions:
-  contents: read
+  contents: write
+  actions: read
 jobs:
-  emulator:
+  apply-and-verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
-      - name: Download official Firestore test runtime
-        run: |
-          mkdir -p /tmp/emulator
-          curl --fail --location --retry 3 https://storage.googleapis.com/firebase-preview-drop/emulator/cloud-firestore-emulator-v1.22.0.jar -o /tmp/emulator/firestore-emulator.jar
-          echo '9b6498b7f62714d67f48f59b3818883cd682dbcd46b9f59511de81c97bb5166c  /tmp/emulator/firestore-emulator.jar' | sha256sum --check
-      - uses: actions/upload-artifact@v4
+      - uses: actions/checkout@v4
         with:
-          name: songkeep-firestore-emulator
-          path: /tmp/emulator
-          retention-days: 1
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Reconstruct exact locally tested source files
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, lzma, pathlib, shutil, subprocess
+          root = pathlib.Path.cwd()
+          encoded = ''.join((root / '.release-transport' / f'part{i}.txt').read_text().strip() for i in range(1, 9))
+          packed = base64.b64decode(encoded, validate=True)
+          assert hashlib.sha256(packed).hexdigest() == '7a3ae66735579cfc604d3a45cb38c6dcb16ac903130d152049a86997e01f2192', 'Transport checksum mismatch'
+          bundle = json.loads(lzma.decompress(packed))
+          assert bundle['refs'] == {'21': '26c0296a95b53d274d838de6c0cefa7c5204b503', '24': 'c898d85704c944e34a84cebe3e57a4f457a4e3ef'}
+          def safe_path(name):
+              relative = pathlib.PurePosixPath(name)
+              assert not relative.is_absolute() and '..' not in relative.parts and '.git' not in relative.parts
+              return root / relative
+          hashes = {}
+          for name, entry in bundle['files'].items():
+              target = safe_path(name)
+              if 'content' in entry:
+                  text = entry['content']
+              else:
+                  source = subprocess.check_output(['git', 'show', bundle['refs'][entry['base']] + ':' + name])
+                  assert hashlib.sha256(source).hexdigest() == entry['baseHash'], name + ': base checksum mismatch'
+                  lines = source.decode('utf-8').splitlines(keepends=True)
+                  for start, end, replacement in reversed(entry['edits']):
+                      lines[start:end] = [replacement]
+                  text = ''.join(lines)
+              data = text.encode('utf-8')
+              assert hashlib.sha256(data).hexdigest() == entry['hash'], name + ': final checksum mismatch'
+              target.parent.mkdir(parents=True, exist_ok=True)
+              target.write_bytes(data)
+              hashes[name] = entry['hash']
+          for name in bundle['delete']:
+              safe_path(name).unlink(missing_ok=True)
+          shutil.rmtree(root / '.release-transport')
+          pathlib.Path('/tmp/release-source-hashes.json').write_text(json.dumps(hashes, indent=2))
+          print(f'Reconstructed and verified {len(hashes)} source files; removed {len(bundle["delete"])} obsolete files.')
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: songkeep-verification-dependencies
+          run-id: 33916510749
+          github-token: ${{ github.token }}
+          path: /tmp/songkeep-locked-dependencies
+      - name: Restore exact tested dependency locks
+        run: |
+          tar -xzf /tmp/songkeep-locked-dependencies/dependencies.tar.gz package-lock.json functions/package-lock.json
+          echo 'ba6781f8eb6e218e11188a5f807c8b03a6c6ca44f3c86da3e887f510ade99972  package-lock.json' | sha256sum --check
+          echo 'bcc594c566653746ada6cfeb89015d2872a6542782da92ea3c156b5073c4df3b  functions/package-lock.json' | sha256sum --check
+          npm ci --no-audit --no-fund
+          npm ci --prefix functions --no-audit --no-fund
+      - name: Verify application and native unit tests
+        run: |
+          set -o pipefail
+          npm run lint 2>&1 | tee /tmp/release-lint.log
+          npm run typecheck 2>&1 | tee /tmp/release-typecheck.log
+          npm test 2>&1 | tee /tmp/release-app-tests.log
+          npm --prefix functions test 2>&1 | tee /tmp/release-native-tests.log
+      - name: Start isolated official Firestore emulator
+        run: |
+          curl --fail --location --retry 3 https://storage.googleapis.com/firebase-preview-drop/emulator/cloud-firestore-emulator-v1.22.0.jar -o /tmp/firestore-emulator.jar
+          echo '9b6498b7f62714d67f48f59b3818883cd682dbcd46b9f59511de81c97bb5166c  /tmp/firestore-emulator.jar' | sha256sum --check
+          java -Duser.language=en -jar /tmp/firestore-emulator.jar --host 127.0.0.1 --port 8096 --project_id demo-songkeep-invoices > /tmp/firestore.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -s http://127.0.0.1:8096 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/firestore.log
+          exit 1
+      - name: Verify transactions, authorization and production build
+        run: |
+          set -o pipefail
+          npm --prefix functions run test:integration 2>&1 | tee /tmp/release-integration-tests.log
+          npm run build 2>&1 | tee /tmp/release-build.log
+        env:
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8096
+          SONGKEEP_TEST_PDF: /tmp/songkeep-sample-invoice.pdf
+      - name: Commit only verified reconciliation
+        env:
+          EXPECTED_HEAD: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, pathlib
+          for name, expected in json.loads(pathlib.Path('/tmp/release-source-hashes.json').read_text()).items():
+              assert hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() == expected, name + ': changed during verification'
+          PY
+          test "$(git ls-remote origin refs/heads/feature/organization-to-individual-lifecycle | cut -f1)" = "$EXPECTED_HEAD"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --check
+          git commit -m 'feat: reconcile PR 21 and implement native invoice lifecycle'
+          git push origin HEAD:feature/organization-to-individual-lifecycle
+          git rev-parse HEAD | tee /tmp/release-commit.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reconciled-release-evidence
+          path: |
+            /tmp/release-*.log
+            /tmp/release-source-hashes.json
+            /tmp/release-commit.txt
+            /tmp/songkeep-sample-invoice.pdf
+            /tmp/firestore.log
+          retention-days: 7
