@@ -44,14 +44,14 @@ describe("commercial integrity", () => {
 describe("complete relationship experience", () => {
   it("keeps payment, permissions, feedback, renewal, and advocacy connected", () => {
     expect(organizationExperience).toContain("Commercial status");
-    expect(organizationExperience).toContain("People & readiness");
+    expect(organizationExperience).toContain("People &amp; readiness");
     expect(organizationExperience).toContain("How likely are you to recommend SongKeep");
     expect(organizationExperience).toContain("Make a warm introduction.");
     expect(organizationExperience).toContain("Plan what comes next.");
   });
 
   it("gives operations direct lifecycle controls", () => {
-    expect(adminExperience).toContain("Confirm payment & create experience");
+    expect(adminExperience).toContain("Confirm payment &amp; create experience");
     expect(adminExperience).toContain("Publish products created from organization experiences");
     expect(adminExperience).toContain("Review each person’s choices");
     expect(adminExperience).toContain("Individual commerce");
