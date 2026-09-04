@@ -31,6 +31,7 @@ export const workspaceNavigation: Record<WorkspaceId, NavigationItem[]> = {
     { id: "organization-home", label: "Home", slug: "", description: "See your next experience, recent memories, agreements that need attention, and future dates.", availability: "structured" },
     { id: "organization-experiences", label: "Experiences", slug: "experiences", description: "Manage upcoming experiences and revisit the events your organization has already completed.", availability: "structured" },
     { id: "organization-library", label: "Songs & Memories", slug: "library", description: "Return to songs, lyrics, event videos, photos, reports, and keepsakes from completed experiences.", availability: "structured" },
+    { id: "organization-growth", label: "After the Experience", slug: "growth", description: "Manage participant follow-through, feedback, renewal, and referrals after an organization experience.", availability: "structured" },
     { id: "organization-account", label: "Account", slug: "account", description: "Manage your organization, authorized team, agreements, and billing information.", availability: "structured" },
     { id: "organization-help", label: "Help", slug: "help", description: "Get help with your account, an upcoming experience, or completed event materials.", availability: "structured" }
   ],
