@@ -66,9 +66,9 @@ describe("booking truthfulness", () => {
     expect(bookingSource).not.toContain("Your experience is booked");
   });
 
-  it("keeps infrastructure details out of the customer-facing fallback", () => {
+  it("keeps infrastructure details and internal preview labels out of customer-facing copy", () => {
     expect(authSource).not.toContain('return error instanceof Error ? error.message');
-    expect(authSource).toContain("Account access isn’t available in this preview");
+    expect(authSource).toContain("Account access is temporarily unavailable.");
     expect(bookingSource).not.toContain("NEXT_PUBLIC_FIREBASE_API_KEY");
     expect(bookingSource).not.toContain("Firebase client configuration");
     expect(bookingSource).not.toContain(">Preview mode<");
