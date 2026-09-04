@@ -8,6 +8,7 @@ import { SongKeepLockup } from "@/components/brand";
 import { CreatorWorkspace } from "@/components/creator-workspace";
 import { CustomerWorkspace } from "@/components/customer-workspace";
 import { FacilityWorkspace } from "@/components/facility-workspace";
+import { OrganizationGrowthSurface } from "@/components/organization-growth-surface";
 import { OrganizationWorkspace } from "@/components/organization-workspace";
 import { referenceFacilityContext } from "@/fixtures/reference-data";
 import { buildAdminHref, resolveAdminRoute, type AdminParentId } from "@/lib/admin-navigation";
@@ -137,7 +138,9 @@ export function WorkspaceRoute() {
               : workspace === "facility" && facilityRoute
                 ? <FacilityWorkspace route={facilityRoute} />
                 : workspace === "organization"
-                  ? <OrganizationWorkspace sectionId={activeItem.id} />
+                  ? activeItem.id === "organization-growth"
+                    ? <OrganizationGrowthSurface />
+                    : <OrganizationWorkspace sectionId={activeItem.id} />
                   : <section className="unavailable large"><strong>{activeItem.label} is coming soon.</strong></section>}
     </main>
     <nav className="mobileNav" aria-label={`${workspaceName} mobile navigation`}>
