@@ -35,6 +35,33 @@ service cloud.firestore {
       return platformAdmin() || organizationRole(orgId, ['organization_admin', 'program_coordinator', 'event_contact']);
     }
 
+    function assignedCreator(assignmentId) {
+      return signedIn() && assignmentId is string && assignmentId.size() > 0
+        && exists(/databases/$(database)/documents/creatorAssignments/$(assignmentId))
+        && get(/databases/$(database)/documents/creatorAssignments/$(assignmentId)).data.assignedUserId == request.auth.uid
+        && get(/databases/$(database)/documents/creatorAssignments/$(assignmentId)).data.status != 'cancelled';
+    }
+    function validCreatorAsset(orgId, assetId) {
+      let a = get(/databases/$(database)/documents/creatorAssignments/$(request.resource.data.assignmentId));
+      return assignedCreator(request.resource.data.assignmentId)
+        && request.resource.data.keys().hasOnly(['organizationId','experienceId','title','kind','status','workflowStatus','organizationVisible','assignmentId','participantId','submittedByUserId','submittedByName','submittedByRole','notes','reviewNotes','storagePath','downloadUrl','fileName','mimeType','createdAt','updatedAt'])
+        && a.data.organizationId == orgId
+        && request.resource.data.organizationId == orgId
+        && request.resource.data.experienceId == a.data.experienceId
+        && request.resource.data.participantId == a.data.get('participantId', null)
+        && request.resource.data.submittedByUserId == request.auth.uid
+        && request.resource.data.submittedByRole == a.data.role
+        && request.resource.data.organizationVisible == false
+        && request.resource.data.status == 'processing'
+        && request.resource.data.workflowStatus == 'uploading'
+        && request.resource.data.downloadUrl == null
+        && request.resource.data.reviewNotes == null
+        && request.resource.data.fileName.matches('[A-Za-z0-9._-]+')
+        && request.resource.data.storagePath == 'organizations/' + orgId + '/creator-submissions/' + request.resource.data.assignmentId + '/' + assetId + '/' + request.resource.data.fileName
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+    }
+
     function matchesVerifiedSignedInEmail(email) {
       return verifiedEmail()
         && request.auth.token.email != null
@@ -106,6 +133,144 @@ service cloud.firestore {
         && membership.data.status == 'active';
     }
 
+    function validOfferingAndAmount(offeringId, amountCents) {
+      return (offeringId == 'single-song-group-event' && amountCents == 20000)
+        || (offeringId == 'honor-a-life-song-experience' && amountCents == 250000)
+        || (offeringId == 'songkeep-legacy-album' && amountCents == 600000);
+    }
+
+    function validExperienceRequestCreate(orgId) {
+      let method = request.resource.data.requestedPaymentMethod;
+      return organizationAdmin(orgId)
+        && request.resource.data.organizationId == orgId
+        && request.resource.data.createdByUserId == request.auth.uid
+        && request.resource.data.organizationName is string
+        && request.resource.data.offeringId is string
+        && validOfferingAndAmount(request.resource.data.offeringId, request.resource.data.amountCents)
+        && request.resource.data.currency == 'USD'
+        && request.resource.data.agreementAcknowledged == true
+        && request.resource.data.agreementVersion == 'organization-planning-v1'
+        && request.resource.data.preferredStartsAt is timestamp
+        && method in ['card', 'invoice']
+        && ((method == 'card'
+              && request.resource.data.status == 'payment_pending'
+              && request.resource.data.financialStatus == 'payment_pending'
+              && request.resource.data.nurtureTrack == 'payment_reconciliation')
+          || (method == 'invoice'
+              && request.resource.data.status == 'invoice_requested'
+              && request.resource.data.financialStatus == 'invoice_requested'
+              && request.resource.data.nurtureTrack == 'invoice_payment'))
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function feedbackBranchMatches(score, branch, followUpStatus) {
+      return (score <= 6 && branch == 'service_recovery' && followUpStatus == 'required')
+        || (score >= 7 && score <= 8 && branch == 'relationship_nurture' && followUpStatus == 'not_required')
+        || (score >= 9 && branch == 'promoter' && followUpStatus == 'not_required');
+    }
+
+    function validFeedbackCreate(orgId) {
+      let score = request.resource.data.score;
+      let experienceId = request.resource.data.experienceId;
+      return organizationMember(orgId)
+        && request.resource.data.organizationId == orgId
+        && request.resource.data.submittedByUserId == request.auth.uid
+        && request.resource.data.audience == 'organization'
+        && score is int
+        && score >= 0
+        && score <= 10
+        && feedbackBranchMatches(score, request.resource.data.branch, request.resource.data.followUpStatus)
+        && experienceId is string
+        && exists(/databases/$(database)/documents/organizations/$(orgId)/experiences/$(experienceId))
+        && get(/databases/$(database)/documents/organizations/$(orgId)/experiences/$(experienceId)).data.status in ['post_event', 'closed', 'assets_processing']
+        && request.resource.data.createdAt == request.time;
+    }
+
+    function validReferralCreate(orgId) {
+      let feedbackId = request.resource.data.feedbackId;
+      let feedback = get(/databases/$(database)/documents/organizations/$(orgId)/feedback/$(feedbackId));
+      return organizationMember(orgId)
+        && request.resource.data.organizationId == orgId
+        && request.resource.data.submittedByUserId == request.auth.uid
+        && feedbackId is string
+        && feedback.data.organizationId == orgId
+        && feedback.data.score >= 9
+        && feedback.data.submittedByUserId == request.auth.uid
+        && request.resource.data.experienceId == feedback.data.experienceId
+        && request.resource.data.referredOrganizationName is string
+        && request.resource.data.status == 'submitted'
+        && request.resource.data.createdAt == request.time;
+    }
+
+    function validPermissionResponse(orgId, experienceId, invitationId) {
+      return matchesVerifiedSignedInEmail(resource.data.recipientEmail)
+        && resource.data.status == 'pending'
+        && request.resource.data.status == 'submitted'
+        && request.resource.data.organizationId == resource.data.organizationId
+        && request.resource.data.organizationId == orgId
+        && request.resource.data.experienceId == resource.data.experienceId
+        && request.resource.data.experienceId == experienceId
+        && request.resource.data.participantId == resource.data.participantId
+        && request.resource.data.participantName == resource.data.participantName
+        && request.resource.data.recipientEmail == resource.data.recipientEmail
+        && request.resource.data.agreementVersion == resource.data.agreementVersion
+        && request.resource.data.invitedByUserId == resource.data.invitedByUserId
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.submittedByUserId == request.auth.uid
+        && request.resource.data.submittedAt == request.time
+        && request.resource.data.signatureName is string
+        && request.resource.data.authorityBasis in ['self', 'authorized_representative']
+        && request.resource.data.scopes is list
+        && request.resource.data.scopes.hasAll(['participation', 'internal_creative_use'])
+        && request.resource.data.restrictions is list
+        && request.resource.data.designatedFamilyEmails is list
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status',
+          'submittedAt',
+          'submittedByUserId',
+          'signatureName',
+          'authorityBasis',
+          'scopes',
+          'restrictions',
+          'participantDeliveryEmail',
+          'designatedFamilyEmails'
+        ]);
+    }
+
+    function validPurchaseRequestCreate(userId) {
+      let accessId = request.resource.data.accessId;
+      let productId = request.resource.data.productId;
+      let access = get(/databases/$(database)/documents/users/$(userId)/experienceAccess/$(accessId));
+      let product = get(/databases/$(database)/documents/postExperienceProducts/$(productId));
+      let checkoutConfigured = product.data.get('checkoutUrl', null) != null;
+      return verifiedEmail()
+        && request.auth.uid == userId
+        && request.resource.data.userId == userId
+        && accessId is string
+        && productId is string
+        && product.data.status == 'active'
+        && request.resource.data.organizationId == access.data.organizationId
+        && request.resource.data.organizationName == access.data.organizationName
+        && request.resource.data.experienceId == access.data.experienceId
+        && request.resource.data.experienceTitle == access.data.experienceTitle
+        && request.resource.data.participantId == access.data.participantId
+        && request.resource.data.participantName == access.data.participantName
+        && request.resource.data.recipient == access.data.recipient
+        && request.resource.data.recipient in product.data.audiences
+        && request.resource.data.productName == product.data.name
+        && request.resource.data.priceCents == product.data.get('priceCents', null)
+        && request.resource.data.currency == 'USD'
+        && ((checkoutConfigured
+              && request.resource.data.requestedPaymentMethod == 'card'
+              && request.resource.data.status == 'payment_pending')
+          || (!checkoutConfigured
+              && request.resource.data.requestedPaymentMethod == 'invoice'
+              && request.resource.data.status == 'invoice_requested'))
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+    }
+
     match /admins/{userId} {
       allow read: if signedIn() && (request.auth.uid == userId || platformAdmin());
       allow create, update, delete: if platformAdmin();
@@ -128,6 +293,20 @@ service cloud.firestore {
         allow create: if experienceAccessPointerCreate(userId, accessId);
         allow update, delete: if platformAdmin();
       }
+
+      match /purchaseReceipts/{receiptId} {
+        allow read: if (signedIn() && request.auth.uid == userId) || platformAdmin();
+        allow write: if false;
+      }
+      match /purchaseRequests/{purchaseRequestId} {
+        allow read: if signedIn() && (request.auth.uid == userId || platformAdmin());
+        allow create, update, delete: if false; // Confirmed through authenticated backend transactions.
+      }
+    }
+
+    match /postExperienceProducts/{productId} {
+      allow read: if signedIn();
+      allow create, update, delete: if platformAdmin();
     }
 
     match /organizations/{orgId} {
@@ -187,6 +366,23 @@ service cloud.firestore {
         allow delete: if platformAdmin();
       }
 
+      match /experienceRequests/{requestId} {
+        allow read: if organizationMember(orgId) || platformAdmin();
+        allow create, update, delete: if false; // Invoice and request transitions are one server transaction.
+      }
+
+      match /feedback/{feedbackId} {
+        allow read: if organizationMember(orgId) || platformAdmin();
+        allow create: if validFeedbackCreate(orgId);
+        allow update, delete: if platformAdmin();
+      }
+
+      match /referrals/{referralId} {
+        allow read: if organizationMember(orgId) || platformAdmin();
+        allow create: if validReferralCreate(orgId);
+        allow update, delete: if platformAdmin();
+      }
+
       match /experiences/{experienceId} {
         allow read: if organizationMember(orgId) || platformAdmin();
         allow create, update, delete: if platformAdmin();
@@ -200,12 +396,34 @@ service cloud.firestore {
           allow update: if organizationExperienceManager(orgId)
             && request.resource.data.organizationId == resource.data.organizationId
             && request.resource.data.experienceId == resource.data.experienceId
-            && request.resource.data.permissionReadiness == resource.data.permissionReadiness;
-          allow update, delete: if platformAdmin();
+            && request.resource.data.permissionReadiness == resource.data.permissionReadiness
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['currentConsentId', 'permissionVersion']);
+          allow delete: if platformAdmin();
 
           match /consents/{consentId} {
-            allow read, create, update, delete: if platformAdmin();
+            allow read: if platformAdmin();
+            allow write: if false; // Version advancement and revocations must remain atomic.
           }
+        }
+
+        match /permissionInvitations/{invitationId} {
+          allow read: if organizationExperienceManager(orgId)
+            || matchesVerifiedSignedInEmail(resource.data.recipientEmail);
+          allow create: if organizationExperienceManager(orgId)
+            && request.resource.data.organizationId == orgId
+            && request.resource.data.experienceId == experienceId
+            && request.resource.data.participantId is string
+            && exists(/databases/$(database)/documents/organizations/$(orgId)/experiences/$(experienceId)/participants/$(request.resource.data.participantId))
+            && request.resource.data.recipientEmail is string
+            && request.resource.data.status == 'pending'
+            && request.resource.data.agreementVersion == 'participant-permissions-v1'
+            && request.resource.data.invitedByUserId == request.auth.uid
+            && request.resource.data.createdAt == request.time;
+          allow update: if (organizationExperienceManager(orgId)
+              && resource.data.status == 'pending'
+              && request.resource.data.status == 'revoked'
+              && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'revokedAt']));
+          allow delete: if platformAdmin();
         }
 
         match /entitlements/{entitlementId} {
@@ -255,12 +473,51 @@ service cloud.firestore {
             && request.resource.data.status in ['interested', 'declined']);
       }
 
+      match /invoices/{invoiceId} {
+        allow read: if platformAdmin() || organizationRole(orgId, ['organization_admin', 'billing_contact']);
+        allow write: if false;
+        match /invoiceMessages/{messageId} {
+          allow read: if platformAdmin() || organizationRole(orgId, ['organization_admin', 'billing_contact']);
+          allow write: if false;
+        }
+      }
+      match /orders/{orderId} {
+        allow read: if platformAdmin() || organizationRole(orgId, ['organization_admin', 'billing_contact']);
+        allow write: if false;
+      }
       match /assets/{assetId} {
         allow read: if platformAdmin()
-          || (organizationMember(orgId) && resource.data.organizationVisible == true);
-        allow create, update, delete: if platformAdmin();
+          || (organizationMember(orgId) && resource.data.organizationVisible == true)
+          || (assignedCreator(resource.data.get('assignmentId', '')) && resource.data.submittedByUserId == request.auth.uid);
+        allow create: if platformAdmin() || validCreatorAsset(orgId, assetId);
+        allow update: if platformAdmin() && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['workflowStatus', 'organizationVisible'])
+          || (assignedCreator(resource.data.get('assignmentId', ''))
+            && resource.data.submittedByUserId == request.auth.uid
+            && resource.data.workflowStatus == 'uploading'
+            && request.resource.data.organizationVisible == false
+            && request.resource.data.get('downloadUrl', null) == null
+            && ((request.resource.data.status == 'ready' && request.resource.data.workflowStatus == 'submitted')
+              || (request.resource.data.status == 'restricted' && request.resource.data.workflowStatus == 'upload_failed'))
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'workflowStatus', 'updatedAt']));
+        allow delete: if platformAdmin();
       }
     }
+
+    match /creatorAssignments/{assignmentId} {
+      allow read: if platformAdmin() || (signedIn() && resource.data.assignedUserId == request.auth.uid);
+      allow create, update, delete: if platformAdmin();
+    }
+    // Explicit collection-group read scopes support the Operations queues, never client writes.
+    match /{path=**}/invoices/{invoiceId} { allow read: if platformAdmin(); }
+    match /{path=**}/experienceRequests/{requestId} { allow read: if platformAdmin(); }
+    match /{path=**}/purchaseRequests/{requestId} { allow read: if platformAdmin(); }
+    match /{path=**}/permissionInvitations/{invitationId} { allow read: if platformAdmin(); }
+    match /{path=**}/feedback/{feedbackId} { allow read: if platformAdmin(); }
+    match /{path=**}/referrals/{referralId} { allow read: if platformAdmin(); }
+    match /billingExceptions/{exceptionId} { allow read: if platformAdmin(); }
+    match /billingFollowUp/{taskId} { allow read: if platformAdmin(); }
+    match /billingAudit/{auditId} { allow read: if platformAdmin(); }
+    match /lifecycleAudit/{auditId} { allow read: if platformAdmin(); }
 
     match /{document=**} {
       allow read, write: if false;

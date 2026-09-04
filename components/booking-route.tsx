@@ -1,12 +1,13 @@
 "use client";
 
+import { nativeCheckoutEnabled } from "@/lib/firebase/native-services";
+
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { SongKeepLockup } from "@/components/brand";
 import {
-  bookingActionIsAvailable,
   bookingSteps,
   formatOfferingPrice,
   getServiceOffering,
@@ -15,203 +16,300 @@ import {
   type ServiceOfferingId
 } from "@/domain/booking";
 import { normalizeExperienceOfferingId } from "@/domain/experience";
-import type { OrganizationAccount } from "@/domain/organization-account";
-import { listUserOrganizations } from "@/lib/firebase/organization-account";
+import type { OrganizationRelationshipProfile } from "@/domain/customer-lifecycle";
+import {
+  createOrganizationExperienceRequest,
+  listOrganizationRelationshipProfiles
+} from "@/lib/firebase/customer-lifecycle";
 import styles from "./booking-route.module.css";
 
-const stepLabels: Record<BookingStep, string> = {
-  experience: "Plan",
-  organization: "Account",
-  schedule: "Date",
-  agreement: "Review",
-  payment: "Pay",
-  setup: "Setup",
-  ready: "Done"
+const progressSteps = bookingSteps.filter((step): step is Exclude<BookingStep, "ready"> => step !== "ready");
+const stepLabels: Record<Exclude<BookingStep, "ready">, string> = {
+  experience: "Experience",
+  organization: "Organization",
+  plan: "Plan",
+  payment: "Complete"
 };
 
-const legalDocuments = [
-  ["Service agreement", "Experience scope and terms."],
-  ["Cancellation policy", "Cancellation and rescheduling terms."],
-  ["Privacy notice", "How information and files are handled."],
-  ["Electronic records", "Electronic document choices."]
-] as const;
+const offeringDetails: Record<ServiceOfferingId, readonly string[]> = {
+  "single-song-group-event": ["Shared story conversation", "One original group song", "Event presentation"],
+  "honor-a-life-song-experience": ["Participant interviews", "Multiple original songs", "Follow-up concert"],
+  "songkeep-legacy-album": ["Extended story discovery", "Cohesive multi-track album", "Approved digital release"]
+};
 
 function validOfferingId(value: string | null): ServiceOfferingId | undefined {
   return normalizeExperienceOfferingId(value);
 }
 
+function titleForStep(step: BookingStep) {
+  if (step === "experience") return "Choose the experience that fits.";
+  if (step === "organization") return "Who should SongKeep work with?";
+  if (step === "plan") return "Tell us what you are planning.";
+  if (step === "payment") return "Choose how to complete the request.";
+  return "Your request is connected to your account.";
+}
+
 export function BookingRoute() {
   const searchParams = useSearchParams();
   const { user, status: authStatus, configurationError } = useAuth();
+  const isStaticPreview = process.env.NEXT_PUBLIC_HALS_STATIC_PREVIEW === "1";
   const requestedOffering = validOfferingId(searchParams.get("offering") ?? searchParams.get("service"));
-  const requestedOrganizationId = searchParams.get("organizationId");
-  const sourceExperience = searchParams.get("sourceExperience");
-  const requestedStep: BookingStep = searchParams.get("step") === "organization" && requestedOffering ? "organization" : "experience";
-  const [activeStep, setActiveStep] = useState<BookingStep>(requestedStep);
-  const [furthestStep, setFurthestStep] = useState(bookingSteps.indexOf(requestedStep));
+  const requestedOrganizationId = searchParams.get("organizationId") ?? searchParams.get("org");
+  const sourceExperienceId = searchParams.get("sourceExperience") ?? undefined;
+  const replacesRequestId = searchParams.get("replacesRequest") ?? undefined;
+  const initialStep: BookingStep = requestedOffering ? "organization" : "experience";
+
+  const [activeStep, setActiveStep] = useState<BookingStep>(initialStep);
+  const [furthestStepIndex, setFurthestStepIndex] = useState(bookingSteps.indexOf(initialStep));
   const [offeringId, setOfferingId] = useState<ServiceOfferingId | undefined>(requestedOffering);
-  const [organizations, setOrganizations] = useState<OrganizationAccount[]>([]);
-  const [organizationLoading, setOrganizationLoading] = useState(false);
+  const [organizations, setOrganizations] = useState<OrganizationRelationshipProfile[]>([]);
   const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | undefined>(requestedOrganizationId ?? undefined);
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [reviewedTerms, setReviewedTerms] = useState(false);
+  const [previewOrganizationName, setPreviewOrganizationName] = useState("");
+  const [organizationLoading, setOrganizationLoading] = useState(false);
+  const [preferredDate, setPreferredDate] = useState("");
+  const [preferredTime, setPreferredTime] = useState("");
+  const [venue, setVenue] = useState("");
+  const [participantEstimate, setParticipantEstimate] = useState("");
+  const [organizationGoal, setOrganizationGoal] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "invoice">(nativeCheckoutEnabled ? "card" : "invoice");
+  const [authorized, setAuthorized] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [submittedMethod, setSubmittedMethod] = useState<"card" | "invoice" | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const offering = useMemo(() => offeringId ? getServiceOffering(offeringId) : undefined, [offeringId]);
   const selectedOrganization = organizations.find((organization) => organization.id === selectedOrganizationId);
-  const stepIndex = bookingSteps.indexOf(activeStep);
+  const currentIndex = bookingSteps.indexOf(activeStep);
+  const cardAvailable = nativeCheckoutEnabled;
+  const intent = useRef<{ signature: string; key: string } | null>(null);
 
   useEffect(() => {
-    if (!user) {
+    if (isStaticPreview || !user) {
       setOrganizations([]);
       return;
     }
     let cancelled = false;
     setOrganizationLoading(true);
-    listUserOrganizations(user.uid)
+    listOrganizationRelationshipProfiles(user.uid)
       .then((items) => {
         if (cancelled) return;
         setOrganizations(items);
         setSelectedOrganizationId((current) => items.some((item) => item.id === current) ? current : items[0]?.id);
       })
+      .catch((loadError) => {
+        if (!cancelled) setError(loadError instanceof Error ? loadError.message : "We could not open your organization account.");
+      })
       .finally(() => { if (!cancelled) setOrganizationLoading(false); });
     return () => { cancelled = true; };
-  }, [user]);
+  }, [isStaticPreview, user]);
 
   function moveTo(step: BookingStep) {
     const index = bookingSteps.indexOf(step);
-    if (index > furthestStep) return;
+    if (index > furthestStepIndex) return;
     setActiveStep(step);
+    setError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function nextStep() {
-    const next = bookingSteps[stepIndex + 1];
-    if (!next) return;
-    const nextIndex = stepIndex + 1;
-    setFurthestStep((current) => Math.max(current, nextIndex));
-    setActiveStep(next);
+  function continueTo(step: BookingStep) {
+    const index = bookingSteps.indexOf(step);
+    setFurthestStepIndex((current) => Math.max(current, index));
+    setActiveStep(step);
+    setError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function organizationReturnPath() {
+  function accountReturnPath() {
     const params = new URLSearchParams();
-    params.set("step", "organization");
     if (offeringId) params.set("offering", offeringId);
-    if (requestedOrganizationId) params.set("organizationId", requestedOrganizationId);
-    if (sourceExperience) params.set("sourceExperience", sourceExperience);
+    params.set("step", "organization");
+    if (sourceExperienceId) params.set("sourceExperience", sourceExperienceId);
+    if (replacesRequestId) params.set("replacesRequest", replacesRequestId);
     return `/begin?${params.toString()}`;
   }
 
+  function chooseExperience(id: ServiceOfferingId) {
+    setOfferingId(id);
+    setRequestId(null);
+    setSubmittedMethod(null);
+  }
+
+  async function submitRequest() {
+    if (!offering || !preferredDate || !preferredTime || !authorized) return;
+    if (isStaticPreview) {
+      setRequestId("preview-only");
+      setSubmittedMethod(paymentMethod);
+      continueTo("ready");
+      return;
+    }
+    if (!user || !selectedOrganization) {
+      setError("Choose or create an organization account before continuing.");
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      const signature = JSON.stringify({ offeringId, selectedOrganizationId, preferredDate, preferredTime, venue, participantEstimate, organizationGoal, paymentMethod, sourceExperienceId, replacesRequestId });
+      if (intent.current?.signature !== signature) intent.current = { signature, key: crypto.randomUUID() };
+      const request = await createOrganizationExperienceRequest({
+        idempotencyKey: intent.current.key,
+        organizationId: selectedOrganization.id,
+        createdByUserId: user.uid,
+        offeringId: offering.id,
+        preferredDate,
+        preferredTime,
+        venue,
+        participantEstimate: participantEstimate ? Number(participantEstimate) : undefined,
+        organizationGoal,
+        requestedPaymentMethod: paymentMethod,
+        agreementAcknowledged: authorized,
+        sourceExperienceId,
+        replacesRequestId,
+        acquisition: {
+          source: searchParams.get("utm_source") ?? undefined,
+          medium: searchParams.get("utm_medium") ?? undefined,
+          campaign: searchParams.get("utm_campaign") ?? undefined,
+          content: searchParams.get("utm_content") ?? undefined,
+          referralCode: searchParams.get("ref") ?? undefined
+        }
+      });
+      setRequestId(request.id);
+      setSubmittedMethod(paymentMethod);
+      if (paymentMethod === "card") {
+        window.location.assign(`/organization/invoices?organization=${encodeURIComponent(selectedOrganization.id)}&invoice=${encodeURIComponent(request.id)}`);
+        return;
+      }
+      continueTo("ready");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "We could not save this request.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const organizationName = isStaticPreview ? previewOrganizationName : selectedOrganization?.name;
+
   return <main className={styles.shell}>
-    <aside className={styles.imagePanel} aria-label="SongKeep">
+    <aside className={styles.storyPanel} aria-label="SongKeep">
       <Link className={styles.brand} href="/" aria-label="SongKeep home"><SongKeepLockup variant="full" inverse /></Link>
-      <div className={styles.imageCopy}>
+      <div className={styles.storyCopy}>
         <span className={styles.wave} aria-hidden="true"><i /><i /><i /><i /><i /></span>
-        <p>Stories become songs worth keeping.</p>
+        <p>One account carries every experience forward.</p>
+        <small>Choose, plan, pay, invite, celebrate, and return.</small>
       </div>
-      <span className={styles.photoCredit}>Photo: Los Muertos Crew / Pexels</span>
     </aside>
 
     <section className={styles.flow}>
       <header className={styles.flowHeader}>
         <Link className={styles.mobileBrand} href="/" aria-label="SongKeep home"><SongKeepLockup variant="app" /></Link>
-        <nav className={styles.progress} aria-label="Booking progress">
-          {bookingSteps.map((step, index) => <button
+        {activeStep !== "ready" ? <nav className={styles.progress} aria-label="Planning progress">
+          {progressSteps.map((step, index) => <button
             key={step}
             type="button"
-            className={index <= stepIndex ? styles.progressActive : undefined}
             aria-current={step === activeStep ? "step" : undefined}
-            disabled={index > furthestStep}
+            disabled={bookingSteps.indexOf(step) > furthestStepIndex}
             onClick={() => moveTo(step)}
-          ><span>{index + 1}</span><small>{stepLabels[step]}</small></button>)}
-        </nav>
+          ><span aria-hidden="true">{index + 1}</span><small>{stepLabels[step]}</small></button>)}
+        </nav> : null}
       </header>
 
       <div className={styles.content}>
-        {activeStep === "experience" ? <section aria-labelledby="booking-title">
-          <p className={styles.eyebrow}>Choose</p>
-          <h1 id="booking-title">Pick your experience.</h1>
+        {error ? <div className={styles.alert} role="alert"><strong>We could not continue.</strong><span>{error}</span></div> : null}
+        <p className={styles.eyebrow}>{activeStep === "ready" ? "Saved to your relationship" : stepLabels[activeStep as Exclude<BookingStep, "ready">]}</p>
+        <h1>{titleForStep(activeStep)}</h1>
+
+        {activeStep === "experience" ? <section className={styles.step} aria-label="Choose a SongKeep experience">
+          <p className={styles.lede}>All three experiences are purchased by an organization. Participants and families enter later through private invitations.</p>
           <div className={styles.offerings} role="radiogroup" aria-label="SongKeep experiences">
             {serviceOfferings.map((item) => <label key={item.id} className={styles.offering}>
-              <input type="radio" name="offering" value={item.id} checked={offeringId === item.id} onChange={() => setOfferingId(item.id)} />
+              <input type="radio" name="offering" value={item.id} checked={offeringId === item.id} onChange={() => chooseExperience(item.id)} />
               <span className={styles.choiceMark} aria-hidden="true" />
-              <span className={styles.offeringText}><strong>{item.name}</strong><small>{item.creativeOutput} · {item.presentation}</small></span>
-              <b>{formatOfferingPrice(item.priceCents)}</b>
+              <span className={styles.offeringBody}>
+                <span className={styles.offeringHeading}><strong>{item.name}</strong><b>{formatOfferingPrice(item.priceCents)}</b></span>
+                <small>{item.description}</small>
+                <span className={styles.inclusions}>{offeringDetails[item.id].map((detail) => <span key={detail}>{detail}</span>)}</span>
+              </span>
             </label>)}
           </div>
-          <button className={styles.primaryButton} type="button" disabled={!offering} onClick={nextStep}>Continue</button>
+          <button className={styles.primaryButton} type="button" disabled={!offering} onClick={() => continueTo("organization")}>Continue</button>
         </section> : null}
 
-        {activeStep === "organization" ? <section aria-labelledby="organization-title">
-          <p className={styles.eyebrow}>Account</p>
-          <h1 id="organization-title">Choose your organization.</h1>
-          {authStatus === "loading" || organizationLoading ? <p className={styles.serviceNote}>Checking account…</p> : null}
-          {authStatus === "signed_out" ? <div className={styles.participantActions}>
-            <Link className={styles.primaryLink} href={`/create-account?next=${encodeURIComponent(organizationReturnPath())}`}>Create account</Link>
-            <Link className={styles.primaryLink} href={`/login?next=${encodeURIComponent(organizationReturnPath())}`}>Sign in</Link>
-          </div> : null}
-          {authStatus === "signed_in" && user && organizations.length > 0 ? <>
-            <div className={styles.offerings} role="radiogroup" aria-label="Choose organization">
-              {organizations.map((organization) => <label key={organization.id} className={styles.offering}>
-                <input type="radio" name="organization" value={organization.id} checked={selectedOrganizationId === organization.id} onChange={() => setSelectedOrganizationId(organization.id)} />
-                <span className={styles.choiceMark} aria-hidden="true" />
-                <span className={styles.offeringText}><strong>{organization.name}</strong><small>{user.email}</small></span>
-              </label>)}
-            </div>
-            <button className={styles.primaryButton} type="button" disabled={!selectedOrganization} onClick={nextStep}>Continue</button>
-          </> : null}
-          {authStatus === "signed_in" && user && !organizationLoading && organizations.length === 0 ? <Link className={styles.primaryLink} href="/create-account?complete=organization">Finish setup</Link> : null}
-          {authStatus === "unavailable" ? <p className={styles.serviceNote}>{configurationError ?? "Account access is unavailable here."}</p> : null}
-        </section> : null}
-
-        {activeStep === "schedule" ? <section aria-labelledby="schedule-title">
-          <p className={styles.eyebrow}>Date</p>
-          <h1 id="schedule-title">Choose a date.</h1>
-          <div className={styles.inlineFields}><label><span>Date</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><label><span>Time</span><input type="time" value={time} onChange={(event) => setTime(event.target.value)} /></label></div>
-          <p className={styles.serviceNote}>Live scheduling isn’t connected yet.</p>
-          <button className={styles.primaryButton} type="button" disabled={!date || !time || !bookingActionIsAvailable("scheduling")} onClick={nextStep}>Check availability</button>
-        </section> : null}
-
-        {activeStep === "agreement" ? <section aria-labelledby="agreement-title">
-          <p className={styles.eyebrow}>Review</p>
-          <h1 id="agreement-title">Review &amp; sign.</h1>
-          <dl className={styles.documentList}>{legalDocuments.map(([title, description]) => <div key={title}><dt>{title}</dt><dd>{description}</dd></div>)}</dl>
-          <label className={styles.checkLine}><input type="checkbox" checked={reviewedTerms} onChange={(event) => setReviewedTerms(event.target.checked)} /><span>I’m authorized to review these documents.</span></label>
-          <p className={styles.serviceNote}>Electronic signing isn’t connected yet.</p>
-          <button className={styles.primaryButton} type="button" disabled={!reviewedTerms || !bookingActionIsAvailable("agreementPersistence")} onClick={nextStep}>Continue</button>
-        </section> : null}
-
-        {activeStep === "payment" ? <section aria-labelledby="payment-title">
-          <p className={styles.eyebrow}>Payment</p>
-          <h1 id="payment-title">Complete payment.</h1>
-          <div className={styles.orderLine}><div><strong>{offering?.name ?? "SongKeep experience"}</strong><span>{selectedOrganization?.name ?? "Organization"}{date && time ? ` · ${date} · ${time}` : ""}</span></div><b>{offering ? formatOfferingPrice(offering.priceCents) : "—"}</b></div>
-          <p className={styles.serviceNote}>Secure checkout isn’t connected yet.</p>
-          <button className={styles.primaryButton} type="button" disabled={!bookingActionIsAvailable("payments")} onClick={nextStep}>Pay securely</button>
-        </section> : null}
-
-        {activeStep === "setup" ? <section aria-labelledby="setup-title">
-          <p className={styles.eyebrow}>Setup</p>
-          <h1 id="setup-title">Get ready.</h1>
-          {offering?.participantMode === "group" ? <>
-            <p className={styles.lede}>A simple event with one shared song.</p>
-            <div className={styles.readiness}><span>Event details</span><span>Group</span><span>Permissions</span><span>Song</span></div>
+        {activeStep === "organization" ? <section className={styles.step} aria-label="Choose your organization">
+          {offering ? <div className={styles.selectionSummary}><div><span>Selected</span><strong>{offering.name}</strong><small>{formatOfferingPrice(offering.priceCents)}</small></div><button type="button" onClick={() => moveTo("experience")}>Change</button></div> : null}
+          {isStaticPreview ? <>
+            <label className={styles.field}><span>Organization name</span><input value={previewOrganizationName} onChange={(event) => setPreviewOrganizationName(event.target.value)} placeholder="Your organization" /></label>
+            <p className={styles.serviceNote}>Preview mode shows the journey without creating an account or saving information.</p>
+            <button className={styles.primaryButton} type="button" disabled={!previewOrganizationName.trim()} onClick={() => continueTo("plan")}>Continue</button>
           </> : <>
-            <p className={styles.lede}>Participants, interviews, songs, and a follow-up concert.</p>
-            <div className={styles.readiness}><span>Participants</span><span>Interviews</span><span>Songs</span><span>Concert</span></div>
+            {authStatus === "loading" || organizationLoading ? <p className={styles.statusLine} role="status">Opening your account…</p> : null}
+            {authStatus === "signed_out" ? <div className={styles.accountChoice}>
+              <p>Create the permanent organization account now. The primary contact remains separate and can be changed later.</p>
+              <div><Link className={styles.primaryLink} href={`/create-account?next=${encodeURIComponent(accountReturnPath())}`}>Create organization account</Link><Link className={styles.secondaryLink} href={`/login?next=${encodeURIComponent(accountReturnPath())}`}>Sign in</Link></div>
+            </div> : null}
+            {authStatus === "signed_in" && user && organizations.length ? <>
+              <div className={styles.organizationList} role="radiogroup" aria-label="Organization account">
+                {organizations.map((organization) => <label key={organization.id}>
+                  <input type="radio" name="organization" checked={selectedOrganizationId === organization.id} onChange={() => setSelectedOrganizationId(organization.id)} />
+                  <span className={styles.choiceMark} aria-hidden="true" />
+                  <span><strong>{organization.name}</strong><small>{organization.contact.displayName}{organization.contact.title ? ` · ${organization.contact.title}` : ""}</small></span>
+                </label>)}
+              </div>
+              <div className={styles.inlineActions}><Link className={styles.secondaryLink} href={`/create-account?next=${encodeURIComponent(accountReturnPath())}`}>Add another organization</Link></div>
+              <button className={styles.primaryButton} type="button" disabled={!selectedOrganization} onClick={() => continueTo("plan")}>Continue</button>
+            </> : null}
+            {authStatus === "signed_in" && user && !organizationLoading && !organizations.length ? <div className={styles.accountChoice}><p>Add the organization and primary point of contact to continue.</p><Link className={styles.primaryLink} href={`/create-account?next=${encodeURIComponent(accountReturnPath())}`}>Add organization</Link></div> : null}
+            {authStatus === "unavailable" ? <div className={styles.alert} role="status"><strong>Account access is unavailable.</strong><span>{configurationError ?? "Please try again from the live SongKeep site."}</span></div> : null}
           </>}
-          <p className={styles.serviceNote}>Participants don’t need SongKeep accounts.</p>
-          <button className={styles.primaryButton} type="button" disabled={!bookingActionIsAvailable("experiencePersistence")} onClick={nextStep}>Create experience</button>
         </section> : null}
 
-        {activeStep === "ready" ? <section aria-labelledby="ready-title">
-          <p className={styles.eyebrow}>Done</p>
-          <h1 id="ready-title">You’re ready.</h1>
-          <Link className={styles.primaryLink} href={selectedOrganizationId ? `/organization/experiences?org=${selectedOrganizationId}` : "/organization"}>Open experience</Link>
+        {activeStep === "plan" ? <section className={styles.step} aria-label="Plan your experience">
+          <div className={styles.selectionSummary}><div><span>{organizationName}</span><strong>{offering?.name}</strong><small>{offering ? formatOfferingPrice(offering.priceCents) : ""}</small></div><button type="button" onClick={() => moveTo("experience")}>Change experience</button></div>
+          <div className={styles.twoColumns}>
+            <label className={styles.field}><span>Preferred date</span><input required type="date" value={preferredDate} onChange={(event) => setPreferredDate(event.target.value)} /></label>
+            <label className={styles.field}><span>Preferred start time</span><input required type="time" value={preferredTime} onChange={(event) => setPreferredTime(event.target.value)} /></label>
+          </div>
+          <label className={styles.field}><span>Location or room <small>Optional</small></span><input value={venue} onChange={(event) => setVenue(event.target.value)} placeholder="Community room or address" /></label>
+          <div className={styles.twoColumns}>
+            <label className={styles.field}><span>Estimated participants <small>Optional</small></span><input min="1" inputMode="numeric" type="number" value={participantEstimate} onChange={(event) => setParticipantEstimate(event.target.value)} /></label>
+            <label className={styles.field}><span>What should this experience accomplish?</span><input value={organizationGoal} onChange={(event) => setOrganizationGoal(event.target.value)} placeholder="Celebrate, preserve, connect…" /></label>
+          </div>
+          <p className={styles.serviceNote}>This is a preferred time, not a confirmed reservation. SongKeep confirms capacity, scope, and final documents from your account.</p>
+          <button className={styles.primaryButton} type="button" disabled={!preferredDate || !preferredTime} onClick={() => continueTo("payment")}>Review & complete</button>
+        </section> : null}
+
+        {activeStep === "payment" ? <section className={styles.step} aria-label="Choose payment or invoice">
+          <div className={styles.orderSummary}>
+            <div><strong>{offering?.name}</strong><span>{organizationName} · {preferredDate} at {preferredTime}</span></div>
+            <b>{offering ? formatOfferingPrice(offering.priceCents) : "—"}</b>
+          </div>
+          <fieldset className={styles.paymentChoices}>
+            <legend>How should the organization complete the purchase?</legend>
+            <label><input type="radio" name="paymentMethod" checked={paymentMethod === "card"} onChange={() => setPaymentMethod("card")} /><span><strong>Pay now</strong><small>{cardAvailable ? "Continue to secure checkout. Activation follows confirmed payment." : "Available when checkout is configured for this experience."}</small></span></label>
+            <label><input type="radio" name="paymentMethod" checked={paymentMethod === "invoice"} onChange={() => setPaymentMethod("invoice")} /><span><strong>Request an invoice</strong><small>The invoice and all payment follow-up stay connected to the organization account.</small></span></label>
+          </fieldset>
+          {offeringId === "songkeep-legacy-album" ? <div className={styles.contextNote}><strong>Legacy Album release terms</strong><span>Final scope also addresses artist identity, credits, AI disclosure, rights, approved distribution, and release authorization.</span></div> : null}
+          <label className={styles.authorization}><input type="checkbox" checked={authorized} onChange={(event) => setAuthorized(event.target.checked)} /><span>I am authorized to plan this experience for the organization and understand that final service, cancellation, privacy, and applicable release documents will be issued through the account.</span></label>
+          <button className={styles.primaryButton} type="button" disabled={!authorized || saving || (paymentMethod === "card" && !cardAvailable && !isStaticPreview)} onClick={submitRequest}>{saving ? "Saving…" : paymentMethod === "card" ? "Continue to secure payment" : "Request invoice"}</button>
+          {paymentMethod === "card" && !cardAvailable && !isStaticPreview ? <p className={styles.serviceNote}>Card checkout is not configured for this package. Choose invoice to save the request now.</p> : null}
+        </section> : null}
+
+        {activeStep === "ready" ? <section className={styles.step} aria-label="Request saved">
+          {isStaticPreview ? <div className={styles.previewNotice}><strong>Preview complete</strong><span>No account, invoice, payment, or request was created in this static preview.</span></div> : null}
+          <div className={styles.completionMark} aria-hidden="true">✓</div>
+          <p className={styles.lede}>{submittedMethod === "invoice"
+            ? "The invoice request is now part of the organization relationship. SongKeep can prepare the invoice, follow up on payment, and move directly into onboarding after payment is confirmed."
+            : "The request is saved. The experience becomes active only after SongKeep receives authoritative payment confirmation."}</p>
+          <div className={styles.nextSteps}>
+            <div><span>1</span><p><strong>Commercial follow-up</strong><small>Invoice or payment status stays with the organization account.</small></p></div>
+            <div><span>2</span><p><strong>Experience setup</strong><small>Paid experiences open the right participant, story, album, or event workflow.</small></p></div>
+            <div><span>3</span><p><strong>People & permissions</strong><small>Participants receive their own private permission links; the organization agreement never replaces individual consent.</small></p></div>
+          </div>
+          {!isStaticPreview && selectedOrganization ? <Link className={styles.primaryLink} href={`/organization/relationship?org=${selectedOrganization.id}${requestId ? `&request=${requestId}` : ""}`}>Open organization relationship</Link> : <button className={styles.primaryButton} type="button" onClick={() => moveTo("experience")}>Start again</button>}
         </section> : null}
       </div>
 
-      <footer className={styles.flowFooter}><span>Need help? Contact us.</span></footer>
+      <footer className={styles.footer}><span>Need help? Contact SongKeep.</span><Link href="/services">Compare experiences</Link></footer>
     </section>
   </main>;
 }

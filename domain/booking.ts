@@ -12,10 +12,8 @@ export type ServiceOfferingId = ExperienceOfferingId;
 export const bookingSteps = [
   "experience",
   "organization",
-  "schedule",
-  "agreement",
+  "plan",
   "payment",
-  "setup",
   "ready"
 ] as const;
 export type BookingStep = (typeof bookingSteps)[number];
@@ -23,13 +21,18 @@ export type BookingStep = (typeof bookingSteps)[number];
 export const bookingServiceCapabilities = {
   invitationResolution: false,
   identity: true,
+  accountPersistence: true,
+  requestPersistence: true,
+  invoiceRequests: true,
+  participantPermissionInvitations: true,
   scheduling: false,
   agreementPersistence: false,
   payments: false,
-  participantPersistence: false,
-  consentPersistence: false,
+  authoritativePaymentConfirmation: false,
+  participantPersistence: true,
+  consentPersistence: true,
   notifications: false,
-  experiencePersistence: false
+  experiencePersistence: true
 } as const;
 export type BookingServiceCapability = keyof typeof bookingServiceCapabilities;
 
@@ -49,6 +52,33 @@ export function formatOfferingPrice(priceCents: number): string {
   }).format(priceCents / 100);
 }
 
+const paymentLinks: Readonly<Record<ServiceOfferingId, string | undefined>> = {
+  "single-song-group-event": process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_SINGLE_SONG_GROUP_EVENT,
+  "honor-a-life-song-experience": process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_HONOR_A_LIFE_SONG_EXPERIENCE,
+  "songkeep-legacy-album": process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_SONGKEEP_LEGACY_ALBUM
+};
+
+export function getOfferingPaymentLink(offeringId: ServiceOfferingId): string | undefined {
+  const value = paymentLinks[offeringId]?.trim();
+  return value || undefined;
+}
+
+export function buildOfferingPaymentLink(
+  offeringId: ServiceOfferingId,
+  input: { experienceRequestId: string; customerEmail?: string }
+): string | undefined {
+  const base = getOfferingPaymentLink(offeringId);
+  if (!base) return undefined;
+  try {
+    const url = new URL(base);
+    url.searchParams.set("client_reference_id", input.experienceRequestId);
+    if (input.customerEmail) url.searchParams.set("prefilled_email", input.customerEmail);
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+}
+
 export interface BookingInvitation {
   id: EntityId;
   customerPersonId?: EntityId;
@@ -63,7 +93,8 @@ export type LegalDocumentKind =
   | "service_terms"
   | "privacy_notice"
   | "cancellation_policy"
-  | "electronic_records";
+  | "electronic_records"
+  | "album_release_terms";
 
 export interface LegalDocumentVersion {
   id: EntityId;
@@ -101,6 +132,7 @@ export const participantPermissionScopes: ReadonlyArray<{
   scope: ConsentScope;
   label: string;
   description: string;
+  optional?: boolean;
 }> = [
   {
     scope: "participation",
@@ -120,7 +152,8 @@ export const participantPermissionScopes: ReadonlyArray<{
   {
     scope: "designated_family_sharing",
     label: "Share with designated family",
-    description: "Permission to share approved materials with the family members the participant designates."
+    description: "Permission to share approved materials with the family members the participant designates.",
+    optional: true
   },
   {
     scope: "private_performance",
@@ -130,16 +163,19 @@ export const participantPermissionScopes: ReadonlyArray<{
   {
     scope: "event_photo_video",
     label: "Appear in event photos or video",
-    description: "Permission for approved photography or video during the event."
+    description: "Optional permission for approved photography or video during the event.",
+    optional: true
   },
   {
     scope: "public_marketing",
     label: "Share publicly",
-    description: "Optional permission for approved story, song, photo, or video material to be used publicly."
+    description: "Optional permission for approved story, song, photo, or video material to be used publicly.",
+    optional: true
   },
   {
     scope: "testimonial",
     label: "Use an approved testimonial",
-    description: "Optional permission to use a separately approved testimonial."
+    description: "Optional permission to use a separately approved testimonial.",
+    optional: true
   }
 ];

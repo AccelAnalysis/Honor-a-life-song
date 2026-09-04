@@ -27,6 +27,24 @@ service firebase.storage {
       allow read, write: if platformAdmin();
     }
 
+    match /invoices/{allPaths=**} {
+      allow read, write: if false; // Original documents are delivered only by the authenticated backend.
+    }
+    match /organizations/{orgId}/creator-submissions/{assignmentId}/{assetId}/{fileName} {
+      allow read: if false; // Creator, organization, and family downloads all use current authorization.
+      allow create: if signedIn()
+        && firestore.get(/databases/(default)/documents/creatorAssignments/$(assignmentId)).data.assignedUserId == request.auth.uid
+        && firestore.get(/databases/(default)/documents/creatorAssignments/$(assignmentId)).data.organizationId == orgId
+        && firestore.get(/databases/(default)/documents/creatorAssignments/$(assignmentId)).data.status != 'cancelled'
+        && firestore.get(/databases/(default)/documents/organizations/$(orgId)/assets/$(assetId)).data.workflowStatus == 'uploading'
+        && firestore.get(/databases/(default)/documents/organizations/$(orgId)/assets/$(assetId)).data.assignmentId == assignmentId
+        && request.resource.metadata.assignmentId == assignmentId
+        && request.resource.metadata.submittedByUserId == request.auth.uid
+        && request.resource.size > 0 && request.resource.size <= 250 * 1024 * 1024
+        && request.resource.contentType.matches('audio/.*|video/.*|image/(jpeg|png|webp|gif)|application/pdf|text/plain|application/msword|application/vnd.openxmlformats-officedocument.wordprocessingml.document|application/octet-stream');
+      allow update, delete: if false;
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

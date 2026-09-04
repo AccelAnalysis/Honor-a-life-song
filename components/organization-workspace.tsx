@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AuthorizedAsset } from "@/components/authorized-asset";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useAuth } from "@/components/auth-provider";
@@ -350,7 +351,7 @@ export function OrganizationWorkspace({ sectionId }: OrganizationWorkspaceProps)
       {selectedView === "concert" ? <ExperienceStage title="Concert" items={["Date & venue", "Run of show", "Accessibility", "Guests", "Photo & video"]} /> : null}
       {selectedView === "materials" ? <section className={styles.materialsSection}>
         <div className={styles.sectionHeading}><div><h3>Materials</h3></div></div>
-        {experienceAssets.length ? <div className={styles.assetList}>{experienceAssets.map((asset) => <article key={asset.id}><div><span className={styles.assetKind}>{titleize(asset.kind)}</span><h3>{asset.title}</h3><p>{asset.status === "ready" ? "Ready" : titleize(asset.status)}</p></div>{asset.status === "ready" && asset.downloadUrl ? <a href={asset.downloadUrl} target="_blank" rel="noreferrer">Open</a> : <span>{asset.status === "processing" ? "Preparing" : "Restricted"}</span>}</article>)}</div> : <p className={styles.quiet}>Nothing released yet.</p>}
+        {experienceAssets.length ? <div className={styles.assetList}>{experienceAssets.map((asset) => <article key={asset.id}><div><span className={styles.assetKind}>{titleize(asset.kind)}</span><h3>{asset.title}</h3><p>{asset.status === "ready" ? "Ready" : titleize(asset.status)}</p></div>{asset.status === "ready" && asset.storagePath ? <AuthorizedAsset organizationId={asset.organizationId} assetId={asset.id} kind={asset.kind} /> : <span>{asset.status === "processing" ? "Preparing" : "Restricted"}</span>}</article>)}</div> : <p className={styles.quiet}>Nothing released yet.</p>}
         {canManageExperience ? <div className={styles.shareSection}><h3>Share access</h3><p>Only approved items can be shared.</p>{participants.length ? <div className={styles.shareList}>{participants.map((participant) => {
           const participantEntitlements = entitlements.filter((item) => item.participantId === participant.id && item.status === "active");
           const latestInvite = accessInvitations.find((item) => item.participantId === participant.id);
@@ -366,7 +367,7 @@ export function OrganizationWorkspace({ sectionId }: OrganizationWorkspaceProps)
 
     {sectionId === "organization-library" ? <section>
       <div className={styles.sectionHeading}><div><h2>Library</h2></div></div>
-      {assets.length ? <div className={styles.assetList}>{assets.map((asset) => <article key={asset.id}><div><span className={styles.assetKind}>{titleize(asset.kind)}</span><h3>{asset.title}</h3><p>{asset.status === "ready" ? "Ready" : titleize(asset.status)}</p></div>{asset.status === "ready" && asset.downloadUrl ? <a href={asset.downloadUrl} target="_blank" rel="noreferrer">Open</a> : <span>{asset.status === "processing" ? "Preparing" : "Restricted"}</span>}</article>)}</div> : <EmptyState title="Nothing here yet." />}
+      {assets.length ? <div className={styles.assetList}>{assets.map((asset) => <article key={asset.id}><div><span className={styles.assetKind}>{titleize(asset.kind)}</span><h3>{asset.title}</h3><p>{asset.status === "ready" ? "Ready" : titleize(asset.status)}</p></div>{asset.status === "ready" && asset.storagePath ? <AuthorizedAsset organizationId={asset.organizationId} assetId={asset.id} kind={asset.kind} /> : <span>{asset.status === "processing" ? "Preparing" : "Restricted"}</span>}</article>)}</div> : <EmptyState title="Nothing here yet." />}
       <div className={styles.postEventActions}><h3>Plan another</h3><div><Link href={`/begin?organizationId=${selectedOrganization.id}&offering=single-song-group-event`}>Group event</Link><Link href={`/begin?organizationId=${selectedOrganization.id}&offering=honor-a-life-song-experience`}>Full experience</Link></div></div>
     </section> : null}
 

@@ -29,8 +29,8 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function authUnavailableMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Firebase authentication is not configured for this environment.";
+function authUnavailableMessage() {
+  return "Account access is temporarily unavailable. Please try again or contact Honor a Life Song for help.";
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -52,8 +52,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
       });
-    } catch (error) {
-      setConfigurationError(authUnavailableMessage(error));
+    } catch {
+      setConfigurationError(authUnavailableMessage());
       setStatus("unavailable");
       return undefined;
     }
