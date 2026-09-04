@@ -6,7 +6,7 @@ export default function HomePage() {
   return (
     <PublicShell>
       <section className="consumerHero" id="hero-value-proposition" aria-labelledby="consumer-hero-title">
-        <div className="consumerHeroMedia" role="img" aria-label="A woman at a piano in a warm, lived-in home" />
+        <div className="consumerHeroMedia" role="img" aria-label="A multigenerational family looking together at a printed photograph" />
         <div className="consumerHeroContent">
           <p className="eyebrow">Stories become songs.</p>
           <h1 id="consumer-hero-title">Bring their stories to life.</h1>
@@ -17,11 +17,11 @@ export default function HomePage() {
           </div>
           <SonicSignature inverse label="Hear SongKeep" />
         </div>
-        <span className="consumerHeroCredit">Photo: Centre for Ageing Better / Pexels</span>
+        <span className="consumerHeroCredit">Photo: Ivan S / Pexels</span>
       </section>
 
       <section className="consumerScene" id="featured-stories-songs" aria-labelledby="listening-title">
-        <div className="consumerSceneImage" role="img" aria-label="A woman listening quietly in a sunlit room">
+        <div className="consumerSceneImage" role="img" aria-label="A mother and daughter sharing a joyful moment at home">
           <span className="consumerSceneCredit">Photo: Los Muertos Crew / Pexels</span>
         </div>
         <div className="consumerSceneCopy">
