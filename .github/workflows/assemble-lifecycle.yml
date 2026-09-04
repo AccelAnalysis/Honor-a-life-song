@@ -51,6 +51,37 @@ jobs:
           test "$(git hash-object lib/firebase/customer-lifecycle.ts)" = "99adc75077a36fcdf193a9c056b4331a88c56802"
           test "$(git hash-object firestore.rules)" = "2b81a4a5f93b1b20a7127b0941c1d2ac903fb12d"
 
+      - name: Scope reduced-motion selectors to local page roots
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          shell_files = [
+              Path("components/organization-relationship.module.css"),
+              Path("components/admin-lifecycle-surface.module.css"),
+              Path("components/booking-route.module.css"),
+              Path("components/create-account-route.module.css"),
+              Path("components/memories-hub.module.css"),
+              Path("components/participant-permission-route.module.css"),
+          ]
+          replacements = {
+              "*, *::before, *::after": ".shell, .shell *, .shell::before, .shell *::before, .shell::after, .shell *::after",
+          }
+          for path in shell_files:
+              text = path.read_text()
+              for old, new in replacements.items():
+                  text = text.replace(old, new)
+              path.write_text(text)
+
+          service_path = Path("app/(public)/services/services.module.css")
+          text = service_path.read_text().replace(
+              "*, *::before, *::after",
+              ".page, .page *, .page::before, .page *::before, .page::after, .page *::after",
+          )
+          service_path.write_text(text)
+          PY
+
       - name: Verify application
         run: |
           npm install --no-audit --no-fund --package-lock=false
