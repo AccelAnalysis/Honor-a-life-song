@@ -5,19 +5,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { SongKeepLockup } from "@/components/brand";
-import { createOrganizationAccount } from "@/lib/firebase/organization-account";
+import { createOrganizationWithPrimaryContact } from "@/lib/firebase/customer-lifecycle";
 import type { OrganizationKind } from "@/domain/types";
 import { safeReturnPath } from "@/lib/safe-return-path";
 import styles from "./create-account-route.module.css";
 
 const organizationKinds: Array<{ value: OrganizationKind; label: string }> = [
   { value: "facility", label: "Senior living or care community" },
-  { value: "nonprofit", label: "Nonprofit" },
-  { value: "school", label: "School or education organization" },
-  { value: "healthcare", label: "Healthcare organization" },
-  { value: "veterans_organization", label: "Veterans organization" },
-  { value: "faith_community", label: "Faith community" },
   { value: "business", label: "Business" },
+  { value: "nonprofit", label: "Nonprofit" },
+  { value: "faith_community", label: "Faith community" },
+  { value: "healthcare", label: "Healthcare organization" },
+  { value: "school", label: "School or education organization" },
+  { value: "veterans_organization", label: "Veterans organization" },
   { value: "community_partner", label: "Community organization" },
   { value: "other", label: "Other organization" }
 ];
@@ -30,7 +30,8 @@ export function CreateAccountRoute() {
   const safeNext = safeReturnPath(requestedNext);
   const joiningOrganization = Boolean(safeNext?.startsWith("/accept-invitation"));
   const claimingMemories = Boolean(safeNext?.startsWith("/claim"));
-  const accessOnly = joiningOrganization || claimingMemories;
+  const respondingToPermissions = Boolean(safeNext?.startsWith("/participate"));
+  const accessOnly = joiningOrganization || claimingMemories || respondingToPermissions;
   const completingOrganization = !accessOnly && status === "signed_in" && Boolean(signedInUser);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,15 +43,9 @@ export function CreateAccountRoute() {
     const email = String(form.get("email") ?? "").trim();
     const password = String(form.get("password") ?? "");
     const confirmPassword = String(form.get("confirmPassword") ?? "");
-    const organizationName = String(form.get("organizationName") ?? "").trim();
-    const organizationKind = String(form.get("organizationKind") ?? "community_partner") as OrganizationKind;
 
-    if (password !== confirmPassword) {
+    if (!completingOrganization && password !== confirmPassword) {
       setError("The passwords do not match.");
-      return;
-    }
-    if (!accessOnly && !organizationName) {
-      setError("Enter the organization name.");
       return;
     }
 
@@ -60,17 +55,26 @@ export function CreateAccountRoute() {
       const user = completingOrganization && signedInUser
         ? signedInUser
         : await createAccount({ displayName, email, password });
+
       if (safeNext && accessOnly) {
         router.push(safeNext);
         return;
       }
-      const organizationId = await createOrganizationAccount({
+
+      const organizationId = await createOrganizationWithPrimaryContact({
         userId: user.uid,
         email: user.email ?? email,
         displayName: user.displayName ?? displayName,
-        organizationName,
-        kind: organizationKind
+        contactTitle: String(form.get("contactTitle") ?? ""),
+        contactPhone: String(form.get("contactPhone") ?? ""),
+        organizationName: String(form.get("organizationName") ?? ""),
+        organizationKind: String(form.get("organizationKind") ?? "facility") as OrganizationKind,
+        organizationEmail: String(form.get("organizationEmail") ?? ""),
+        organizationPhone: String(form.get("organizationPhone") ?? ""),
+        website: String(form.get("website") ?? ""),
+        address: String(form.get("address") ?? "")
       });
+
       if (safeNext) {
         const returnUrl = new URL(safeNext, "https://songkeep.invalid");
         returnUrl.searchParams.set("organizationId", organizationId);
@@ -85,13 +89,21 @@ export function CreateAccountRoute() {
     }
   }
 
+  const accessHeading = joiningOrganization
+    ? "Join your organization."
+    : respondingToPermissions
+      ? "Respond to your invitation."
+      : "Keep what was shared with you.";
+
   return <main className={styles.shell}>
     <section className={styles.story}>
       <Link href="/" className={styles.brand} aria-label="SongKeep home"><SongKeepLockup variant="full" inverse /></Link>
       <div>
-        <p className={styles.kicker}>{accessOnly ? "Private access" : "SongKeep"}</p>
-        <h1>{accessOnly ? "Keep what was shared with you." : "One account. Every experience."}</h1>
-        <p>{joiningOrganization ? "Create your sign-in to join your team." : claimingMemories ? "Create your sign-in to keep your songs and memories." : "Plan events. Manage your team. Keep your songs and memories."}</p>
+        <p className={styles.kicker}>{accessOnly ? "Private access" : "SongKeep for organizations"}</p>
+        <h1>{accessOnly ? accessHeading : "One relationship. Every experience."}</h1>
+        <p>{accessOnly
+          ? "Your sign-in keeps private invitations, permissions, songs, and purchases connected to the right person."
+          : "Create the organization account once. Keep contacts, invoices, experiences, participants, and future plans together."}</p>
       </div>
     </section>
 
@@ -99,22 +111,49 @@ export function CreateAccountRoute() {
       <div className={styles.formInner}>
         <div className={styles.formBrand}><SongKeepLockup variant="app" /></div>
         <p className={styles.kicker}>Account</p>
-        <h2 id="create-account-title">{accessOnly ? "Create sign-in." : completingOrganization ? "Finish setup." : "Create your account."}</h2>
+        <h2 id="create-account-title">{accessOnly ? "Create your sign-in." : completingOrganization ? "Add your organization." : "Tell us who to work with."}</h2>
+        {!accessOnly ? <p className={styles.intro}>The person and the organization remain separate, so your organization keeps its SongKeep history even when contacts change.</p> : null}
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          <label><span>Name</span><input required name="displayName" autoComplete="name" defaultValue={completingOrganization ? signedInUser?.displayName ?? "" : ""} /></label>
-          <label><span>Email</span><input required type="email" name="email" autoComplete="email" defaultValue={completingOrganization ? signedInUser?.email ?? "" : ""} readOnly={completingOrganization} /></label>
+          <fieldset>
+            <legend>{accessOnly ? "Your details" : "Primary contact"}</legend>
+            <div className={styles.twoColumns}>
+              <label><span>Name</span><input required name="displayName" autoComplete="name" defaultValue={completingOrganization ? signedInUser?.displayName ?? "" : ""} /></label>
+              {!accessOnly ? <label><span>Title or role</span><input required name="contactTitle" autoComplete="organization-title" placeholder="Activities Director" /></label> : null}
+            </div>
+            <div className={styles.twoColumns}>
+              <label><span>Email</span><input required type="email" name="email" autoComplete="email" defaultValue={completingOrganization ? signedInUser?.email ?? "" : ""} readOnly={completingOrganization} /></label>
+              {!accessOnly ? <label><span>Direct phone</span><input required type="tel" name="contactPhone" autoComplete="tel" /></label> : null}
+            </div>
+          </fieldset>
 
-          {!accessOnly ? <>
-            <label><span>Organization</span><input required name="organizationName" autoComplete="organization" /></label>
-            <label><span>Type</span><select name="organizationKind" defaultValue="facility">{organizationKinds.map((kind) => <option key={kind.value} value={kind.value}>{kind.label}</option>)}</select></label>
-          </> : null}
+          {!accessOnly ? <fieldset>
+            <legend>Organization</legend>
+            <label><span>Organization name</span><input required name="organizationName" autoComplete="organization" /></label>
+            <div className={styles.twoColumns}>
+              <label><span>Type</span><select name="organizationKind" defaultValue="facility">{organizationKinds.map((kind) => <option key={kind.value} value={kind.value}>{kind.label}</option>)}</select></label>
+              <label><span>Main phone <small>Optional</small></span><input type="tel" name="organizationPhone" autoComplete="tel-national" /></label>
+            </div>
+            <details className={styles.optionalDetails}>
+              <summary>Add organization contact details</summary>
+              <div className={styles.optionalFields}>
+                <label><span>General or billing email <small>Optional</small></span><input type="email" name="organizationEmail" autoComplete="email" /></label>
+                <label><span>Website <small>Optional</small></span><input type="url" name="website" autoComplete="url" /></label>
+                <label><span>Address <small>Optional</small></span><input name="address" autoComplete="street-address" /></label>
+              </div>
+            </details>
+          </fieldset> : null}
 
-          {!completingOrganization ? <><label><span>Password</span><input required minLength={8} type="password" name="password" autoComplete="new-password" /></label>
-          <label><span>Confirm password</span><input required minLength={8} type="password" name="confirmPassword" autoComplete="new-password" /></label></> : null}
+          {!completingOrganization ? <fieldset>
+            <legend>Secure sign-in</legend>
+            <div className={styles.twoColumns}>
+              <label><span>Password</span><input required minLength={8} type="password" name="password" autoComplete="new-password" /></label>
+              <label><span>Confirm password</span><input required minLength={8} type="password" name="confirmPassword" autoComplete="new-password" /></label>
+            </div>
+          </fieldset> : null}
 
-          <p className={styles.legal}>Agreements and participant permissions are completed separately.</p>
-          <button type="submit" disabled={busy || status === "unavailable"}>{busy ? "Saving…" : accessOnly ? "Create & continue" : completingOrganization ? "Finish setup" : "Create account"}</button>
+          <p className={styles.legal}>Organization agreements and individual participant permissions are completed separately.</p>
+          <button type="submit" disabled={busy || status === "unavailable"}>{busy ? "Saving…" : accessOnly ? "Create & continue" : completingOrganization ? "Add organization" : "Create organization account"}</button>
           {error ? <p className={styles.error} role="alert">{error}</p> : null}
           {configurationError ? <p className={styles.error} role="status">{configurationError}</p> : null}
         </form>

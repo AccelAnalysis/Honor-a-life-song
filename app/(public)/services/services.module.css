@@ -1,0 +1,40 @@
+.page { background: #fff; color: #141648; }
+.hero { width: min(74rem, calc(100% - 2rem)); margin: 0 auto; padding: clamp(4rem, 10vw, 9rem) 0 clamp(3rem, 8vw, 7rem); }
+.eyebrow { margin: 0 0 .7rem; color: #7c4aa5; text-transform: uppercase; letter-spacing: .14em; font-size: .67rem; font-weight: 850; }
+.hero h1 { max-width: 14ch; margin: 0 0 1.2rem; font-family: var(--font-brand-sans, "Avenir Next", Avenir, Inter, sans-serif); font-size: clamp(3.4rem, 7.5vw, 7.3rem); font-weight: 650; line-height: .92; letter-spacing: -.065em; text-wrap: balance; }
+.hero > p:not(.eyebrow) { max-width: 65ch; color: #62667a; font-size: 1.04rem; line-height: 1.72; }
+.comparison { border-top: 1px solid #dde1e9; }
+.offer { width: min(74rem, calc(100% - 2rem)); margin: 0 auto; display: grid; grid-template-columns: minmax(4rem,.2fr) minmax(0,1.8fr); gap: clamp(1rem, 4vw, 3.5rem); padding: clamp(2.7rem, 7vw, 6rem) 0; border-bottom: 1px solid #dde1e9; }
+.offerNumber { color: #c2c6d2; font-size: clamp(2.5rem, 5vw, 5.5rem); font-weight: 300; letter-spacing: -.06em; }
+.offerHeading { display: flex; justify-content: space-between; gap: 2rem; align-items: flex-start; }
+.offerHeading h2 { max-width: 14ch; margin: 0; font-family: var(--font-brand-sans, "Avenir Next", Avenir, Inter, sans-serif); font-size: clamp(2.2rem, 4.5vw, 4.7rem); font-weight: 650; line-height: .98; letter-spacing: -.055em; }
+.offerHeading > strong { color: #1572c6; font-size: clamp(1.2rem, 2.2vw, 2rem); white-space: nowrap; }
+.offerBody > p { max-width: 65ch; color: #62667a; line-height: 1.65; }
+.offer dl { margin: 2rem 0; border-top: 1px solid #e0e3eb; }
+.offer dl div { display: grid; grid-template-columns: 9rem 1fr; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid #e0e3eb; }
+.offer dt { color: #7a7e90; font-size: .75rem; }
+.offer dd { margin: 0; font-size: .88rem; }
+.primary { min-height: 50px; display: inline-flex; align-items: center; justify-content: center; padding: .75rem 1.15rem; border-radius: 12px; background: #1572c6; color: #fff; font-weight: 820; text-decoration: none; }
+.lifecycle { width: min(74rem, calc(100% - 2rem)); margin: 0 auto; padding: clamp(4rem, 9vw, 8rem) 0; }
+.lifecycle > div:first-child { display: grid; grid-template-columns: .65fr 1.35fr; gap: 2rem; align-items: start; }
+.lifecycle h2 { max-width: 14ch; margin: 0; font-family: var(--font-brand-sans, "Avenir Next", Avenir, Inter, sans-serif); font-size: clamp(2.6rem, 5vw, 5.2rem); line-height: .96; letter-spacing: -.058em; }
+.lifecycleSteps { margin-top: 3rem; display: grid; grid-template-columns: repeat(4, 1fr); gap: .8rem; }
+.lifecycleSteps p { min-height: 13rem; margin: 0; padding: 1rem; display: flex; flex-direction: column; justify-content: flex-end; border: 1px solid #dfe2eb; border-radius: 15px; background: linear-gradient(155deg, #fff, #f3f6fa); }
+.lifecycleSteps span { color: #7c4aa5; font-size: .68rem; font-weight: 850; }
+.lifecycleSteps strong { margin-top: .4rem; }
+.lifecycleSteps small { margin-top: .45rem; color: #696d80; line-height: 1.45; }
+.primary:focus-visible { outline: 3px solid rgba(21,114,198,.28); outline-offset: 3px; }
+
+@media (max-width: 740px) {
+  .offer { grid-template-columns: 1fr; }
+  .offerNumber { font-size: 2.4rem; }
+  .offerHeading { flex-direction: column; gap: .8rem; }
+  .offer dl div { grid-template-columns: 1fr; gap: .35rem; }
+  .lifecycle > div:first-child { grid-template-columns: 1fr; }
+  .lifecycleSteps { grid-template-columns: 1fr; }
+  .lifecycleSteps p { min-height: 8.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; scroll-behavior: auto !important; }
+}

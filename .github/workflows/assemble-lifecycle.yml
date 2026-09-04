@@ -1,0 +1,71 @@
+name: Assemble lifecycle implementation
+
+on:
+  push:
+    branches:
+      - feature/organization-to-individual-lifecycle
+    paths:
+      - .lifecycle-ready
+
+permissions:
+  contents: write
+
+jobs:
+  assemble-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Assemble source files
+        shell: bash
+        run: |
+          set -euo pipefail
+          decode() {
+            local src="$1"
+            local dst="$2"
+            mkdir -p "$(dirname "$dst")"
+            tr -d '\n\r ' < "$src" | base64 -d | gzip -d > "$dst"
+          }
+
+          decode .lifecycle-assembly/organization-relationship.tsx.gz.b64 components/organization-relationship.tsx
+          decode .lifecycle-assembly/organization-relationship.module.css.gz.b64 components/organization-relationship.module.css
+          decode .lifecycle-assembly/admin-lifecycle-surface.tsx.gz.b64 components/admin-lifecycle-surface.tsx
+          decode .lifecycle-assembly/admin-lifecycle-surface.module.css.gz.b64 components/admin-lifecycle-surface.module.css
+          decode .lifecycle-assembly/booking-route.module.css.gz.b64 components/booking-route.module.css
+          decode .lifecycle-assembly/memories-hub.tsx.gz.b64 components/memories-hub.tsx
+          decode .lifecycle-assembly/memories-hub.module.css.gz.b64 components/memories-hub.module.css
+          decode .lifecycle-assembly/customer-lifecycle.ts.gz.b64 lib/firebase/customer-lifecycle.ts
+          decode .lifecycle-assembly/firestore.rules.gz.b64 firestore.rules
+
+          test "$(git hash-object components/organization-relationship.tsx)" = "6d185ab318fb13d718b526d6184cd896c35bc47b"
+          test "$(git hash-object components/organization-relationship.module.css)" = "66837556cbd8dda18e3d2dfd7462cf5a975af6d8"
+          test "$(git hash-object components/admin-lifecycle-surface.tsx)" = "b47ea881ffa83ae02f56d929a37527a3317c4cb9"
+          test "$(git hash-object components/admin-lifecycle-surface.module.css)" = "9825feb40adf064da5e31249165de56828481019"
+          test "$(git hash-object components/booking-route.module.css)" = "ffe7ea7addf0e7614676eb42a0d4156502c7d165"
+          test "$(git hash-object components/memories-hub.tsx)" = "59ef511e2fa9d97ee3bd0dd17618b193fcba9859"
+          test "$(git hash-object components/memories-hub.module.css)" = "2816f0f3472e6dd14fed4bed5c22eea77c563373"
+          test "$(git hash-object lib/firebase/customer-lifecycle.ts)" = "99adc75077a36fcdf193a9c056b4331a88c56802"
+          test "$(git hash-object firestore.rules)" = "2b81a4a5f93b1b20a7127b0941c1d2ac903fb12d"
+
+      - name: Verify application
+        run: |
+          npm ci
+          npm run lint
+          npm run typecheck
+          npm test
+          npm run build
+
+      - name: Commit assembled implementation
+        run: |
+          rm -rf .lifecycle-assembly
+          rm -f .lifecycle-ready
+          rm -f .github/workflows/assemble-lifecycle.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: assemble organization-to-individual lifecycle"
+          git push
