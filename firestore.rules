@@ -114,6 +114,88 @@ service cloud.firestore {
         && membership.data.status == 'active';
     }
 
+    function validPostExperiencePurchaseIntentCreate(userId, intentId) {
+      let accessId = request.resource.data.accessId;
+      let accessPath = /databases/$(database)/documents/users/$(userId)/experienceAccess/$(accessId);
+      return signedIn()
+        && request.auth.uid == userId
+        && accessId is string
+        && exists(accessPath)
+        && request.resource.data.keys().hasOnly([
+          'userId', 'accessId', 'organizationId', 'experienceId', 'participantId',
+          'productId', 'status', 'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.userId == userId
+        && request.resource.data.organizationId == get(accessPath).data.organizationId
+        && request.resource.data.experienceId == get(accessPath).data.experienceId
+        && request.resource.data.participantId == get(accessPath).data.participantId
+        && request.resource.data.productId in [
+          'digital-song-keepsake',
+          'printed-lyric-keepsake',
+          'event-memory-collection'
+        ]
+        && request.resource.data.status == 'requested'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validExperienceFeedbackWrite(orgId, experienceId, feedbackId) {
+      let experiencePath = /databases/$(database)/documents/organizations/$(orgId)/experiences/$(experienceId);
+      let score = request.resource.data.npsScore;
+      let band = request.resource.data.band;
+      return organizationMember(orgId)
+        && feedbackId == request.auth.uid
+        && exists(experiencePath)
+        && get(experiencePath).data.status in ['assets_processing', 'post_event', 'closed']
+        && request.resource.data.keys().hasOnly([
+          'organizationId', 'experienceId', 'submittedByUserId', 'npsScore',
+          'satisfactionScore', 'mostMeaningful', 'improvement', 'band',
+          'createdAt', 'updatedAt'
+        ])
+        && request.resource.data.organizationId == orgId
+        && request.resource.data.experienceId == experienceId
+        && request.resource.data.submittedByUserId == request.auth.uid
+        && score is int
+        && score >= 0
+        && score <= 10
+        && request.resource.data.satisfactionScore is int
+        && request.resource.data.satisfactionScore >= 1
+        && request.resource.data.satisfactionScore <= 5
+        && (request.resource.data.mostMeaningful == null || request.resource.data.mostMeaningful is string)
+        && (request.resource.data.improvement == null || request.resource.data.improvement is string)
+        && (
+          (score <= 6 && band == 'recovery')
+          || (score >= 7 && score <= 8 && band == 'passive')
+          || (score >= 9 && band == 'promoter')
+        )
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function validOrganizationReferralCreate(orgId) {
+      let sourceExperienceId = request.resource.data.sourceExperienceId;
+      let feedbackPath = /databases/$(database)/documents/organizations/$(orgId)/experiences/$(sourceExperienceId)/feedback/$(request.auth.uid);
+      return organizationMember(orgId)
+        && sourceExperienceId is string
+        && exists(feedbackPath)
+        && get(feedbackPath).data.band == 'promoter'
+        && request.resource.data.keys().hasOnly([
+          'organizationId', 'sourceExperienceId', 'advocateUserId',
+          'referredOrganizationName', 'referredContactName', 'referredContactEmail',
+          'relationship', 'message', 'status', 'createdAt'
+        ])
+        && request.resource.data.organizationId == orgId
+        && request.resource.data.advocateUserId == request.auth.uid
+        && request.resource.data.referredOrganizationName is string
+        && request.resource.data.referredOrganizationName.size() > 0
+        && (request.resource.data.referredContactName == null || request.resource.data.referredContactName is string)
+        && (request.resource.data.referredContactEmail == null || request.resource.data.referredContactEmail is string)
+        && (request.resource.data.relationship == null || request.resource.data.relationship is string)
+        && (request.resource.data.message == null || request.resource.data.message is string)
+        && request.resource.data.status == 'submitted'
+        && request.resource.data.createdAt == request.time;
+    }
+
     function organizationExperienceRequestCreate(orgId) {
       return organizationAdmin(orgId)
         && request.resource.data.keys().hasOnly([
@@ -140,6 +222,10 @@ service cloud.firestore {
           (request.resource.data.offeringId == 'honor-a-life-song-experience'
             && request.resource.data.templateKind == 'full_program'
             && request.resource.data.participantMode == 'named_roster')
+          ||
+          (request.resource.data.offeringId == 'songkeep-legacy-album'
+            && request.resource.data.templateKind == 'legacy_album'
+            && request.resource.data.participantMode == 'named_roster')
         );
     }
 
@@ -159,7 +245,7 @@ service cloud.firestore {
         && request.resource.data.submittedByUserId == request.auth.uid
         && request.resource.data.submittedByRole == assignment.data.role
         && request.resource.data.participantId == assignment.data.participantId
-        && request.resource.data.kind in ['song', 'lyrics', 'event_video', 'photo', 'report', 'keepsake', 'other']
+        && request.resource.data.kind in ['song', 'lyrics', 'event_video', 'photo', 'report', 'keepsake', 'album_artwork', 'release_link', 'other']
         && request.resource.data.title.size() > 0
         && request.resource.data.storagePath == 'organizations/' + orgId + '/creator-submissions/' + assignmentId + '/' + assetId + '/' + request.resource.data.fileName
         && request.resource.data.status == 'processing'
@@ -221,6 +307,12 @@ service cloud.firestore {
       match /experienceAccess/{accessId} {
         allow read: if signedIn() && (request.auth.uid == userId || platformAdmin());
         allow create: if experienceAccessPointerCreate(userId, accessId);
+        allow update, delete: if platformAdmin();
+      }
+
+      match /purchaseIntents/{intentId} {
+        allow read: if signedIn() && (request.auth.uid == userId || platformAdmin());
+        allow create: if validPostExperiencePurchaseIntentCreate(userId, intentId);
         allow update, delete: if platformAdmin();
       }
     }
@@ -337,6 +429,18 @@ service cloud.firestore {
               && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'acceptedBy', 'acceptedAt']));
           allow delete: if platformAdmin();
         }
+
+        match /feedback/{feedbackId} {
+          allow read: if organizationMember(orgId) || platformAdmin();
+          allow create, update: if validExperienceFeedbackWrite(orgId, experienceId, feedbackId);
+          allow delete: if platformAdmin();
+        }
+      }
+
+      match /referrals/{referralId} {
+        allow read: if organizationMember(orgId) || platformAdmin();
+        allow create: if validOrganizationReferralCreate(orgId);
+        allow update, delete: if platformAdmin();
       }
 
       match /suggestedDates/{suggestionId} {
