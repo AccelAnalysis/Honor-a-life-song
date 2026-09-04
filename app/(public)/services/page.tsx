@@ -1,69 +1,56 @@
 import Link from "next/link";
 import { PublicShell } from "@/components/public-shell";
+import { formatOfferingPrice } from "@/domain/booking";
+import { experienceOfferings } from "@/domain/experience";
 import styles from "./services.module.css";
 
-const experiences = [
-  {
-    id: "single-song-group-event",
-    price: "$200",
-    name: "Single-Song Group Event",
-    summary: "One gathering. One shared story. One original song.",
-    bestFor: "A meaningful group activity or first SongKeep experience",
-    story: "Shared group story conversation",
-    music: "One original shared song",
-    presentation: "Presented during your gathering",
-    afterward: "The song and approved event materials",
-    cta: "Book Group Event — $200"
-  },
-  {
-    id: "honor-a-life-song-experience",
-    price: "$2,500",
-    name: "Honor a Life Song Experience",
-    summary: "Individual stories become original songs, then return to the community in concert.",
-    bestFor: "Communities seeking a deeper resident and family experience",
-    story: "Several participant interviews and family contributions",
-    music: "Multiple participant songs",
-    presentation: "A follow-up concert for the community",
-    afterward: "Songs, lyrics, approved video, photos, reports, and keepsakes",
-    cta: "Plan Full Experience — $2,500"
-  }
-] as const;
+const ctaLabels = {
+  "single-song-group-event": "Plan Group Event",
+  "honor-a-life-song-experience": "Plan Full Experience",
+  "songkeep-legacy-album": "Explore Legacy Album"
+} as const;
 
 export default function ServicesPage() {
   return (
     <PublicShell>
       <main className={styles.page}>
         <header className={styles.hero}>
-          <p className="eyebrow">Experiences for communities</p>
-          <h1>Choose the experience that fits your community.</h1>
+          <p className="eyebrow">Experiences for organizations</p>
+          <h1>Choose how your stories become music.</h1>
           <p>
-            Both experiences are created for facilities and organizations. Choose a simple shared-song event or a
-            fuller resident journey with interviews, multiple songs, and a concert.
+            Start with one shared song, create a deeper participant experience, or preserve a complete story as a
+            professionally developed legacy album. Every experience remains connected to one organization account.
           </p>
         </header>
 
         <section className={styles.comparison} aria-label="Compare SongKeep experiences">
-          {experiences.map((experience, index) => (
-            <article className={index === 1 ? styles.featured : undefined} id={experience.id} key={experience.id}>
-              {index === 1 ? <span className={styles.recommended}>Deeper resident experience</span> : null}
+          {experienceOfferings.map((experience) => (
+            <article
+              className={experience.id === "honor-a-life-song-experience" ? styles.featured : experience.id === "songkeep-legacy-album" ? styles.premium : undefined}
+              id={experience.id}
+              key={experience.id}
+            >
+              {experience.id === "honor-a-life-song-experience" ? <span className={styles.recommended}>Complete participant experience</span> : null}
+              {experience.id === "songkeep-legacy-album" ? <span className={styles.recommended}>Premium musical legacy</span> : null}
               <div className={styles.titleRow}>
                 <div>
-                  <p className={styles.price}>{experience.price}</p>
+                  <p className={styles.price}>{formatOfferingPrice(experience.priceCents)}</p>
                   <h2>{experience.name}</h2>
                 </div>
               </div>
-              <p className={styles.summary}>{experience.summary}</p>
+              <p className={styles.summary}>{experience.description}</p>
               <dl>
                 <div><dt>Best for</dt><dd>{experience.bestFor}</dd></div>
-                <div><dt>Story experience</dt><dd>{experience.story}</dd></div>
-                <div><dt>Music</dt><dd>{experience.music}</dd></div>
+                <div><dt>Story experience</dt><dd>{experience.storyCapture}</dd></div>
+                <div><dt>Music</dt><dd>{experience.creativeOutput}</dd></div>
                 <div><dt>Presentation</dt><dd>{experience.presentation}</dd></div>
-                <div><dt>Afterward</dt><dd>{experience.afterward}</dd></div>
+                <div><dt>Afterward</dt><dd>{experience.postEvent}</dd></div>
               </dl>
               <Link className={styles.primaryAction} href={`/begin?offering=${experience.id}&step=details`}>
-                {experience.cta}
+                {ctaLabels[experience.id]} — {formatOfferingPrice(experience.priceCents)}
               </Link>
-              {index === 1 ? <Link className={styles.detailLink} href="/services/project-ageless">See the full experience</Link> : null}
+              {experience.id === "honor-a-life-song-experience" ? <Link className={styles.detailLink} href="/services/project-ageless">See the complete experience</Link> : null}
+              {experience.requiresConsultation ? <span className={styles.consultationNote}>Includes a scope and release conversation before production begins.</span> : null}
             </article>
           ))}
         </section>
@@ -72,7 +59,7 @@ export default function ServicesPage() {
           <div>
             <p className="eyebrow">Not sure which fits?</p>
             <h2>We’ll help you choose.</h2>
-            <p>Tell us about your community, the number of participants, and the kind of gathering you envision.</p>
+            <p>Tell us about your organization, participants, goals, and the kind of story experience you envision.</p>
           </div>
           <Link className={styles.secondaryAction} href="/schedule-a-consultation">Talk with us</Link>
         </aside>
