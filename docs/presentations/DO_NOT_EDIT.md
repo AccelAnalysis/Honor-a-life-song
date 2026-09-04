@@ -1,0 +1,1 @@
+The presentation itself is generated into the compressed payload parts. Edit the presentation source/content intentionally and regenerate all six parts together so the loader reconstructs a valid gzip payload.
