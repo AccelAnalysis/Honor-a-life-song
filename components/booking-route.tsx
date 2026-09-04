@@ -297,7 +297,7 @@ export function BookingRoute() {
           <p className={styles.serviceNote}>Participant permission forms are completed separately for each person who takes part.</p>
 
           {isStaticPreview ? <div className={styles.paymentChoices}>
-            <button className={styles.primaryButton} type="button" disabled={!reviewedTerms} onClick={showNextSteps}>{`Continue${offering ? ` — ${formatOfferingPrice(offering.priceCents)}` : ""}`}</button>
+            <button className={styles.primaryButton} type="button" disabled={!reviewedTerms} onClick={showNextSteps}>{`Pay securely${offering ? ` — ${formatOfferingPrice(offering.priceCents)}` : ""}`}</button>
             <button className={styles.secondaryButton} type="button" disabled={!reviewedTerms} onClick={showNextSteps}>Request invoice</button>
           </div> : <>
             <div className={styles.paymentChoices}>
