@@ -1,0 +1,62 @@
+name: Diagnose and apply lifecycle review fixes
+
+on:
+  push:
+    branches:
+      - feature/organization-to-individual-lifecycle
+    paths:
+      - .diagnose-lifecycle-review
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose-apply-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract, apply, and verify
+        shell: bash
+        run: |
+          set +e
+          awk '/^[[:space:]]*python - <<.PY./{capture=1; next} capture && /^[[:space:]]*PY$/{exit} capture{sub(/^          /, ""); print}' .github/workflows/fix-lifecycle-review.yml > /tmp/lifecycle-fix.py
+          python /tmp/lifecycle-fix.py > /tmp/lifecycle-review-result.log 2>&1
+          patch_rc=$?
+          echo "patch_exit=$patch_rc" >> /tmp/lifecycle-review-result.log
+
+          verify_rc=99
+          if [ "$patch_rc" -eq 0 ]; then
+            npm install --no-audit --no-fund --package-lock=false >> /tmp/lifecycle-review-result.log 2>&1 && \
+            npm run lint >> /tmp/lifecycle-review-result.log 2>&1 && \
+            npm run typecheck >> /tmp/lifecycle-review-result.log 2>&1 && \
+            npm test >> /tmp/lifecycle-review-result.log 2>&1 && \
+            npm run build >> /tmp/lifecycle-review-result.log 2>&1
+            verify_rc=$?
+          fi
+          echo "verify_exit=$verify_rc" >> /tmp/lifecycle-review-result.log
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [ "$patch_rc" -eq 0 ] && [ "$verify_rc" -eq 0 ]; then
+            rm -f .lifecycle-review-fix .diagnose-lifecycle-review
+            rm -f .github/workflows/fix-lifecycle-review.yml
+            rm -f .github/workflows/diagnose-and-apply-lifecycle-review.yml
+            git add -A
+            git commit -m "fix: make lifecycle transitions atomic and recoverable"
+            git push
+            exit 0
+          fi
+
+          cp /tmp/lifecycle-review-result.log .lifecycle-review-diagnostic.log
+          git reset --hard HEAD
+          cp /tmp/lifecycle-review-result.log .lifecycle-review-diagnostic.log
+          git add .lifecycle-review-diagnostic.log
+          git commit -m "ci: capture lifecycle review failure"
+          git push
+          exit 1
