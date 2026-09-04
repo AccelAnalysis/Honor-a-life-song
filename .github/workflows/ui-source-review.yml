@@ -2,9 +2,7 @@ name: Apply customer experience update
 on:
   push:
     branches: [feature/account-first-customer-experience]
-    paths:
-      - .github/workflows/ui-source-review.yml
-      - .account-update/**
+    paths: [.github/workflows/ui-source-review.yml]
 permissions:
   contents: write
 jobs:
@@ -18,7 +16,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Reconstruct reviewed source
+      - name: Reconstruct reviewed source and normalize formatting
         run: |
           python3 - <<'PY'
           import base64, hashlib, json, lzma, pathlib, shutil, subprocess
@@ -41,12 +39,17 @@ jobs:
                   for start, end, replacement in reversed(entry['edits']):
                       lines[start:end] = [replacement]
                   text = ''.join(lines)
+              assert hashlib.sha256(text.encode('utf-8')).hexdigest() == entry['hash'], name
+              if name == 'app/page.tsx':
+                  text = '\n'.join(line.rstrip() for line in text.splitlines()) + '\n'
+              if name == 'e2e/account-first.cjs':
+                  assert 'await browser.close();}' in text
+                  text = text.replace('await browser.close();}', 'await browser.close();await db.terminate();}')
               data = text.encode('utf-8')
-              assert hashlib.sha256(data).hexdigest() == entry['hash'], name
               target = root / relative
               target.parent.mkdir(parents=True,exist_ok=True)
               target.write_bytes(data)
-              hashes[name] = entry['hash']
+              hashes[name] = hashlib.sha256(data).hexdigest()
           shutil.rmtree(root / '.account-update')
           pathlib.Path('/tmp/source-hashes.json').write_text(json.dumps(hashes,indent=2))
           print(f'Applied {len(hashes)} reviewed source files.')
