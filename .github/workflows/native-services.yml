@@ -1,0 +1,46 @@
+name: Native services
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify-native-services:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci --prefix functions --no-audit --no-fund
+      - run: npm --prefix functions test
+      - name: Start isolated official Firestore emulator
+        run: |
+          curl --fail --location --retry 3 https://storage.googleapis.com/firebase-preview-drop/emulator/cloud-firestore-emulator-v1.22.0.jar -o /tmp/firestore-emulator.jar
+          echo '9b6498b7f62714d67f48f59b3818883cd682dbcd46b9f59511de81c97bb5166c  /tmp/firestore-emulator.jar' | sha256sum --check
+          java -Duser.language=en -jar /tmp/firestore-emulator.jar --host 127.0.0.1 --port 8096 --project_id demo-songkeep-invoices > /tmp/firestore.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -s http://127.0.0.1:8096 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/firestore.log
+          exit 1
+      - name: Transaction, authorization, consent and payment tests
+        run: npm --prefix functions run test:integration
+        env:
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8096
+          SONGKEEP_TEST_PDF: /tmp/songkeep-sample-invoice.pdf
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-services-evidence
+          path: |
+            /tmp/firestore.log
+            /tmp/songkeep-sample-invoice.pdf
+          retention-days: 7
