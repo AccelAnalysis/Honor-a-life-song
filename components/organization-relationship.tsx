@@ -1,7 +1,9 @@
 "use client";
 
+import { customerMessage } from "@/lib/customer-messages";
+
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { SongKeepLockup } from "@/components/brand";
@@ -38,9 +40,13 @@ import {
   listOrganizationExperiences,
   listOrganizationMembers
 } from "@/lib/firebase/organization-account";
+import { OrganizationTeam } from "./organization-team";
+import { listBookingDrafts } from "@/lib/firebase/booking-draft";
+import { bookingReturnPath, canPlanExperience, type BookingDraft } from "@/domain/account-onboarding";
+import { appPath } from "@/lib/app-path";
 import styles from "./organization-relationship.module.css";
 
-type OrganizationRelationshipProps = { view?: "home" | "account" };
+type OrganizationRelationshipProps = { view?: "home" | "account" | "experiences" };
 
 function titleize(value: string) {
   return value.replaceAll("_", " ").replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -65,17 +71,19 @@ function requestTone(request: OrganizationExperienceRequest) {
 
 function experienceRoadmap(offeringId: OrganizationExperience["offeringId"]) {
   if (offeringId === "single-song-group-event") {
-    return ["Event details", "Shared story", "Song creation", "Presentation & individual access"];
+    return ["Event details", "Shared story", "Song creation", "Presentation & keepsakes"];
   }
   if (offeringId === "songkeep-legacy-album") {
-    return ["Album subject", "Life-story map", "Track production", "Release & individual access"];
+    return ["Album subject", "Life-story map", "Track production", "Album reveal & release"];
   }
-  return ["Participants", "Stories & interviews", "Song production", "Concert & individual access"];
+  return ["Participants", "Stories & interviews", "Song production", "Concert & keepsakes"];
 }
 
 export function OrganizationRelationship({ view = "home" }: OrganizationRelationshipProps) {
   const searchParams = useSearchParams();
-  const { user, status, configurationError } = useAuth();
+  const router = useRouter();
+  const { user, status, configurationError, signOut } = useAuth();
+  const [drafts, setDrafts] = useState<BookingDraft[]>([]);
   const [organizations, setOrganizations] = useState<OrganizationRelationshipProfile[]>([]);
   const [requests, setRequests] = useState<OrganizationExperienceRequest[]>([]);
   const [experiences, setExperiences] = useState<OrganizationExperience[]>([]);
@@ -96,7 +104,11 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
   const requestedExperienceId = searchParams.get("experience");
   const highlightedRequestId = searchParams.get("request");
 
-  const organization = organizations.find((item) => item.id === requestedOrganizationId) ?? organizations[0] ?? null;
+  const organization = (requestedOrganizationId ? organizations.find(item => item.id === requestedOrganizationId) : organizations[0]) ?? null;
+  const canBook = canPlanExperience(organization?.membershipRole);
+  const canManagePeople = ["organization_admin", "coordinator"].includes(organization?.membershipRole ?? "");
+  const savedPlan = drafts.find(item => item.organizationId === organization?.id);
+  const savedOffering = getExperienceOffering(savedPlan?.offeringId);
   const completedExperiences = useMemo(() => experiences.filter(isCompleted), [experiences]);
   const currentExperiences = useMemo(() => experiences.filter((item) => !isCompleted(item) && item.status !== "cancelled"), [experiences]);
   const focusExperience = experiences.find((item) => item.id === requestedExperienceId)
@@ -116,14 +128,15 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
 
   useEffect(() => {
     if (!user) {
+      setOrganizations([]); setRequests([]); setExperiences([]); setMembers([]); setDrafts([]);
       setLoading(status === "loading");
       return;
     }
     let cancelled = false;
     setLoading(true);
-    listOrganizationRelationshipProfiles(user.uid)
-      .then((items) => { if (!cancelled) setOrganizations(items); })
-      .catch((loadError) => { if (!cancelled) setError(loadError instanceof Error ? loadError.message : "We could not open this account."); })
+    Promise.all([listOrganizationRelationshipProfiles(user.uid), listBookingDrafts(user.uid)])
+      .then(([items, nextDrafts]) => { if (!cancelled) { setOrganizations(items); setDrafts(nextDrafts); } })
+      .catch((loadError) => { if (!cancelled) setError(customerMessage(loadError, "We could not open this account.")); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [status, user]);
@@ -131,6 +144,7 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
   useEffect(() => {
     if (!organization) return;
     let cancelled = false;
+    setRequests([]); setExperiences([]); setFeedback([]); setReferrals([]); setMembers([]); setAgreements([]);
     setDetailLoading(true);
     setError(null);
     Promise.all([
@@ -149,13 +163,13 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
       setMembers(nextMembers);
       setAgreements(nextAgreements);
     }).catch((loadError) => {
-      if (!cancelled) setError(loadError instanceof Error ? loadError.message : "We could not load the organization relationship.");
+      if (!cancelled) setError(customerMessage(loadError, "We could not open your account. Please try again."));
     }).finally(() => { if (!cancelled) setDetailLoading(false); });
     return () => { cancelled = true; };
   }, [organization]);
 
   useEffect(() => {
-    if (!organization || !focusExperience) {
+    if (!organization || !focusExperience || !canManagePeople) {
       setParticipants([]);
       setPermissionInvitations([]);
       return;
@@ -169,10 +183,10 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
       setParticipants(nextParticipants);
       setPermissionInvitations(nextInvitations);
     }).catch((loadError) => {
-      if (!cancelled) setError(loadError instanceof Error ? loadError.message : "We could not load participant readiness.");
+      if (!cancelled) setError(customerMessage(loadError, "We could not load participant readiness."));
     });
     return () => { cancelled = true; };
-  }, [focusExperience, organization]);
+  }, [focusExperience, organization, canManagePeople]);
 
   async function refreshRelationship() {
     if (!organization) return;
@@ -207,7 +221,7 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
       formElement.reset();
       setParticipants(await listExperienceParticipants(organization.id, focusExperience.id));
     } catch (participantError) {
-      setError(participantError instanceof Error ? participantError.message : "We could not add the person.");
+      setError(customerMessage(participantError, "We could not add the person."));
     } finally {
       setBusy(null);
     }
@@ -230,10 +244,10 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
         invitedByUserId: user.uid
       });
       const params = new URLSearchParams({ org: organization.id, experience: focusExperience.id, invitation: invitation.id });
-      setPermissionLink(`${window.location.origin}/participate?${params.toString()}`);
+      setPermissionLink(`${window.location.origin}${appPath(`/participate?${params.toString()}`)}`);
       setPermissionInvitations(await listExperiencePermissionInvitations(organization.id, focusExperience.id));
     } catch (invitationError) {
-      setError(invitationError instanceof Error ? invitationError.message : "We could not create the permission link.");
+      setError(customerMessage(invitationError, "We could not create the permission link."));
     } finally {
       setBusy(null);
     }
@@ -258,7 +272,7 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
       setScore(null);
       await refreshRelationship();
     } catch (feedbackError) {
-      setError(feedbackError instanceof Error ? feedbackError.message : "We could not save the feedback.");
+      setError(customerMessage(feedbackError, "We could not save the feedback."));
     } finally {
       setBusy(null);
     }
@@ -287,7 +301,7 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
       formElement.reset();
       await refreshRelationship();
     } catch (referralError) {
-      setError(referralError instanceof Error ? referralError.message : "We could not save the introduction.");
+      setError(customerMessage(referralError, "We could not save the introduction."));
     } finally {
       setBusy(null);
     }
@@ -296,31 +310,31 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
   if (status === "loading" || loading) return <main className={styles.centered}><p role="status">Opening SongKeep…</p></main>;
   if (status === "unavailable") return <main className={styles.centered}><section><h1>Account access is unavailable.</h1><p>{configurationError}</p></section></main>;
   if (status === "signed_out" || !user) return <main className={styles.centered}><section><SongKeepLockup variant="full" /><h1>Sign in to your organization.</h1><Link className={styles.primaryAction} href="/login?next=%2Forganization">Sign in</Link></section></main>;
-  if (!organization) return <main className={styles.centered}><section><SongKeepLockup variant="full" /><h1>Add your organization.</h1><p>Create the permanent account before planning an experience.</p><Link className={styles.primaryAction} href="/create-account?next=%2Forganization">Continue</Link></section></main>;
+  if (!organization) return <main className={styles.centered}><section><SongKeepLockup variant="full" /><h1>Add your organization.</h1><p>Your songs, events, and invoices will be here.</p><Link className={styles.primaryAction} href="/create-account?next=%2Forganization">Continue</Link></section></main>;
 
   return <main className={styles.shell}>
     <header className={styles.header}>
       <Link href="/" aria-label="SongKeep home"><SongKeepLockup variant="app" /></Link>
       <nav aria-label="Organization account">
         <Link aria-current={view === "home" ? "page" : undefined} href={`/organization?org=${organization.id}`}>Home</Link>
-        <Link href={`/organization?org=${organization.id}${focusExperience ? `&experience=${focusExperience.id}` : ""}#experience-readiness`}>Experiences</Link>
+        <Link aria-current={view === "experiences" ? "page" : undefined} href={`/organization/experiences?org=${organization.id}`}>Experiences</Link>
         <Link href={`/organization/library?org=${organization.id}`}>Songs &amp; memories</Link>
         <Link href={`/organization/invoices?organization=${organization.id}`}>Invoices</Link>
-        <Link aria-current={view === "account" ? "page" : undefined} href={`/organization/account?org=${organization.id}`}>Account</Link>
+        <Link aria-current={view === "account" ? "page" : undefined} href={`/organization/account?org=${organization.id}`}>Account &amp; team</Link>
       </nav>
-      <span>{organization.name}</span>
+      <div className={styles.signedIn}><span>{organization.name}</span><button type="button" onClick={() => { void signOut().then(() => router.replace("/login")).catch(cause => setError(customerMessage(cause))); }}>Sign out</button></div>
     </header>
 
     <div className={styles.content}>
       {organizations.length > 1 ? <nav className={styles.organizationSwitcher} aria-label="Choose organization">{organizations.map((item) => <Link aria-current={item.id === organization.id ? "page" : undefined} href={`/organization${view === "account" ? "/account" : ""}?org=${item.id}`} key={item.id}>{item.name}</Link>)}</nav> : null}
       {error ? <div className={styles.alert} role="alert"><strong>Something needs attention.</strong><span>{error}</span></div> : null}
-      {detailLoading ? <p className={styles.loading} role="status">Updating relationship…</p> : null}
+      {detailLoading ? <p className={styles.loading} role="status">Updating your account…</p> : null}
 
       {view === "account" ? <>
         <section className={styles.hero}>
           <p className={styles.eyebrow}>Organization account</p>
           <h1>{organization.name}</h1>
-          <p>The organization keeps the commercial history. People remain contacts who can change over time.</p>
+          <p>Manage your contact details, team, and billing.</p>
         </section>
         <div className={styles.accountGrid}>
           <section className={styles.surface}>
@@ -341,35 +355,41 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
             </dl>
           </section>
         </div>
+        <OrganizationTeam key={organization.id} organizationId={organization.id} members={members} canManage={canBook} />
         <section className={styles.surface}>
-          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>Authorized people</p><h2>Team</h2></div><Link href={`/organization?org=${organization.id}${focusExperience ? `&experience=${focusExperience.id}` : ""}#experience-readiness`}>Manage experiences</Link></div>
-          <div className={styles.rows}>{members.map((member) => <div className={styles.row} key={member.userId}><div><strong>{member.displayName}</strong><span>{member.email}</span></div><span>{titleize(member.role)}</span></div>)}</div>
-        </section>
-        <section className={styles.surface}>
-          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>Commercial record</p><h2>Invoices, payments &amp; agreements</h2></div></div>
+          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>Billing</p><h2>Invoices, payments &amp; agreements</h2></div></div>
           <div className={styles.rows}>{activeRequests.length ? activeRequests.map((request) => <div className={styles.row} key={request.id}><div><strong>{request.offeringName}</strong><span>{formatOfferingPrice(request.amountCents)} · {titleize(request.financialStatus)}</span></div><Link href={`/organization/invoices?organization=${organization.id}&invoice=${request.invoiceId ?? request.id}`}>Open invoice</Link></div>) : <p className={styles.quiet}>No purchase requests yet.</p>}</div>
           <div className={styles.rows}>{agreements.map((agreement) => <div className={styles.row} key={agreement.id}><div><strong>{agreement.title}</strong><span>Version {agreement.documentVersion}</span></div><span>{titleize(agreement.status)}</span></div>)}</div>
         </section>
       </> : <>
         <section className={styles.hero}>
-          <p className={styles.eyebrow}>Your SongKeep relationship</p>
-          <h1>One place for what happens next.</h1>
-          <p>Payment, preparation, participant permissions, completed memories, feedback, and the next experience stay connected to {organization.name}.</p>
-          <Link className={styles.primaryAction} href={`/begin?organizationId=${organization.id}`}>Plan an experience</Link>
+          <p className={styles.eyebrow}>Your SongKeep account</p>
+          <h1>Welcome to SongKeep.</h1>
+          <p>Your upcoming events, invoices, and songs are all here.</p>
+          {canBook && !savedPlan ? <Link className={styles.primaryAction} href={`/begin?organizationId=${organization.id}`}>Plan an experience</Link> : null}
         </section>
 
+        {canBook && savedPlan && savedOffering ? <section className={styles.surface} aria-labelledby="saved-plan-heading">
+          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>Ready when you are</p><h2 id="saved-plan-heading">Continue planning</h2><p>{savedOffering.name} · {savedOffering.creativeOutput}</p></div>
+          <Link className={styles.primaryAction} href={bookingReturnPath(savedPlan)}>Continue planning</Link></div>
+        </section> : null}
+        {!detailLoading && !experiences.length && !activeRequests.length && !savedPlan ? <section className={styles.surface}><h2>Your first experience starts here.</h2><p>Once you book, you’ll find your event details and invoice in this account.</p></section> : null}
+        {experiences.length ? <section className={styles.surface} aria-labelledby="event-history-heading">
+          <div className={styles.sectionHeading}><h2 id="event-history-heading">Your experiences</h2></div>
+          {[{ label: "Upcoming & in progress", items: currentExperiences }, { label: "Past experiences", items: completedExperiences }].map(group => group.items.length ? <div key={group.label}><h3>{group.label}</h3><div className={styles.rows}>{group.items.map(item => <Link className={styles.row} href={`/organization?org=${organization.id}&experience=${item.id}#experience-readiness`} key={item.id}><div><strong>{item.title}</strong><span>{getExperienceOffering(item.offeringId)?.creativeOutput} · {formatDate(item.startsAt)}</span></div><span>{titleize(item.status)}</span></Link>)}</div></div> : null)}
+        </section> : null}
         {activeRequests.length ? <section className={styles.surface} aria-labelledby="commercial-heading">
-          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>Commercial status</p><h2 id="commercial-heading">Requests &amp; payment</h2></div></div>
+          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>Your requests</p><h2 id="commercial-heading">Requests &amp; payment</h2></div></div>
           <div className={styles.requestList}>{activeRequests.map((request) => <article data-tone={requestTone(request)} className={request.id === highlightedRequestId ? styles.highlighted : ""} key={request.id}>
-            <div><span className={styles.statusPill}>{titleize(request.financialStatus)}</span><h3>{request.offeringName}</h3><p>{formatDate(request.preferredStartsAt)} · {formatOfferingPrice(request.amountCents)}</p><small>{request.nextAction}</small></div>
-            <div className={styles.requestActions}><Link className={styles.primaryAction} href={`/organization/invoices?organization=${organization.id}&invoice=${request.invoiceId ?? request.id}`}>{request.requestedPaymentMethod === "card" ? "Resume secure payment" : "View invoice"}</Link>{request.status !== "converted" ? <Link href={`/begin?organizationId=${organization.id}&offering=${request.offeringId}&replacesRequest=${request.id}`}>Change experience</Link> : request.experienceId ? <Link href={`/organization?org=${organization.id}&experience=${request.experienceId}#experience-readiness`}>Open experience</Link> : null}</div>
+            <div><span className={styles.statusPill}>{titleize(request.financialStatus)}</span><h3>{request.offeringName}</h3><p>{formatDate(request.preferredStartsAt)} · {formatOfferingPrice(request.amountCents)}</p><small>{request.financialStatus === "paid" ? "Payment received. Continue planning your event." : request.financialStatus === "invoice_requested" ? "Your invoice is being prepared." : "Review your invoice for payment details."}</small></div>
+            <div className={styles.requestActions}><Link className={styles.primaryAction} href={`/organization/invoices?organization=${organization.id}&invoice=${request.invoiceId ?? request.id}`}>{request.financialStatus === "paid" ? "View invoice" : request.requestedPaymentMethod === "card" ? "Continue payment" : "View invoice"}</Link>{canBook && request.status !== "converted" ? <Link href={`/begin?organizationId=${organization.id}&offering=${request.offeringId}&replacesRequest=${request.id}`}>Change experience</Link> : request.experienceId ? <Link href={`/organization?org=${organization.id}&experience=${request.experienceId}#experience-readiness`}>Open experience</Link> : null}</div>
           </article>)}</div>
         </section> : null}
 
         {focusExperience ? <section id="experience-readiness" className={styles.surface} aria-labelledby="readiness-heading">
-          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>People &amp; readiness</p><h2 id="readiness-heading">{focusExperience.title}</h2><p>{focusOffering?.name ?? titleize(focusExperience.templateKind)} · {titleize(focusExperience.status)} · {formatDate(focusExperience.startsAt)}</p></div><Link href={`/organization/library?org=${organization.id}`}>Songs &amp; memories</Link></div>
+          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>Your event</p><h2 id="readiness-heading">{focusExperience.title}</h2><p>{focusOffering?.name ?? titleize(focusExperience.templateKind)} · {titleize(focusExperience.status)} · {formatDate(focusExperience.startsAt)}</p></div><Link href={`/organization/library?org=${organization.id}`}>Songs &amp; memories</Link></div>
           <ol className={styles.roadmap} aria-label="Experience readiness">{experienceRoadmap(focusExperience.offeringId).map((step, index) => <li key={step}><span>{index + 1}</span><strong>{step}</strong></li>)}</ol>
-          <details className={styles.capturePanel}>
+          {canManagePeople ? <details className={styles.capturePanel}>
             <summary>Add a person connected to this experience</summary>
             <form onSubmit={handleAddParticipant}>
               <label><span>Participant or subject name</span><input required name="displayName" autoComplete="name" /></label>
@@ -377,8 +397,8 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
               <p>The contact can be the participant or an eligible family member. Permission is still requested separately.</p>
               <button type="submit" disabled={busy === "add-participant"}>{busy === "add-participant" ? "Adding…" : "Add person"}</button>
             </form>
-          </details>
-          {participants.length ? <div className={styles.participantList}>{participants.map((participant) => {
+          </details> : null}
+          {canManagePeople && participants.length ? <div className={styles.participantList}>{participants.map((participant) => {
             const invitation = permissionInvitations.find((item) => item.participantId === participant.id && item.status !== "revoked");
             return <article key={participant.id}>
               <div><strong>{participant.displayName}</strong><span>Permission: {titleize(participant.permissionReadiness)}</span>{invitation ? <small>Invitation {titleize(invitation.status)}</small> : null}</div>
@@ -392,7 +412,7 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
                 </form>
               </details>
             </article>;
-          })}</div> : <div className={styles.emptyState}><strong>No people have been added yet.</strong><p>Add participants, the album subject, or eligible family contacts here. They can later receive individual permission and post-event product access.</p></div>}
+          })}</div> : canManagePeople ? <div className={styles.emptyState}><strong>No people have been added yet.</strong><p>Add the people taking part. We’ll help you invite them and collect their choices.</p></div> : null}
           {permissionLink ? <div className={styles.linkResult} role="status"><strong>Permission link ready</strong><code>{permissionLink}</code><div><button type="button" onClick={() => navigator.clipboard?.writeText(permissionLink)}>Copy</button><button type="button" onClick={() => window.print()}>Print</button></div></div> : null}
           <details className={styles.permissionGuide}><summary>What the individual chooses</summary><div>{participantPermissionScopes.map((permission) => <p key={permission.scope}><strong>{permission.label}</strong><span>{permission.description}</span></p>)}</div></details>
         </section> : null}
@@ -401,7 +421,7 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
           const existingFeedback = latestFeedbackByExperience.get(experience.id);
           const result = feedbackResult?.experienceId === experience.id ? feedbackResult : existingFeedback;
           return <section className={styles.surface} key={experience.id} aria-labelledby={`followup-${experience.id}`}>
-            <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>After the experience</p><h2 id={`followup-${experience.id}`}>{experience.title}</h2><p>Keep the relationship active without mixing organization feedback with participant permissions.</p></div><Link href={`/organization/library?org=${organization.id}`}>Open materials</Link></div>
+            <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>After the experience</p><h2 id={`followup-${experience.id}`}>{experience.title}</h2><p>How was your experience? We’d love to hear.</p></div><Link href={`/organization/library?org=${organization.id}`}>Open materials</Link></div>
             {!result ? <form className={styles.feedbackForm} onSubmit={(event) => handleFeedback(event, experience.id)}>
               <fieldset><legend>How likely are you to recommend SongKeep to another organization?</legend><div className={styles.npsScale}>{Array.from({ length: 11 }, (_, index) => <label key={index}><input type="radio" name={`nps-${experience.id}`} checked={score === index} onChange={() => setScore(index)} /><span>{index}</span></label>)}</div><div className={styles.scaleLabels}><span>Not likely</span><span>Very likely</span></div></fieldset>
               <label><span>Overall satisfaction</span><select name="satisfaction" defaultValue="5"><option value="5">5 — Excellent</option><option value="4">4 — Very good</option><option value="3">3 — Good</option><option value="2">2 — Fair</option><option value="1">1 — Poor</option></select></label>
@@ -412,7 +432,7 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
         })}
 
         {promoterFeedback ? <section className={styles.surface} aria-labelledby="referral-heading">
-          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>Introduce another organization</p><h2 id="referral-heading">Make a warm introduction.</h2><p>SongKeep carries the source from this advocate into the next organization relationship.</p></div></div>
+          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>Introduce another organization</p><h2 id="referral-heading">Make a warm introduction.</h2><p>Know a group that would enjoy SongKeep? Introduce us.</p></div></div>
           <form className={styles.referralForm} onSubmit={(event) => handleReferral(event, promoterFeedback)}>
             <div className={styles.twoColumns}><label><span>Your name</span><input required name="advocateName" defaultValue={user.displayName ?? organization.contact.displayName} /></label><label><span>Your email</span><input required type="email" name="advocateEmail" defaultValue={user.email ?? organization.contact.email} /></label></div>
             <label><span>Organization to introduce</span><input required name="referredOrganizationName" /></label>
@@ -423,10 +443,10 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
           {referrals.length ? <p className={styles.quiet}>{referrals.length} {referrals.length === 1 ? "introduction" : "introductions"} connected to this organization.</p> : null}
         </section> : null}
 
-        <section className={styles.surface} aria-labelledby="next-experience-heading">
-          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>Keep the relationship going</p><h2 id="next-experience-heading">Plan what comes next.</h2><p>Another event, a deeper experience, or a Legacy Album can stay under the same organization account.</p></div></div>
-          <div className={styles.offerGrid}>{serviceOfferings.map((offering) => <Link href={`/begin?organizationId=${organization.id}&offering=${offering.id}${focusExperience ? `&sourceExperience=${focusExperience.id}` : ""}`} key={offering.id}><span>{formatOfferingPrice(offering.priceCents)}</span><strong>{offering.shortName}</strong><small>{offering.bestFor}</small></Link>)}</div>
-        </section>
+        {canBook && completedExperiences.length ? <section className={styles.surface} aria-labelledby="next-experience-heading">
+          <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>Make more memories</p><h2 id="next-experience-heading">Plan what comes next.</h2><p>Bring your people together again. Your account is ready when you are.</p></div></div>
+          <div className={styles.offerGrid}>{serviceOfferings.map((offering) => <Link href={`/begin?organizationId=${organization.id}&offering=${offering.id}${focusExperience ? `&sourceExperience=${focusExperience.id}` : ""}`} key={offering.id}><span>{formatOfferingPrice(offering.priceCents)}</span><strong>{offering.shortName}</strong><small>{offering.creativeOutput}</small></Link>)}</div>
+        </section> : null}
       </>}
     </div>
   </main>;

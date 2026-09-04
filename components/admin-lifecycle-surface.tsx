@@ -1,5 +1,7 @@
 "use client";
 
+import { customerMessage } from "@/lib/customer-messages";
+
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
@@ -80,7 +82,7 @@ export function AdminLifecycleSurface({ area }: AdminLifecycleSurfaceProps) {
     let cancelled = false;
     setLoading(true);
     load()
-      .catch((loadError) => { if (!cancelled) setError(loadError instanceof Error ? loadError.message : "Unable to load lifecycle records."); })
+      .catch((loadError) => { if (!cancelled) setError(customerMessage(loadError, "Unable to open customer requests.")); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [load]);
@@ -116,7 +118,7 @@ export function AdminLifecycleSurface({ area }: AdminLifecycleSurfaceProps) {
       setNotice("Individual product published to eligible post-experience accounts.");
       await load();
     } catch (productError) {
-      setError(productError instanceof Error ? productError.message : "The product could not be created.");
+      setError(customerMessage(productError, "The product could not be created."));
     } finally {
       setBusy(null);
     }
@@ -131,7 +133,7 @@ export function AdminLifecycleSurface({ area }: AdminLifecycleSurfaceProps) {
       setNotice(`${invitation.participantName}'s permission response is now an active consent record.`);
       await load();
     } catch (permissionError) {
-      setError(permissionError instanceof Error ? permissionError.message : "The response could not be approved.");
+      setError(customerMessage(permissionError, "The response could not be approved."));
     } finally {
       setBusy(null);
     }
@@ -154,7 +156,7 @@ export function AdminLifecycleSurface({ area }: AdminLifecycleSurfaceProps) {
       setNotice("Individual purchase status updated.");
       await load();
     } catch (purchaseError) {
-      setError(purchaseError instanceof Error ? purchaseError.message : "The purchase could not be updated.");
+      setError(customerMessage(purchaseError, "The purchase could not be updated."));
     } finally {
       setBusy(null);
     }
@@ -165,7 +167,7 @@ export function AdminLifecycleSurface({ area }: AdminLifecycleSurfaceProps) {
   return <main className={styles.shell}>
     <header className={styles.header}>
       <Link href="/admin">← Operations</Link>
-      <div><p>SongKeep</p><strong>Customer lifecycle</strong></div>
+      <div><p>SongKeep</p><strong>Customers & experiences</strong></div>
     </header>
     <nav className={styles.areaNav} aria-label="Lifecycle operations"><Link href="/admin/invoices">Invoices & payments</Link><Link href="/admin/deliverables">Creator delivery</Link>{areas.map((item) => <Link key={item.id} aria-current={area === item.id ? "page" : undefined} href={`/admin/${item.id}`}>{item.label}</Link>)}</nav>
     <div className={styles.content}>
@@ -173,7 +175,7 @@ export function AdminLifecycleSurface({ area }: AdminLifecycleSurfaceProps) {
       {notice ? <div className={styles.notice} role="status"><strong>Saved</strong><span>{notice}</span></div> : null}
 
       {area === "requests" ? <>
-        <section className={styles.pageHeading}><p className={styles.eyebrow}>Organization commerce</p><h1>Requests become experiences only after valid payment.</h1><p>Package selection, invoice requests, payment reconciliation, and experience creation remain one auditable commercial record.</p></section>
+        <section className={styles.pageHeading}><p className={styles.eyebrow}>Requests & payments</p><h1>Review customer requests.</h1><p>Review invoices and payments, then help each group prepare for its experience.</p></section>
         <section className={styles.records}>{requests.length ? requests.map((request) => <article key={request.id}>
           <div className={styles.recordHeading}><div><span className={styles.status}>{titleize(request.financialStatus)}</span><h2>{request.organizationName}</h2><p>{request.offeringName} · {formatLifecycleMoney(request.amountCents)} · {formatDate(request.preferredStartsAt)}</p></div><Link href={`/admin/people/facilities/${request.organizationId}`}>Organization</Link></div>
           <p className={styles.nextAction}>{request.nextAction}</p>
@@ -190,7 +192,7 @@ export function AdminLifecycleSurface({ area }: AdminLifecycleSurfaceProps) {
             <label><span>Description</span><textarea required name="description" rows={4} /></label>
             <label><span>Type</span><select name="kind" defaultValue="printed_lyrics"><option value="digital_song">Digital song</option><option value="printed_lyrics">Printed lyrics</option><option value="song_card">Song card</option><option value="event_video">Event video</option><option value="photo_music_package">Photo + music package</option><option value="additional_copy">Additional copy</option><option value="personalized_follow_on">Personalized follow-on</option><option value="other">Other</option></select></label>
             <label><span>Price in dollars <small>Leave blank for invoice/quote</small></span><input min="0" step="0.01" inputMode="decimal" name="price" /></label>
-            <p>Online payment uses the saved product price and a secure, source-attributed SongKeep checkout. Public payment links are not used.</p>
+            <p>Customers pay the listed price through secure checkout.</p>
             <fieldset><legend>Eligible audience</legend><label className={styles.check}><input type="checkbox" name="audiences" value="participant" defaultChecked /><span>Participant</span></label><label className={styles.check}><input type="checkbox" name="audiences" value="designated_family" defaultChecked /><span>Designated family</span></label></fieldset>
             <button disabled={busy === "product"} type="submit">{busy === "product" ? "Publishing…" : "Publish product"}</button>
           </form>
@@ -199,7 +201,7 @@ export function AdminLifecycleSurface({ area }: AdminLifecycleSurfaceProps) {
       </> : null}
 
       {area === "communications" ? <>
-        <section className={styles.pageHeading}><p className={styles.eyebrow}>State-driven nurture</p><h1>Follow the relationship state, not a generic mailing list.</h1><p>Notification delivery is kept separate from the authoritative payment and experience records. This queue shows what should happen next.</p></section>
+        <section className={styles.pageHeading}><p className={styles.eyebrow}>Follow-up</p><h1>Keep in touch at the right time.</h1><p>See which customers need a response or payment reminder.</p></section>
         <section className={styles.queue}>{requests.filter((request) => !["cancelled"].includes(request.status)).map((request) => <article key={request.id}><span>{titleize(request.nurtureTrack)}</span><div><strong>{request.organizationName}</strong><p>{request.nextAction}</p></div><small>{request.offeringName}</small></article>)}</section>
       </> : null}
 

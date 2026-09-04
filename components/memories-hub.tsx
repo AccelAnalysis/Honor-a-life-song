@@ -1,5 +1,7 @@
 "use client";
 
+import { customerMessage } from "@/lib/customer-messages";
+
 import Link from "next/link";
 import { nativeCheckoutEnabled, openIndividualCheckout } from "@/lib/firebase/native-services";
 import { PrivateExperienceMaterials } from "@/components/authorized-asset";
@@ -56,7 +58,7 @@ export function MemoriesHub() {
       setProducts(nextProducts);
       setPurchases(nextPurchases);
     }).catch((loadError) => {
-      if (!cancelled) setError(loadError instanceof Error ? loadError.message : "We could not open your memories.");
+      if (!cancelled) setError(customerMessage(loadError, "We could not open your memories."));
     }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [status, user]);
@@ -90,7 +92,7 @@ export function MemoriesHub() {
       }
       setNotice(`${product.name} was requested. SongKeep will connect pricing or an invoice to this account.`);
     } catch (purchaseError) {
-      setError(purchaseError instanceof Error ? purchaseError.message : "We could not start this purchase.");
+      setError(customerMessage(purchaseError, "We could not start this purchase."));
     } finally {
       setBusy(null);
     }
@@ -102,7 +104,7 @@ export function MemoriesHub() {
 
   return <main className={styles.shell}>
     <header><Link className={styles.brand} href="/" aria-label="SongKeep home"><SongKeepLockup variant="app" /></Link><span>Memories &amp; products</span></header>
-    <section className={styles.intro}><p className={styles.eyebrow}>Your collection</p><h1>Songs worth keeping.</h1><p>Private materials and products created from experiences shared with you live here. Every purchase stays connected to the organization event that made it possible.</p></section>
+    <section className={styles.intro}><p className={styles.eyebrow}>Your collection</p><h1>Songs worth keeping.</h1><p>Private materials and products created from experiences shared with you live here. Keepsakes from your experience that made it possible.</p></section>
     {error ? <div className={styles.alert} role="alert"><strong>Something needs attention.</strong><span>{error}</span></div> : null}
     {notice ? <div className={styles.notice} role="status"><strong>Request saved.</strong><span>{notice}</span></div> : null}
 
