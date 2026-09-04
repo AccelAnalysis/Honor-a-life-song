@@ -9,15 +9,18 @@ import {
 import { safeReturnPath } from "../lib/safe-return-path";
 
 const organizationDomain = readFileSync(resolve(process.cwd(), "domain/organization-account.ts"), "utf8");
+const organizationOnboarding = readFileSync(resolve(process.cwd(), "lib/firebase/organization-onboarding.ts"), "utf8");
 const organizationRepository = readFileSync(resolve(process.cwd(), "lib/firebase/organization-account.ts"), "utf8");
 const invitationRepository = readFileSync(resolve(process.cwd(), "lib/firebase/organization-invitations.ts"), "utf8");
+const postExperienceRepository = readFileSync(resolve(process.cwd(), "lib/firebase/post-experience.ts"), "utf8");
 const firestoreRules = readFileSync(resolve(process.cwd(), "firestore.rules"), "utf8");
 const storageRules = readFileSync(resolve(process.cwd(), "storage.rules"), "utf8");
 const publicHome = readFileSync(resolve(process.cwd(), "app/page.tsx"), "utf8");
 const memoriesHub = readFileSync(resolve(process.cwd(), "components/memories-hub.tsx"), "utf8");
+const storefront = readFileSync(resolve(process.cwd(), "components/post-experience-storefront.tsx"), "utf8");
 
 describe("governing customer model", () => {
-  it("defines exactly two organization-owned experience templates", () => {
+  it("defines three organization-owned experience templates", () => {
     expect(experienceOfferings).toEqual([
       expect.objectContaining({
         id: "single-song-group-event",
@@ -25,7 +28,7 @@ describe("governing customer model", () => {
         buyer: "organization",
         templateKind: "group_event",
         participantMode: "group",
-        creativeOutput: "One shared song",
+        creativeOutput: "One original shared song",
         presentation: "Event presentation"
       }),
       expect.objectContaining({
@@ -34,8 +37,16 @@ describe("governing customer model", () => {
         buyer: "organization",
         templateKind: "full_program",
         participantMode: "named_roster",
-        creativeOutput: "Multiple participant songs",
+        creativeOutput: "Multiple original participant songs",
         presentation: "Follow-up concert"
+      }),
+      expect.objectContaining({
+        id: "songkeep-legacy-album",
+        priceCents: 600_000,
+        buyer: "organization",
+        templateKind: "legacy_album",
+        participantMode: "named_roster",
+        requiresConsultation: true
       })
     ]);
   });
@@ -43,8 +54,19 @@ describe("governing customer model", () => {
   it("maps legacy offering identifiers without preserving the old purchase model", () => {
     expect(normalizeExperienceOfferingId("individual-legacy-song")).toBe("single-song-group-event");
     expect(normalizeExperienceOfferingId("complete-honor-a-life-song-experience")).toBe("honor-a-life-song-experience");
+    expect(normalizeExperienceOfferingId("legacy-album")).toBe("songkeep-legacy-album");
     expect(getExperienceOffering("individual-legacy-song")?.buyer).toBe("organization");
     expect(getExperienceOffering("unknown")).toBeUndefined();
+  });
+
+  it("keeps the organization and its primary contact separate", () => {
+    expect(organizationDomain).toContain("primaryContactUserId?: EntityId");
+    expect(organizationDomain).toContain("title?: string");
+    expect(organizationDomain).toContain("directPhone?: string");
+    expect(organizationDomain).toContain("preferredContactMethod?: PreferredContactMethod");
+    expect(organizationDomain).toContain("isPrimaryContact?: boolean");
+    expect(organizationOnboarding).toContain("The organization is the durable commercial customer");
+    expect(organizationOnboarding).toContain('role: "organization_admin"');
   });
 
   it("places participants, consent, assets, and access under an organization experience", () => {
@@ -79,20 +101,24 @@ describe("governing customer model", () => {
     expect(firestoreRules).toContain("resource.data.organizationVisible == true");
   });
 
-  it("keeps the primary public acquisition path organization-facing", () => {
+  it("keeps the public acquisition path organization-facing across all three offers", () => {
     expect(publicHome).toContain("SongKeep creates meaningful music experiences for the people your organization serves.");
     expect(publicHome).toContain("Choose an experience");
     expect(publicHome).toContain("$200 Group Event");
     expect(publicHome).toContain("$2,500 Honor a Life Song");
+    expect(publicHome).toContain("$6,000 Legacy Album");
     expect(publicHome).not.toContain("Purchase an individual song");
   });
 
-  it("gives participants and families a lightweight private memories path", () => {
-    expect(memoriesHub).toContain("SongKeep");
-    expect(memoriesHub).toContain("entitlementIds.length");
-    expect(memoriesHub).toContain("Private materials only.");
+  it("converts claimed experience access into source-attributed individual commerce", () => {
+    expect(memoriesHub).toContain("Products from this experience");
+    expect(storefront).toContain("Take the experience with you.");
+    expect(storefront).toContain("createPostExperiencePurchaseIntent");
+    expect(postExperienceRepository).toContain("organizationId: input.access.organizationId");
+    expect(postExperienceRepository).toContain("experienceId: input.access.experienceId");
+    expect(postExperienceRepository).toContain("participantId: input.access.participantId");
+    expect(firestoreRules).toContain("validPostExperiencePurchaseIntentCreate");
     expect(memoriesHub).not.toContain("Payments & Orders");
-    expect(memoriesHub).not.toContain("Customer workspace");
   });
 });
 
