@@ -1,0 +1,23 @@
+name: Customer experience source review
+on:
+  push:
+    branches: [feature/account-first-customer-experience]
+    paths: [.github/workflows/ui-source-review.yml]
+permissions:
+  contents: read
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Export repository source only
+        run: |
+          mkdir -p /tmp/source-review
+          git archive HEAD | gzip > /tmp/source-review/source.tar.gz
+          git rev-parse HEAD > /tmp/source-review/head.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: songkeep-account-first-source
+          path: /tmp/source-review
+          retention-days: 2
