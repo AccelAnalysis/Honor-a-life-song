@@ -1,0 +1,737 @@
+name: Fix lifecycle review findings
+
+on:
+  push:
+    branches:
+      - feature/organization-to-individual-lifecycle
+    paths:
+      - .lifecycle-review-fix
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply review fixes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          def replace_once(path_name: str, old: str, new: str) -> None:
+              path = Path(path_name)
+              text = path.read_text()
+              if text.count(old) != 1:
+                  raise SystemExit(f"Expected one exact match in {path_name}, found {text.count(old)}")
+              path.write_text(text.replace(old, new, 1))
+
+          def replace_regex(path_name: str, pattern: str, replacement: str) -> None:
+              path = Path(path_name)
+              text = path.read_text()
+              updated, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+              if count != 1:
+                  raise SystemExit(f"Expected one regex match in {path_name}, found {count}: {pattern[:80]}")
+              path.write_text(updated)
+
+          replace_once(
+              "domain/customer-lifecycle.ts",
+              "  sourceExperienceId?: EntityId;\n  replacesRequestId?: EntityId;\n  experienceId?: EntityId;",
+              "  sourceExperienceId?: EntityId;\n  replacesRequestId?: EntityId;\n  replacedByRequestId?: EntityId;\n  supersededAt?: ISODateTime;\n  experienceId?: EntityId;",
+          )
+
+          replace_once(
+              "lib/firebase/customer-lifecycle.ts",
+              "  query,\n  serverTimestamp,",
+              "  query,\n  runTransaction,\n  serverTimestamp,",
+          )
+          replace_once(
+              "lib/firebase/customer-lifecycle.ts",
+              "    replacesRequestId: data.replacesRequestId as string | undefined,\n    experienceId: data.experienceId as string | undefined,",
+              "    replacesRequestId: data.replacesRequestId as string | undefined,\n    replacedByRequestId: data.replacedByRequestId as string | undefined,\n    supersededAt: data.supersededAt ? toIso(data.supersededAt) : undefined,\n    experienceId: data.experienceId as string | undefined,",
+          )
+
+          create_request = r'''export async function createOrganizationExperienceRequest(input: {
+            organizationId: string;
+            createdByUserId: string;
+            offeringId: ExperienceOfferingId;
+            preferredDate: string;
+            preferredTime: string;
+            venue?: string;
+            participantEstimate?: number;
+            organizationGoal?: string;
+            requestedPaymentMethod: ExperienceRequestPaymentMethod;
+            agreementAcknowledged: boolean;
+            sourceExperienceId?: string;
+            replacesRequestId?: string;
+            acquisition?: AcquisitionContext;
+          }): Promise<OrganizationExperienceRequest> {
+            const db = requireFirestore();
+            const organizationSnapshot = await getDoc(doc(db, "organizations", input.organizationId));
+            if (!organizationSnapshot.exists()) throw new Error("The organization account was not found.");
+            if (!input.agreementAcknowledged) throw new Error("Organization authority must be acknowledged before continuing.");
+            const offering = getExperienceOffering(input.offeringId);
+            if (!offering) throw new Error("Choose a current SongKeep experience.");
+            const preferredStartsAt = localDateTimeToIso(input.preferredDate, input.preferredTime);
+            const requestRef = doc(collection(db, "organizations", input.organizationId, "experienceRequests"));
+            const invoice = input.requestedPaymentMethod === "invoice";
+            const now = new Date().toISOString();
+            const request: OrganizationExperienceRequest = {
+              id: requestRef.id,
+              organizationId: input.organizationId,
+              organizationName: String(organizationSnapshot.data().name ?? "Organization"),
+              createdByUserId: input.createdByUserId,
+              offeringId: offering.id,
+              offeringName: offering.name,
+              amountCents: offering.priceCents,
+              currency: offering.currency,
+              status: invoice ? "invoice_requested" : "payment_pending",
+              financialStatus: invoice ? "invoice_requested" : "payment_pending",
+              requestedPaymentMethod: input.requestedPaymentMethod,
+              preferredStartsAt,
+              venue: input.venue?.trim() || undefined,
+              participantEstimate: input.participantEstimate,
+              organizationGoal: input.organizationGoal?.trim() || undefined,
+              agreementAcknowledged: true,
+              agreementVersion: "organization-purchase-2026-09-04",
+              ...(input.sourceExperienceId ? { sourceExperienceId: input.sourceExperienceId } : {}),
+              ...(input.replacesRequestId ? { replacesRequestId: input.replacesRequestId } : {}),
+              nurtureTrack: invoice ? "invoice_payment" : "payment_reconciliation",
+              nextAction: invoice
+                ? "SongKeep prepares the invoice and keeps payment follow-up attached to this account."
+                : "Complete secure checkout; SongKeep activates the experience after confirmed payment.",
+              acquisition: input.acquisition,
+              createdAt: now,
+              updatedAt: now
+            };
+
+            await runTransaction(db, async (transaction) => {
+              if (input.replacesRequestId) {
+                const replacedRef = doc(db, "organizations", input.organizationId, "experienceRequests", input.replacesRequestId);
+                const replacedSnapshot = await transaction.get(replacedRef);
+                if (!replacedSnapshot.exists()) throw new Error("The experience request being changed was not found.");
+                const replacedRequest = experienceRequestFrom(input.organizationId, {
+                  id: replacedSnapshot.id,
+                  ...replacedSnapshot.data()
+                });
+                const replaceableStatuses: ExperienceRequestStatus[] = ["invoice_requested", "invoice_open", "payment_pending"];
+                if (
+                  !replaceableStatuses.includes(replacedRequest.status)
+                  || replacedRequest.financialStatus === "paid"
+                  || replacedRequest.financialStatus === "refunded"
+                  || replacedRequest.experienceId
+                ) {
+                  throw new Error("This request can no longer be replaced. Open the active experience or contact SongKeep.");
+                }
+                transaction.update(replacedRef, {
+                  status: "cancelled",
+                  financialStatus: "cancelled",
+                  nurtureTrack: "consideration",
+                  nextAction: replacedRequest.invoiceUrl
+                    ? "Superseded by a new package request. Void the external invoice before further follow-up."
+                    : "Superseded by a new package request.",
+                  replacedByRequestId: requestRef.id,
+                  supersededAt: serverTimestamp(),
+                  updatedAt: serverTimestamp()
+                });
+              }
+              transaction.set(requestRef, {
+                ...request,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+              });
+            });
+            return request;
+          }'''
+
+          replace_regex(
+              "lib/firebase/customer-lifecycle.ts",
+              r"export async function createOrganizationExperienceRequest\([\s\S]*?\n}\n\nexport async function listOrganizationExperienceRequests",
+              create_request + "\n\nexport async function listOrganizationExperienceRequests",
+          )
+
+          advance_request = r'''export async function adminAdvanceExperienceRequest(input: {
+            request: OrganizationExperienceRequest;
+            invoiceUrl?: string;
+            invoiceDueDate?: string;
+            confirmPayment?: boolean;
+          }): Promise<string | undefined> {
+            const db = requireFirestore();
+            const requestRef = doc(db, "organizations", input.request.organizationId, "experienceRequests", input.request.id);
+
+            return runTransaction(db, async (transaction) => {
+              const currentSnapshot = await transaction.get(requestRef);
+              if (!currentSnapshot.exists()) throw new Error("This experience request no longer exists.");
+              const currentRequest = experienceRequestFrom(input.request.organizationId, {
+                id: currentSnapshot.id,
+                ...currentSnapshot.data()
+              });
+
+              if (input.confirmPayment) {
+                if (currentRequest.financialStatus === "paid" && currentRequest.experienceId) {
+                  return currentRequest.experienceId;
+                }
+                if (
+                  currentRequest.status === "cancelled"
+                  || currentRequest.status === "converted"
+                  || currentRequest.financialStatus === "refunded"
+                  || currentRequest.experienceId
+                ) {
+                  throw new Error("This request cannot create another experience.");
+                }
+                const offering = getExperienceOffering(currentRequest.offeringId);
+                if (!offering) throw new Error("The selected offering is no longer available.");
+                const experienceRef = doc(collection(db, "organizations", currentRequest.organizationId, "experiences"));
+                transaction.set(experienceRef, {
+                  organizationId: currentRequest.organizationId,
+                  organizationName: currentRequest.organizationName,
+                  title: offering.name,
+                  offeringId: offering.id,
+                  templateKind: offering.templateKind,
+                  participantMode: offering.participantMode,
+                  status: "planned",
+                  billingStatus: "paid",
+                  startsAt: Timestamp.fromDate(new Date(currentRequest.preferredStartsAt)),
+                  venue: currentRequest.venue ?? "To be confirmed",
+                  participantEstimate: currentRequest.participantEstimate ?? null,
+                  organizationGoal: currentRequest.organizationGoal ?? null,
+                  sourceRequestId: currentRequest.id,
+                  sourceExperienceId: currentRequest.sourceExperienceId ?? null,
+                  visibleSections: offering.sections,
+                  createdBy: currentRequest.createdByUserId,
+                  createdAt: serverTimestamp(),
+                  updatedAt: serverTimestamp()
+                });
+                transaction.update(requestRef, {
+                  status: "converted",
+                  financialStatus: "paid",
+                  nurtureTrack: "customer_onboarding",
+                  nextAction: offering.participantMode === "group"
+                    ? "Complete event setup and add the people who should receive post-event access."
+                    : offering.participantMode === "album_subject"
+                      ? "Identify the album subject, collaborators, permissions, and story sessions."
+                      : "Add participants, create permission invitations, and begin interview readiness.",
+                  experienceId: experienceRef.id,
+                  paidAt: serverTimestamp(),
+                  updatedAt: serverTimestamp()
+                });
+                return experienceRef.id;
+              }
+
+              if (
+                currentRequest.status === "cancelled"
+                || currentRequest.status === "converted"
+                || currentRequest.financialStatus === "paid"
+                || currentRequest.financialStatus === "refunded"
+              ) {
+                throw new Error("This request can no longer be invoiced.");
+              }
+              const invoiceUrl = input.invoiceUrl?.trim();
+              if (!invoiceUrl) throw new Error("Add the invoice link before marking the invoice open.");
+              let invoiceDueAt: Timestamp | undefined;
+              if (input.invoiceDueDate) {
+                const invoiceDueDate = new Date(input.invoiceDueDate);
+                if (Number.isNaN(invoiceDueDate.valueOf())) throw new Error("Choose a valid invoice due date.");
+                invoiceDueAt = Timestamp.fromDate(invoiceDueDate);
+              }
+              transaction.update(requestRef, {
+                status: "invoice_open",
+                financialStatus: "invoice_open",
+                requestedPaymentMethod: "invoice",
+                invoiceUrl,
+                ...(invoiceDueAt ? { invoiceDueAt } : {}),
+                nurtureTrack: "invoice_payment",
+                nextAction: "Open and pay the organization invoice.",
+                updatedAt: serverTimestamp()
+              });
+              return undefined;
+            });
+          }'''
+
+          replace_regex(
+              "lib/firebase/customer-lifecycle.ts",
+              r"export async function adminAdvanceExperienceRequest\([\s\S]*?\n}\n\nexport async function createParticipantPermissionInvitation",
+              advance_request + "\n\nexport async function createParticipantPermissionInvitation",
+          )
+
+          approve_response = r'''export async function approveParticipantPermissionResponse(
+            invitation: ParticipantPermissionInvitation,
+            adminUserId: string
+          ): Promise<string> {
+            if (invitation.status !== "submitted") throw new Error("This response is not awaiting review.");
+            if (!invitation.scopes?.length || !invitation.signatureName || !invitation.authorityBasis) {
+              throw new Error("The response is incomplete.");
+            }
+            return createAdminParticipantConsent({
+              organizationId: invitation.organizationId,
+              experienceId: invitation.experienceId,
+              participantId: invitation.participantId,
+              grantedByPersonId: invitation.submittedByUserId ?? adminUserId,
+              authorityBasis: invitation.authorityBasis,
+              scopes: invitation.scopes,
+              restrictions: invitation.restrictions,
+              authorizedRecipientEmails: invitation.participantDeliveryEmail ? [invitation.participantDeliveryEmail] : [],
+              designatedFamilyEmails: invitation.designatedFamilyEmails,
+              signatureName: invitation.signatureName,
+              agreementVersion: invitation.agreementVersion,
+              permissionInvitationId: invitation.id
+            });
+          }'''
+
+          replace_regex(
+              "lib/firebase/customer-lifecycle.ts",
+              r"export async function approveParticipantPermissionResponse\([\s\S]*?\n}\n\nexport async function listActiveParticipantPermissionInvitations",
+              approve_response + "\n\nexport async function listActiveParticipantPermissionInvitations",
+          )
+
+          replace_once(
+              "lib/firebase/organization-account.ts",
+              "  query,\n  serverTimestamp,",
+              "  query,\n  runTransaction,\n  serverTimestamp,",
+          )
+
+          consent_function = r'''export async function createAdminConsent(input: {
+            organizationId: string;
+            experienceId: string;
+            participantId: string;
+            subjectPersonId?: string;
+            grantedByPersonId: string;
+            authorityBasis: ParticipantConsent["authorityBasis"];
+            scopes: ConsentScope[];
+            restrictions?: string[];
+            authorizedRecipientEmails?: string[];
+            designatedFamilyEmails?: string[];
+            signatureName?: string;
+            agreementVersion?: string;
+            permissionInvitationId?: string;
+          }): Promise<string> {
+            const db = requireFirestore();
+            const participantRef = doc(
+              db,
+              "organizations",
+              input.organizationId,
+              "experiences",
+              input.experienceId,
+              "participants",
+              input.participantId
+            );
+            const consentRef = doc(collection(participantRef, "consents"));
+            const permissionInvitationRef = input.permissionInvitationId
+              ? doc(
+                  db,
+                  "organizations",
+                  input.organizationId,
+                  "experiences",
+                  input.experienceId,
+                  "permissionInvitations",
+                  input.permissionInvitationId
+                )
+              : undefined;
+
+            const existingRecords = await listExperienceConsentRecords(
+              input.organizationId,
+              input.experienceId,
+              input.participantId
+            );
+            const existingVersion = existingRecords.reduce((max, record) => Math.max(max, record.version), 0);
+            const [entitlementSnapshot, invitationSnapshot] = await Promise.all([
+              getDocs(collection(db, "organizations", input.organizationId, "experiences", input.experienceId, "entitlements")),
+              getDocs(collection(db, "organizations", input.organizationId, "experiences", input.experienceId, "accessInvitations"))
+            ]);
+
+            await runTransaction(db, async (transaction) => {
+              const participantSnapshot = await transaction.get(participantRef);
+              if (!participantSnapshot.exists()) throw new Error("The participant was not found.");
+
+              let permissionSnapshot: Awaited<ReturnType<typeof transaction.get>> | undefined;
+              if (permissionInvitationRef) {
+                permissionSnapshot = await transaction.get(permissionInvitationRef);
+                if (!permissionSnapshot.exists()) throw new Error("The permission response was not found.");
+                const permission = permissionSnapshot.data();
+                if (permission.status !== "submitted") throw new Error("This permission response has already been reviewed.");
+                if (
+                  permission.organizationId !== input.organizationId
+                  || permission.experienceId !== input.experienceId
+                  || permission.participantId !== input.participantId
+                ) {
+                  throw new Error("The permission response does not match this participant.");
+                }
+              }
+
+              const participantData = participantSnapshot.data();
+              const storedVersion = Number(participantData.currentConsentVersion ?? 0);
+              const version = Math.max(Number.isFinite(storedVersion) ? storedVersion : 0, existingVersion) + 1;
+              const normalizedAuthorizedEmails = normalizeEmails(input.authorizedRecipientEmails ?? []);
+              const normalizedFamilyEmails = normalizeEmails(input.designatedFamilyEmails ?? []);
+              const state: ParticipantConsent["state"] = input.scopes.includes("participation") && input.scopes.includes("internal_creative_use")
+                ? input.restrictions?.length
+                  ? "active_with_restrictions"
+                  : "active"
+                : "active_with_restrictions";
+
+              transaction.set(consentRef, {
+                organizationId: input.organizationId,
+                experienceId: input.experienceId,
+                participantId: input.participantId,
+                ...(input.subjectPersonId?.trim() ? { subjectPersonId: input.subjectPersonId.trim() } : {}),
+                grantedByPersonId: input.grantedByPersonId,
+                authorityBasis: input.authorityBasis,
+                state,
+                scopes: [...new Set(input.scopes)],
+                restrictions: input.restrictions ?? [],
+                authorizedRecipientEmails: normalizedAuthorizedEmails,
+                designatedFamilyEmails: normalizedFamilyEmails,
+                ...(input.signatureName?.trim() ? { signatureName: input.signatureName.trim() } : {}),
+                ...(input.agreementVersion?.trim() ? { agreementVersion: input.agreementVersion.trim() } : {}),
+                version,
+                effectiveAt: serverTimestamp(),
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+              });
+              transaction.update(participantRef, {
+                permissionReadiness: permissionReadinessFromScopes(input.scopes),
+                currentConsentRecordId: consentRef.id,
+                currentConsentVersion: version,
+                updatedAt: serverTimestamp()
+              });
+
+              entitlementSnapshot.docs
+                .filter((snapshot) => {
+                  const data = snapshot.data();
+                  return data.participantId === input.participantId && data.status === "active";
+                })
+                .forEach((snapshot) => transaction.update(snapshot.ref, {
+                  status: "revoked",
+                  revokedAt: serverTimestamp(),
+                  updatedAt: serverTimestamp()
+                }));
+              invitationSnapshot.docs
+                .filter((snapshot) => {
+                  const data = snapshot.data();
+                  return data.participantId === input.participantId && data.status === "pending";
+                })
+                .forEach((snapshot) => transaction.update(snapshot.ref, {
+                  status: "revoked",
+                  revokedAt: serverTimestamp(),
+                  updatedAt: serverTimestamp()
+                }));
+
+              if (permissionInvitationRef && permissionSnapshot) {
+                transaction.update(permissionInvitationRef, {
+                  status: "approved",
+                  consentRecordId: consentRef.id,
+                  reviewedAt: serverTimestamp(),
+                  reviewedByUserId: input.grantedByPersonId,
+                  updatedAt: serverTimestamp()
+                });
+              }
+            });
+            return consentRef.id;
+          }'''
+
+          replace_regex(
+              "lib/firebase/organization-account.ts",
+              r"export async function createAdminConsent\([\s\S]*?\n}\n\nexport async function releaseAdminParticipantAssets",
+              consent_function + "\n\nexport async function releaseAdminParticipantAssets",
+          )
+
+          replace_once(
+              "components/participant-permission-route.tsx",
+              'import styles from "./participant-permission-route.module.css";\n\nexport function ParticipantPermissionRoute()',
+              'import styles from "./participant-permission-route.module.css";\n\nconst emailPattern = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/i;\n\nfunction parseEmailList(value: string): string[] {\n  return [...new Set(value.split(/[\\n,]/).map((item) => item.trim().toLowerCase()).filter(Boolean))];\n}\n\nexport function ParticipantPermissionRoute()',
+          )
+          replace_once(
+              "components/participant-permission-route.tsx",
+              '''    const form = new FormData(event.currentTarget);
+              setBusy(true);
+              setError(null);
+              try {''',
+              '''    const form = new FormData(event.currentTarget);
+              const designatedFamilyEmails = parseEmailList(String(form.get("designatedFamilyEmails") ?? ""));
+              if (selectedScopes.includes("designated_family_sharing")) {
+                if (!designatedFamilyEmails.length) {
+                  setError("Add at least one designated family email address, or turn off family sharing.");
+                  return;
+                }
+                const invalidFamilyEmail = designatedFamilyEmails.find((email) => !emailPattern.test(email));
+                if (invalidFamilyEmail) {
+                  setError(`Check the designated family email address: ${invalidFamilyEmail}`);
+                  return;
+                }
+              }
+              setBusy(true);
+              setError(null);
+              try {''',
+          )
+          replace_once(
+              "components/participant-permission-route.tsx",
+              '''        designatedFamilyEmails: String(form.get("designatedFamilyEmails") ?? "")
+                  .split(/[\n,]/)
+                  .map((item) => item.trim())
+                  .filter(Boolean)''',
+              '''        designatedFamilyEmails''',
+          )
+          replace_once(
+              "components/participant-permission-route.tsx",
+              '<textarea name="designatedFamilyEmails" rows={3} placeholder="One per line or separated by commas" />',
+              '<textarea required name="designatedFamilyEmails" rows={3} placeholder="One per line or separated by commas" />',
+          )
+
+          replace_once(
+              "components/organization-relationship.tsx",
+              'import { SongKeepLockup } from "@/components/brand";\n',
+              'import { SongKeepLockup } from "@/components/brand";\nimport { buildOfferingPaymentLink } from "@/domain/booking";\n',
+          )
+
+          request_cards = r'''{activeRequests.length ? activeRequests.map((request) => {
+                          const resumePaymentLink = request.status === "payment_pending" && request.financialStatus === "payment_pending"
+                            ? buildOfferingPaymentLink(request.offeringId, {
+                                experienceRequestId: request.id,
+                                customerEmail: organization.contact.email
+                              })
+                            : undefined;
+                          return <article className={styles.requestCard} key={request.id}>
+                            <div>
+                              <p className={styles.eyebrow}>Commercial status</p>
+                              <h3>{request.offeringName}</h3>
+                              <p>{request.nextAction}</p>
+                              <small>{formatLifecycleMoney(request.amountCents)} · {titleize(request.financialStatus)} · preferred {formatDate(request.preferredStartsAt)}</small>
+                            </div>
+                            <div className={styles.cardActions}>
+                              {request.invoiceUrl ? <a className={styles.primary} href={request.invoiceUrl} target="_blank" rel="noreferrer">Open invoice</a> : null}
+                              {resumePaymentLink ? <a className={styles.primary} href={resumePaymentLink}>Resume secure payment</a> : null}
+                              {!request.invoiceUrl && !resumePaymentLink ? <span>SongKeep is preparing the next commercial action.</span> : null}
+                              {!['converted', 'cancelled'].includes(request.status) ? <Link className={styles.secondary} href={`/begin?offering=${request.offeringId}&organizationId=${organization.id}&replacesRequest=${request.id}`}>Change experience</Link> : null}
+                            </div>
+                          </article>;
+                        }) : <div className={styles.emptyLine}><p>No open purchase requests.</p><Link className={styles.primary} href="/begin">Choose an experience</Link></div>}'''
+
+          replace_regex(
+              "components/organization-relationship.tsx",
+              r"\{activeRequests\.length \? activeRequests\.map\(\(request\) => <article className=\{styles\.requestCard\}[\s\S]*?</article>\) : <div className=\{styles\.emptyLine\}>[\s\S]*?</div>\}",
+              request_cards,
+          )
+
+          replace_once(
+              "firestore.rules",
+              '''    function postExperienceProductRef(productId) {
+              return existing(/databases/$(database)/documents/postExperienceProducts/$(productId));
+            }
+''',
+              '''    function postExperienceProductRef(productId) {
+              return existing(/databases/$(database)/documents/postExperienceProducts/$(productId));
+            }
+
+            function participantConsentRef(orgId, experienceId, participantId, consentId) {
+              return existing(/databases/$(database)/documents/organizations/$(orgId)/experiences/$(experienceId)/participants/$(participantId)/consents/$(consentId));
+            }
+
+            function currentAccessEntitlementIsActive(access) {
+              let entitlement = entitlementRef(access.data.organizationId, access.data.experienceId, access.data.entitlementIds[0]);
+              return entitlement != null
+                && entitlement.data.status == 'active'
+                && entitlement.data.organizationId == access.data.organizationId
+                && entitlement.data.experienceId == access.data.experienceId
+                && entitlement.data.participantId == access.data.participantId
+                && entitlement.data.recipient == access.data.recipient
+                && entitlement.data.recipientEmail == signedInEmail()
+                && entitlement.data.consentRecordId is string
+                && entitlement.data.consentVersion is int;
+            }
+
+            function currentAccessConsentIsActive(access) {
+              let entitlement = entitlementRef(access.data.organizationId, access.data.experienceId, access.data.entitlementIds[0]);
+              let consent = participantConsentRef(access.data.organizationId, access.data.experienceId, access.data.participantId, entitlement.data.consentRecordId);
+              return consent != null
+                && consent.data.state in ['active', 'active_with_restrictions']
+                && consent.data.version == entitlement.data.consentVersion
+                && consent.data.scopes is list
+                && 'participation' in consent.data.scopes
+                && (
+                  (access.data.recipient == 'participant'
+                    && consent.data.authorizedRecipientEmails is list
+                    && signedInEmail() in consent.data.authorizedRecipientEmails)
+                  ||
+                  (access.data.recipient == 'designated_family'
+                    && 'designated_family_sharing' in consent.data.scopes
+                    && consent.data.designatedFamilyEmails is list
+                    && signedInEmail() in consent.data.designatedFamilyEmails)
+                );
+            }
+''',
+          )
+
+          replace_once(
+              "firestore.rules",
+              '''              && request.resource.data.updatedAt is timestamp;
+            }
+
+            function validPermissionInvitationCreate(orgId, experienceId) {''',
+              '''              && request.resource.data.updatedAt is timestamp
+                && validReplacementLink(orgId);
+            }
+
+            function validReplacementLink(orgId) {
+              return !('replacesRequestId' in request.resource.data)
+                || (
+                  request.resource.data.replacesRequestId is string
+                  && exists(/databases/$(database)/documents/organizations/$(orgId)/experienceRequests/$(request.resource.data.replacesRequestId))
+                  && existsAfter(/databases/$(database)/documents/organizations/$(orgId)/experienceRequests/$(request.resource.data.replacesRequestId))
+                  && getAfter(/databases/$(database)/documents/organizations/$(orgId)/experienceRequests/$(request.resource.data.replacesRequestId)).data.status == 'cancelled'
+                  && getAfter(/databases/$(database)/documents/organizations/$(orgId)/experienceRequests/$(request.resource.data.replacesRequestId)).data.replacedByRequestId == request.resource.id
+                );
+            }
+
+            function validExperienceRequestSupersede(orgId) {
+              return organizationAdmin(orgId)
+                && resource.data.organizationId == orgId
+                && resource.data.status in ['invoice_requested', 'invoice_open', 'payment_pending']
+                && !(resource.data.financialStatus in ['paid', 'refunded'])
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+                  'status',
+                  'financialStatus',
+                  'nurtureTrack',
+                  'nextAction',
+                  'replacedByRequestId',
+                  'supersededAt',
+                  'updatedAt'
+                ])
+                && request.resource.data.status == 'cancelled'
+                && request.resource.data.financialStatus == 'cancelled'
+                && request.resource.data.nurtureTrack == 'consideration'
+                && request.resource.data.nextAction is string
+                && request.resource.data.replacedByRequestId is string
+                && request.resource.data.supersededAt is timestamp
+                && request.resource.data.updatedAt is timestamp
+                && existsAfter(/databases/$(database)/documents/organizations/$(orgId)/experienceRequests/$(request.resource.data.replacedByRequestId))
+                && getAfter(/databases/$(database)/documents/organizations/$(orgId)/experienceRequests/$(request.resource.data.replacedByRequestId)).data.organizationId == orgId
+                && getAfter(/databases/$(database)/documents/organizations/$(orgId)/experienceRequests/$(request.resource.data.replacedByRequestId)).data.replacesRequestId == resource.id;
+            }
+
+            function validPermissionInvitationCreate(orgId, experienceId) {''',
+          )
+
+          purchase_rule = r'''    function validPurchaseRequestCreate(userId) {
+              let access = existing(/databases/$(database)/documents/users/$(userId)/experienceAccess/$(request.resource.data.accessId));
+              let product = postExperienceProductRef(request.resource.data.productId);
+              return request.resource.data.userId == userId
+                && resourceAbsent(/databases/$(database)/documents/users/$(userId)/purchaseRequests/$(request.resource.id))
+                && access != null
+                && access.data.userId == userId
+                && access.data.entitlementIds is list
+                && access.data.entitlementIds.size() > 0
+                && currentAccessEntitlementIsActive(access)
+                && currentAccessConsentIsActive(access)
+                && request.resource.data.accessId == access.id
+                && request.resource.data.organizationId == access.data.organizationId
+                && request.resource.data.experienceId == access.data.experienceId
+                && request.resource.data.participantId == access.data.participantId
+                && request.resource.data.recipient == access.data.recipient
+                && product != null
+                && product.data.status == 'active'
+                && product.data.audiences is list
+                && request.resource.data.recipient in product.data.audiences
+                && request.resource.data.productId == product.id
+                && request.resource.data.productName == product.data.name
+                && request.resource.data.priceCents == product.data.get('priceCents', null)
+                && request.resource.data.currency == 'USD'
+                && request.resource.data.requestedPaymentMethod in ['card', 'invoice']
+                && request.resource.data.status in ['payment_pending', 'invoice_requested']
+                && request.resource.data.createdAt is timestamp
+                && request.resource.data.updatedAt is timestamp;
+            }'''
+
+          replace_regex(
+              "firestore.rules",
+              r"    function validPurchaseRequestCreate\(userId\) \{[\s\S]*?\n    \}",
+              purchase_rule,
+          )
+
+          replace_once(
+              "firestore.rules",
+              '''        match /experienceRequests/{requestId} {
+                  allow read: if organizationMember(orgId) || platformAdmin();
+                  allow create: if validExperienceRequestCreate(orgId);
+                  allow update, delete: if platformAdmin();
+                }''',
+              '''        match /experienceRequests/{requestId} {
+                  allow read: if organizationMember(orgId) || platformAdmin();
+                  allow create: if validExperienceRequestCreate(orgId);
+                  allow update: if platformAdmin() || validExperienceRequestSupersede(orgId);
+                  allow delete: if platformAdmin();
+                }''',
+          )
+
+          replace_once(
+              "tests/customer-lifecycle.test.ts",
+              '''    expect(lifecycleRepository).toContain("adminAdvanceExperienceRequest");
+                expect(lifecycleRepository).toContain('billingStatus: "paid"');''',
+              '''    expect(lifecycleRepository).toContain("runTransaction");
+                expect(lifecycleRepository).toContain("replacedByRequestId");
+                expect(lifecycleRepository).toContain("adminAdvanceExperienceRequest");
+                expect(lifecycleRepository).toContain('billingStatus: "paid"');''',
+          )
+          replace_once(
+              "tests/customer-lifecycle.test.ts",
+              '''    expect(rules).toContain("request.resource.data.experienceId == access.data.experienceId");
+                expect(rules).toContain("request.resource.data.priceCents == product.data.get('priceCents', null)");''',
+              '''    expect(rules).toContain("request.resource.data.experienceId == access.data.experienceId");
+                expect(rules).toContain("currentAccessEntitlementIsActive");
+                expect(rules).toContain("currentAccessConsentIsActive");
+                expect(rules).toContain("validExperienceRequestSupersede");
+                expect(rules).toContain("request.resource.data.priceCents == product.data.get('priceCents', null)");''',
+          )
+          replace_once(
+              "tests/customer-lifecycle.test.ts",
+              '''    expect(organizationExperience).toContain("Plan what comes next.");''',
+              '''    expect(organizationExperience).toContain("Plan what comes next.");
+                expect(organizationExperience).toContain("Resume secure payment");''',
+          )
+
+          replace_once(
+              "tests/booking.test.ts",
+              '''    expect(permissionSource).toContain("window.print()");
+                expect(permissionSource).toContain("Organization agreements do not decide this for you.");''',
+              '''    expect(permissionSource).toContain("window.print()");
+                expect(permissionSource).toContain("Add at least one designated family email address");
+                expect(permissionSource).toContain("Organization agreements do not decide this for you.");''',
+          )
+
+          organization_test = Path("tests/customer-lifecycle.test.ts")
+          text = organization_test.read_text()
+          text = text.replace(
+              'const adminExperience = readFileSync(resolve(process.cwd(), "components/admin-lifecycle-surface.tsx"), "utf8");',
+              'const adminExperience = readFileSync(resolve(process.cwd(), "components/admin-lifecycle-surface.tsx"), "utf8");\nconst consentRepository = readFileSync(resolve(process.cwd(), "lib/firebase/organization-account.ts"), "utf8");',
+          )
+          text = text.replace(
+              '    expect(lifecycleRepository).toContain(\'billingStatus: "paid"\');',
+              '    expect(lifecycleRepository).toContain(\'billingStatus: "paid"\');\n    expect(consentRepository).toContain("permissionInvitationId?: string");\n    expect(consentRepository).toContain("currentConsentVersion");',
+          )
+          organization_test.write_text(text)
+          PY
+
+      - name: Verify application
+        run: |
+          npm install --no-audit --no-fund --package-lock=false
+          npm run lint
+          npm run typecheck
+          npm test
+          npm run build
+
+      - name: Commit review fixes
+        run: |
+          rm -f .lifecycle-review-fix
+          rm -f .github/workflows/fix-lifecycle-review.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: make lifecycle transitions atomic and recoverable"
+          git push
