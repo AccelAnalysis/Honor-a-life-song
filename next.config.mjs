@@ -5,6 +5,9 @@ const pagesBasePath = process.env.PAGES_BASE_PATH || "";
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  env: {
+    NEXT_PUBLIC_HALS_STATIC_PREVIEW: isPagesPreview ? "1" : "0"
+  },
   ...(isPagesPreview
     ? {
         output: "export",
