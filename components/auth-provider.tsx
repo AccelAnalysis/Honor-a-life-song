@@ -30,7 +30,7 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function authUnavailableMessage() {
-  return "Account access isn’t available in this preview. Try again from the live app or contact Honor a Life Song for help.";
+  return "Account access is temporarily unavailable. Please try again or contact Honor a Life Song for help.";
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
