@@ -10,6 +10,7 @@ import {
 } from "../domain/booking";
 
 const bookingSource = readFileSync(resolve(process.cwd(), "components/booking-route.tsx"), "utf8");
+const bookingRepositorySource = readFileSync(resolve(process.cwd(), "lib/firebase/booking.ts"), "utf8");
 const organizationSource = readFileSync(resolve(process.cwd(), "components/organization-workspace.tsx"), "utf8");
 const organizationCss = readFileSync(resolve(process.cwd(), "components/organization-workspace.module.css"), "utf8");
 
@@ -23,38 +24,38 @@ describe("post-engagement catalog", () => {
     expect(formatOfferingPrice(250_000)).toBe("$2,500");
   });
 
-  it("uses the customer journey in the intended order", () => {
+  it("uses the shortened facility planning journey in the intended order", () => {
     expect(bookingSteps).toEqual([
       "experience",
-      "organization",
-      "schedule",
-      "agreement",
-      "payment",
-      "setup",
+      "details",
+      "checkout",
       "ready"
     ]);
   });
 });
 
 describe("booking truthfulness", () => {
-  it("uses connected Firebase identity while failing closed for unconnected services", () => {
+  it("uses connected Firebase identity and request persistence without claiming unavailable services", () => {
     expect(bookingActionIsAvailable("identity")).toBe(true);
     expect(bookingActionIsAvailable("invitationResolution")).toBe(false);
     expect(bookingActionIsAvailable("scheduling")).toBe(false);
     expect(bookingActionIsAvailable("agreementPersistence")).toBe(false);
     expect(bookingActionIsAvailable("payments")).toBe(false);
+    expect(bookingActionIsAvailable("invoiceRequest")).toBe(true);
     expect(bookingActionIsAvailable("consentPersistence")).toBe(false);
-    expect(bookingActionIsAvailable("experiencePersistence")).toBe(false);
+    expect(bookingActionIsAvailable("experiencePersistence")).toBe(true);
   });
 
-  it("does not simulate live transactional success", () => {
-    expect(bookingSource).toContain('disabled={!date || !time || !bookingActionIsAvailable("scheduling")}');
-    expect(bookingSource).toContain("Live scheduling isn’t connected yet.");
-    expect(bookingSource).toContain('disabled={!reviewedTerms || !bookingActionIsAvailable("agreementPersistence")}');
-    expect(bookingSource).toContain("Electronic signing isn’t connected yet.");
-    expect(bookingSource).toContain('disabled={!bookingActionIsAvailable("payments")}');
-    expect(bookingSource).toContain("Secure checkout isn’t connected yet.");
-    expect(bookingSource).toContain('disabled={!bookingActionIsAvailable("experiencePersistence")}');
+  it("records a preferred-date inquiry and never simulates booking or payment confirmation", () => {
+    expect(bookingSource).toContain("This is your preferred time.");
+    expect(bookingSource).toContain("confirm availability before the experience is contracted");
+    expect(bookingSource).toContain("does not replace the final service agreement or participant permission forms");
+    expect(bookingSource).toContain("Payment is confirmed only after Stripe reports it");
+    expect(bookingSource).toContain("buildOfferingPaymentLink");
+    expect(bookingRepositorySource).toContain('status: "inquiry"');
+    expect(bookingRepositorySource).toContain('dateStatus: "requested"');
+    expect(bookingSource).not.toContain("Payment successful");
+    expect(bookingSource).not.toContain("Your experience is booked");
   });
 });
 
