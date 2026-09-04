@@ -132,5 +132,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+  .shell, .shell *, .shell::before, .shell *::before, .shell::after, .shell *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }
