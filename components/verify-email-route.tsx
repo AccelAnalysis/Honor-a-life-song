@@ -1,5 +1,7 @@
 "use client";
 
+import { customerMessage } from "@/lib/customer-messages";
+
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
@@ -21,7 +23,7 @@ export function VerifyEmailRoute() {
       await resendVerification();
       setSent(true);
     } catch (verificationError) {
-      setError(verificationError instanceof Error ? verificationError.message : "We could not resend the verification email.");
+      setError(customerMessage(verificationError, "We could not resend the verification email."));
     } finally {
       setBusy(false);
     }
@@ -40,7 +42,7 @@ export function VerifyEmailRoute() {
       }
       window.location.assign(nextPath ?? "/organization");
     } catch (verificationError) {
-      setError(verificationError instanceof Error ? verificationError.message : "We could not refresh verification.");
+      setError(customerMessage(verificationError, "We could not refresh verification."));
     } finally {
       setBusy(false);
     }

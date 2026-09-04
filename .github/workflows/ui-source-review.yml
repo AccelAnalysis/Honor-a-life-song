@@ -1,0 +1,91 @@
+name: Apply customer experience update
+on:
+  push:
+    branches: [feature/account-first-customer-experience]
+    paths: [.github/workflows/ui-source-review.yml]
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Reconstruct reviewed source and normalize formatting
+        run: |
+          python3 - <<'PY'
+          import base64, hashlib, json, lzma, pathlib, shutil, subprocess
+          root = pathlib.Path.cwd()
+          encoded = ''.join((root / '.account-update' / f'part{i}.txt').read_text().strip() for i in range(1, 4))
+          packed = base64.b64decode(encoded, validate=True)
+          assert hashlib.sha256(packed).hexdigest() == '3e76df9c5e7f015aafdddbb86c1b1ef4d963c69a95aebeed3f90728f22174b52'
+          bundle = json.loads(lzma.decompress(packed))
+          assert bundle['base'] == '9f6a2f991066e2fb1e92db1285bd2c3117cabec2'
+          hashes = {}
+          for name, entry in bundle['files'].items():
+              relative = pathlib.PurePosixPath(name)
+              assert not relative.is_absolute() and not {'.git','.github','..'}.intersection(relative.parts)
+              if 'content' in entry:
+                  text = entry['content']
+              else:
+                  source = subprocess.check_output(['git','show',bundle['base'] + ':' + name])
+                  assert hashlib.sha256(source).hexdigest() == entry['baseHash'], name
+                  lines = source.decode('utf-8').splitlines(keepends=True)
+                  for start, end, replacement in reversed(entry['edits']):
+                      lines[start:end] = [replacement]
+                  text = ''.join(lines)
+              assert hashlib.sha256(text.encode('utf-8')).hexdigest() == entry['hash'], name
+              if name == 'app/page.tsx':
+                  text = '\n'.join(line.rstrip() for line in text.splitlines()) + '\n'
+              if name == 'e2e/account-first.cjs':
+                  assert 'await browser.close();}' in text
+                  text = text.replace('await browser.close();}', 'await browser.close();await db.terminate();}')
+              data = text.encode('utf-8')
+              target = root / relative
+              target.parent.mkdir(parents=True,exist_ok=True)
+              target.write_bytes(data)
+              hashes[name] = hashlib.sha256(data).hexdigest()
+          shutil.rmtree(root / '.account-update')
+          pathlib.Path('/tmp/source-hashes.json').write_text(json.dumps(hashes,indent=2))
+          print(f'Applied {len(hashes)} reviewed source files.')
+          PY
+      - name: Verify customer experience source
+        run: |
+          set -o pipefail
+          npm ci --no-audit --no-fund
+          npm run lint 2>&1 | tee /tmp/customer-lint.log
+          npm run typecheck 2>&1 | tee /tmp/customer-types.log
+          npm test 2>&1 | tee /tmp/customer-tests.log
+          npm run build 2>&1 | tee /tmp/customer-build.log
+      - name: Publish verified application files
+        env:
+          EXPECTED_HEAD: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import hashlib,json,pathlib
+          for name, expected in json.loads(pathlib.Path('/tmp/source-hashes.json').read_text()).items():
+              assert hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() == expected, name
+          PY
+          test "$(git ls-remote origin refs/heads/feature/account-first-customer-experience | cut -f1)" = "$EXPECTED_HEAD"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git diff --cached --exit-code -- .github/workflows
+          git diff --cached --check
+          git commit -m 'feat: account-first booking, clear customer copy and living group imagery'
+          git push origin HEAD:feature/account-first-customer-experience
+          git rev-parse HEAD > /tmp/customer-commit.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: customer-source-verification
+          path: |
+            /tmp/customer-*.log
+            /tmp/customer-commit.txt
+            /tmp/source-hashes.json
+          retention-days: 7

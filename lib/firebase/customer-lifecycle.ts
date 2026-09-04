@@ -1,6 +1,7 @@
 import { nativeAction } from "./native-services";
 import {
   collection,
+  runTransaction,
   collectionGroup,
   doc,
   getDoc,
@@ -184,6 +185,10 @@ function purchaseRequestFrom(userId: string, data: ReturnType<typeof dataOf>): I
 }
 
 export async function createOrganizationWithPrimaryContact(input: {
+  setupId: string;
+  firstName: string;
+  lastName: string;
+  offeringId?: ExperienceOfferingId;
   userId: string;
   email: string;
   displayName: string;
@@ -202,56 +207,42 @@ export async function createOrganizationWithPrimaryContact(input: {
   if (!input.displayName.trim()) throw new Error("Enter the primary contact name.");
   if (!input.email.trim()) throw new Error("Enter the primary contact email.");
 
-  const existingOrganizations = await listUserOrganizations(input.userId);
-  const existing = existingOrganizations.find(
-    (item) => item.name.trim().toLocaleLowerCase() === organizationName.toLocaleLowerCase()
-  );
   const db = getFirebaseFirestore();
   const normalizedEmail = input.email.trim().toLowerCase();
-
-  // Reuse the explicitly matching account without rewriting a shared organization's
-  // profile, promoting a member, or replacing its primary contact.
-  if (existing) return existing.id;
-
+  if (!/^[a-zA-Z0-9-]{8,80}$/.test(input.setupId)) throw new Error("Please retry creating your account.");
+  const setupRef = doc(db, "users", input.userId, "organizationSetups", input.setupId);
   const organizationRef = doc(collection(db, "organizations"));
-  const batch = writeBatch(db);
-  batch.set(organizationRef, {
-    name: organizationName,
-    kind: input.organizationKind,
-    organizationEmail: input.organizationEmail?.trim().toLowerCase() || null,
-    billingEmail: input.organizationEmail?.trim().toLowerCase() || normalizedEmail,
-    phone: input.organizationPhone?.trim() || null,
-    website: input.website?.trim() || null,
-    address: input.address?.trim() || null,
-    createdBy: input.userId,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
+  return runTransaction(db, async transaction => {
+    const setup = await transaction.get(setupRef);
+    if (setup.exists()) return setup.data().organizationId as string;
+    transaction.set(organizationRef, {
+      name: organizationName, kind: input.organizationKind,
+      organizationEmail: input.organizationEmail?.trim().toLowerCase() || normalizedEmail,
+      billingEmail: input.organizationEmail?.trim().toLowerCase() || normalizedEmail,
+      phone: input.organizationPhone?.trim() || null, website: input.website?.trim() || null,
+      address: input.address?.trim() || null, createdBy: input.userId,
+      createdAt: serverTimestamp(), updatedAt: serverTimestamp()
+    });
+    transaction.set(doc(db, "organizations", organizationRef.id, "members", input.userId), {
+      userId: input.userId, email: normalizedEmail, displayName: input.displayName.trim(),
+      firstName: input.firstName.trim(), lastName: input.lastName.trim(),
+      title: input.contactTitle?.trim() || null, phone: input.contactPhone?.trim() || null,
+      preferredContactMethod: input.preferredContactMethod ?? "email", relationshipRole: "primary_contact",
+      primaryContact: true, role: "organization_admin", status: "active", joinedAt: serverTimestamp()
+    });
+    transaction.set(doc(db, "users", input.userId, "organizations", organizationRef.id), {
+      organizationId: organizationRef.id, role: "organization_admin", joinedAt: serverTimestamp()
+    });
+    transaction.set(doc(db, "users", input.userId), {
+      email: normalizedEmail, displayName: input.displayName.trim(), firstName: input.firstName.trim(),
+      lastName: input.lastName.trim(), updatedAt: serverTimestamp()
+    }, { merge: true });
+    transaction.set(setupRef, { organizationId: organizationRef.id, createdAt: serverTimestamp() });
+    if (input.offeringId) transaction.set(doc(db, "users", input.userId, "bookingDrafts", organizationRef.id), {
+      organizationId: organizationRef.id, offeringId: input.offeringId, updatedAt: serverTimestamp()
+    });
+    return organizationRef.id;
   });
-  batch.set(doc(db, "organizations", organizationRef.id, "members", input.userId), {
-    userId: input.userId,
-    email: normalizedEmail,
-    displayName: input.displayName.trim(),
-    title: input.contactTitle?.trim() || null,
-    phone: input.contactPhone?.trim() || null,
-    preferredContactMethod: input.preferredContactMethod ?? "email",
-    relationshipRole: "primary_contact",
-    primaryContact: true,
-    role: "organization_admin",
-    status: "active",
-    joinedAt: serverTimestamp()
-  });
-  batch.set(doc(db, "users", input.userId, "organizations", organizationRef.id), {
-    organizationId: organizationRef.id,
-    role: "organization_admin",
-    joinedAt: serverTimestamp()
-  });
-  batch.set(doc(db, "users", input.userId), {
-    email: normalizedEmail,
-    displayName: input.displayName.trim(),
-    updatedAt: serverTimestamp()
-  }, { merge: true });
-  await batch.commit();
-  return organizationRef.id;
 }
 
 export async function listOrganizationRelationshipProfiles(userId: string): Promise<OrganizationRelationshipProfile[]> {
@@ -268,6 +259,7 @@ export async function listOrganizationRelationshipProfiles(userId: string): Prom
       id: organization.id,
       name: organization.name,
       kind: organization.kind,
+      membershipRole: memberData.role,
       organizationEmail: organizationData.organizationEmail ?? organization.billingEmail,
       phone: organizationData.phone ?? organization.phone,
       website: organizationData.website ?? organization.website,

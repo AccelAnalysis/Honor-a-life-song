@@ -6,6 +6,7 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   env: {
+    NEXT_PUBLIC_BASE_PATH: isPagesPreview ? pagesBasePath : "",
     NEXT_PUBLIC_HALS_STATIC_PREVIEW: isPagesPreview
       ? "1"
       : process.env.NEXT_PUBLIC_HALS_STATIC_PREVIEW || "0"

@@ -52,3 +52,7 @@ main > aside[aria-label="SongKeep"] {
       url("https://images.pexels.com/photos/7922179/pexels-photo-7922179.jpeg?auto=compress&cs=tinysrgb&w=1200");
   }
 }
+
+.consumerHeroContent { pointer-events: none; }
+.consumerHeroContent a, .consumerHeroContent button { pointer-events: auto; }
+.consumerSceneImage { position: relative; }

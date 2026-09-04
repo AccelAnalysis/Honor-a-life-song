@@ -1,0 +1,64 @@
+name: Customer experience
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  account-first-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_FIREBASE_EMULATORS: 'true'
+      NEXT_PUBLIC_FIREBASE_API_KEY: demo-key
+      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: localhost
+      NEXT_PUBLIC_FIREBASE_PROJECT_ID: demo-songkeep-account
+      NEXT_PUBLIC_FIREBASE_APP_ID: demo-app
+      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: demo-songkeep-account.appspot.com
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:8096
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+      SONGKEEP_E2E_OUTPUT: /tmp/songkeep-e2e-results
+      FIREBASE_CLI_DISABLE_UPDATE_CHECK: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Install application and isolated test tools
+        run: |
+          npm ci --no-audit --no-fund
+          npm ci --prefix functions --no-audit --no-fund
+          npm install --prefix /tmp/songkeep-e2e --save-exact --no-audit --no-fund @playwright/test@1.63.0 firebase-tools@15.29.0
+          /tmp/songkeep-e2e/node_modules/.bin/playwright install --with-deps chromium
+      - name: Build the real app for an isolated test project
+        run: npm run build
+      - name: Start Auth, Firestore, Functions and app
+        run: |
+          mkdir -p /tmp/songkeep-e2e-results
+          /tmp/songkeep-e2e/node_modules/.bin/firebase emulators:start --only auth,firestore,functions --project demo-songkeep-account > /tmp/songkeep-e2e-results/emulators.log 2>&1 &
+          npm start -- --port 3010 > /tmp/songkeep-e2e-results/app.log 2>&1 &
+          for attempt in $(seq 1 90); do
+            if grep -q 'All emulators ready' /tmp/songkeep-e2e-results/emulators.log && curl -sf http://127.0.0.1:3010/services >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/songkeep-e2e-results/emulators.log
+          cat /tmp/songkeep-e2e-results/app.log
+          exit 1
+      - name: Verify account creation, return visits, invoices, team permissions and responsive UI
+        env:
+          NODE_PATH: /tmp/songkeep-e2e/node_modules
+        run: |
+          set -o pipefail
+          timeout 300 node e2e/account-first.cjs 2>&1 | tee /tmp/songkeep-e2e-results/browser.log
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: customer-experience-evidence
+          path: /tmp/songkeep-e2e-results
+          retention-days: 7

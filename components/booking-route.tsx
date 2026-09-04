@@ -1,315 +1,208 @@
 "use client";
-
-import { nativeCheckoutEnabled } from "@/lib/firebase/native-services";
-
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useAuth } from "@/components/auth-provider";
-import { SongKeepLockup } from "@/components/brand";
-import {
-  bookingSteps,
-  formatOfferingPrice,
-  getServiceOffering,
-  serviceOfferings,
-  type BookingStep,
-  type ServiceOfferingId
-} from "@/domain/booking";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useAuth } from "./auth-provider";
+import { SongKeepLockup } from "./brand";
+import { AccountRegistrationForm, type AccountRegistrationResult } from "./account-registration-form";
+import { SignInForm } from "./sign-in-form";
+import { bookingSteps, formatOfferingPrice, getServiceOffering, serviceOfferings, type BookingStep, type ServiceOfferingId } from "@/domain/booking";
 import { normalizeExperienceOfferingId } from "@/domain/experience";
+import { bookingReturnPath, canPlanExperience, type BookingDraft } from "@/domain/account-onboarding";
 import type { OrganizationRelationshipProfile } from "@/domain/customer-lifecycle";
-import {
-  createOrganizationExperienceRequest,
-  listOrganizationRelationshipProfiles
-} from "@/lib/firebase/customer-lifecycle";
+import { createOrganizationExperienceRequest, listOrganizationRelationshipProfiles } from "@/lib/firebase/customer-lifecycle";
+import { clearBookingDraft, getBookingDraft, saveBookingDraft } from "@/lib/firebase/booking-draft";
+import { nativeCheckoutEnabled } from "@/lib/firebase/native-services";
+import { customerMessage } from "@/lib/customer-messages";
 import styles from "./booking-route.module.css";
 
-const progressSteps = bookingSteps.filter((step): step is Exclude<BookingStep, "ready"> => step !== "ready");
-const stepLabels: Record<Exclude<BookingStep, "ready">, string> = {
-  experience: "Experience",
-  organization: "Organization",
-  plan: "Plan",
-  payment: "Complete"
-};
-
-const offeringDetails: Record<ServiceOfferingId, readonly string[]> = {
-  "single-song-group-event": ["Shared story conversation", "One original group song", "Event presentation"],
-  "honor-a-life-song-experience": ["Participant interviews", "Multiple original songs", "Follow-up concert"],
-  "songkeep-legacy-album": ["Extended story discovery", "Cohesive multi-track album", "Approved digital release"]
-};
-
-function validOfferingId(value: string | null): ServiceOfferingId | undefined {
-  return normalizeExperienceOfferingId(value);
-}
-
-function titleForStep(step: BookingStep) {
-  if (step === "experience") return "Choose the experience that fits.";
-  if (step === "organization") return "Who should SongKeep work with?";
-  if (step === "plan") return "Tell us what you are planning.";
-  if (step === "payment") return "Choose how to complete the request.";
-  return "Your request is connected to your account.";
-}
+const steps = bookingSteps.filter((step): step is Exclude<BookingStep, "ready"> => step !== "ready");
+const labels = { experience: "Experience", organization: "Account", plan: "Event", payment: "Review", ready: "Invoice requested" };
+const titles = { experience: "Choose your experience.", organization: "Who should SongKeep work with?", plan: "Tell us about your event.", payment: "Review your experience.", ready: "Your invoice request is in." };
 
 export function BookingRoute() {
-  const searchParams = useSearchParams();
-  const { user, status: authStatus, configurationError } = useAuth();
-  const isStaticPreview = process.env.NEXT_PUBLIC_HALS_STATIC_PREVIEW === "1";
-  const requestedOffering = validOfferingId(searchParams.get("offering") ?? searchParams.get("service"));
-  const requestedOrganizationId = searchParams.get("organizationId") ?? searchParams.get("org");
-  const sourceExperienceId = searchParams.get("sourceExperience") ?? undefined;
-  const replacesRequestId = searchParams.get("replacesRequest") ?? undefined;
-  const initialStep: BookingStep = requestedOffering ? "organization" : "experience";
-
-  const [activeStep, setActiveStep] = useState<BookingStep>(initialStep);
-  const [furthestStepIndex, setFurthestStepIndex] = useState(bookingSteps.indexOf(initialStep));
+  const params = useSearchParams(), router = useRouter();
+  const { user, status, signOut } = useAuth();
+  const requestedOffering = normalizeExperienceOfferingId(params.get("offering") ?? params.get("service"));
+  const requestedOrg = params.get("organizationId") ?? params.get("org") ?? undefined;
+  const [step, setStep] = useState<BookingStep>(requestedOffering ? "organization" : "experience");
   const [offeringId, setOfferingId] = useState<ServiceOfferingId | undefined>(requestedOffering);
   const [organizations, setOrganizations] = useState<OrganizationRelationshipProfile[]>([]);
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | undefined>(requestedOrganizationId ?? undefined);
-  const [previewOrganizationName, setPreviewOrganizationName] = useState("");
-  const [organizationLoading, setOrganizationLoading] = useState(false);
-  const [preferredDate, setPreferredDate] = useState("");
-  const [preferredTime, setPreferredTime] = useState("");
-  const [venue, setVenue] = useState("");
-  const [participantEstimate, setParticipantEstimate] = useState("");
-  const [organizationGoal, setOrganizationGoal] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "invoice">(nativeCheckoutEnabled ? "card" : "invoice");
+  const [organizationId, setOrganizationId] = useState<string | undefined>(requestedOrg);
+  const [loading, setLoading] = useState(false), [saving, setSaving] = useState(false);
+  const [registrationBusy, setRegistrationBusy] = useState(false);
+  const [reviewed, setReviewed] = useState(false);
+  const [accountMode, setAccountMode] = useState<"create" | "signin" | "choose">("choose");
+  const [plan, setPlan] = useState({ preferredDate: "", preferredTime: "", venue: "", participantEstimate: "", organizationGoal: "" });
   const [authorized, setAuthorized] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [requestId, setRequestId] = useState<string | null>(null);
-  const [submittedMethod, setSubmittedMethod] = useState<"card" | "invoice" | null>(null);
+  const [payment, setPayment] = useState<"card" | "invoice">(nativeCheckoutEnabled ? "card" : "invoice");
   const [error, setError] = useState<string | null>(null);
-
-  const offering = useMemo(() => offeringId ? getServiceOffering(offeringId) : undefined, [offeringId]);
-  const selectedOrganization = organizations.find((organization) => organization.id === selectedOrganizationId);
-  const currentIndex = bookingSteps.indexOf(activeStep);
-  const cardAvailable = nativeCheckoutEnabled;
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [sourceExperienceId, setSourceExperienceId] = useState(params.get("sourceExperience") ?? undefined);
+  const [replacesRequestId, setReplacesRequestId] = useState(params.get("replacesRequest") ?? undefined);
   const intent = useRef<{ signature: string; key: string } | null>(null);
+  const lastUser = useRef<string | null>(null), busy = useRef(false);
+  const heading = useRef<HTMLHeadingElement>(null);
+  const offering = useMemo(() => offeringId ? getServiceOffering(offeringId) : undefined, [offeringId]);
+  const organization = organizations.find(item => item.id === organizationId);
+  const accountReady = Boolean(user && organization && canPlanExperience(organization.membershipRole));
+  const shownStep = ["plan", "payment", "ready"].includes(step) && !accountReady ? "organization" : step;
+  const returnPath = bookingReturnPath({ offeringId, organizationId, sourceExperienceId, replacesRequestId, query: new URLSearchParams(params.toString()) });
 
   useEffect(() => {
-    if (isStaticPreview || !user) {
-      setOrganizations([]);
-      return;
-    }
     let cancelled = false;
-    setOrganizationLoading(true);
-    listOrganizationRelationshipProfiles(user.uid)
-      .then((items) => {
-        if (cancelled) return;
-        setOrganizations(items);
-        setSelectedOrganizationId((current) => items.some((item) => item.id === current) ? current : items[0]?.id);
-      })
-      .catch((loadError) => {
-        if (!cancelled) setError(loadError instanceof Error ? loadError.message : "We could not open your organization account.");
-      })
-      .finally(() => { if (!cancelled) setOrganizationLoading(false); });
+    if (!user) {
+      setOrganizations([]);
+      if (lastUser.current) {
+        setOrganizationId(undefined); setStep(offeringId ? "organization" : "experience");
+        setPlan({ preferredDate: "", preferredTime: "", venue: "", participantEstimate: "", organizationGoal: "" });
+        setRequestId(null); setAuthorized(false); intent.current = null;
+      }
+      lastUser.current = null; return;
+    }
+    if (registrationBusy) { setLoading(false); return; }
+    lastUser.current = user.uid;
+    setLoading(true);
+    listOrganizationRelationshipProfiles(user.uid).then(items => {
+      if (cancelled) return;
+      setOrganizations(items);
+      setOrganizationId(current => items.some(item => item.id === current) ? current : items.length === 1 ? items[0].id : undefined);
+    }).catch(cause => { if (!cancelled) setError(customerMessage(cause, "We could not open your account. Please try again.")); })
+      .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [isStaticPreview, user]);
+    // Choice changes do not reload the signed-in account.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid, registrationBusy]);
 
-  function moveTo(step: BookingStep) {
-    const index = bookingSteps.indexOf(step);
-    if (index > furthestStepIndex) return;
-    setActiveStep(step);
-    setError(null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  useEffect(() => { heading.current?.focus({ preventScroll: true }); }, [shownStep]);
+  function go(next: BookingStep) {
+    if (["plan", "payment"].includes(next) && !accountReady) return;
+    if (next === "plan") setReviewed(false);
+    setStep(next); setError(null); window.scrollTo({ top: 0, behavior: "auto" });
   }
-
-  function continueTo(step: BookingStep) {
-    const index = bookingSteps.indexOf(step);
-    setFurthestStepIndex((current) => Math.max(current, index));
-    setActiveStep(step);
-    setError(null);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+  function choose(id: ServiceOfferingId) {
+    setOfferingId(id); setAuthorized(false); setRequestId(null); setReviewed(false);
+    router.replace(bookingReturnPath({ offeringId: id, organizationId, sourceExperienceId, replacesRequestId, query: new URLSearchParams(params.toString()) }), { scroll: false });
   }
-
-  function accountReturnPath() {
-    const params = new URLSearchParams();
-    if (offeringId) params.set("offering", offeringId);
-    params.set("step", "organization");
-    if (sourceExperienceId) params.set("sourceExperience", sourceExperienceId);
-    if (replacesRequestId) params.set("replacesRequest", replacesRequestId);
-    return `/begin?${params.toString()}`;
+  function draft(): BookingDraft {
+    if (!organizationId || !offeringId) throw new Error("Choose your organization and experience first.");
+    return { organizationId, offeringId, ...plan, sourceExperienceId, replacesRequestId };
   }
-
-  function chooseExperience(id: ServiceOfferingId) {
-    setOfferingId(id);
-    setRequestId(null);
-    setSubmittedMethod(null);
-  }
-
-  async function submitRequest() {
-    if (!offering || !preferredDate || !preferredTime || !authorized) return;
-    if (isStaticPreview) {
-      setRequestId("preview-only");
-      setSubmittedMethod(paymentMethod);
-      continueTo("ready");
-      return;
+  async function openPlan(id = organizationId, accountUser = user) {
+    if (!id || !accountUser || !offeringId) return;
+    const old = await getBookingDraft(accountUser.uid, id);
+    const samePlan = old?.offeringId === offeringId && old.replacesRequestId === replacesRequestId && old.sourceExperienceId === sourceExperienceId;
+    if (samePlan && old) {
+      setPlan({ preferredDate: old.preferredDate ?? "", preferredTime: old.preferredTime ?? "", venue: old.venue ?? "", participantEstimate: old.participantEstimate ?? "", organizationGoal: old.organizationGoal ?? "" });
+      setSourceExperienceId(sourceExperienceId ?? old.sourceExperienceId); setReplacesRequestId(replacesRequestId ?? old.replacesRequestId);
+      if (old.requestKey && old.requestSignature) intent.current = { key: old.requestKey, signature: old.requestSignature };
     }
-    if (!user || !selectedOrganization) {
-      setError("Choose or create an organization account before continuing.");
-      return;
-    }
-    setSaving(true);
-    setError(null);
-    try {
-      const signature = JSON.stringify({ offeringId, selectedOrganizationId, preferredDate, preferredTime, venue, participantEstimate, organizationGoal, paymentMethod, sourceExperienceId, replacesRequestId });
+    await saveBookingDraft(accountUser.uid, { ...(samePlan && old ? old : {}), organizationId: id, offeringId, ...(sourceExperienceId ? { sourceExperienceId } : {}), ...(replacesRequestId ? { replacesRequestId } : {}) });
+    setStep("plan"); setError(null);
+  }
+  async function completeAccount(result: AccountRegistrationResult) {
+    if (!result.organizationId) return;
+    const items = await listOrganizationRelationshipProfiles(result.user.uid);
+    setOrganizations(items); setOrganizationId(result.organizationId); setAccountMode("choose");
+    router.replace(bookingReturnPath({ offeringId, organizationId: result.organizationId, sourceExperienceId, replacesRequestId, query: new URLSearchParams(params.toString()) }), { scroll: false });
+    await openPlan(result.organizationId, result.user);
+  }
+  async function safeAction(action: () => Promise<void>) {
+    if (busy.current) return;
+    busy.current = true; setSaving(true); setError(null);
+    try { await action(); } catch (cause) { setError(customerMessage(cause, "We could not save this yet. Please try again.")); }
+    finally { busy.current = false; setSaving(false); }
+  }
+  async function review(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault(); if (!user || !accountReady) return;
+    await safeAction(async () => { await saveBookingDraft(user.uid, draft()); setReviewed(true); go("payment"); });
+  }
+  async function submit() {
+    if (!accountReady || !user || !offering || !organization || !authorized || !plan.preferredDate || !plan.preferredTime || requestId) return;
+    await safeAction(async () => {
+      const signature = JSON.stringify({ ...draft(), payment });
       if (intent.current?.signature !== signature) intent.current = { signature, key: crypto.randomUUID() };
+      await saveBookingDraft(user.uid, { ...draft(), requestKey: intent.current.key, requestSignature: signature });
       const request = await createOrganizationExperienceRequest({
-        idempotencyKey: intent.current.key,
-        organizationId: selectedOrganization.id,
-        createdByUserId: user.uid,
-        offeringId: offering.id,
-        preferredDate,
-        preferredTime,
-        venue,
-        participantEstimate: participantEstimate ? Number(participantEstimate) : undefined,
-        organizationGoal,
-        requestedPaymentMethod: paymentMethod,
-        agreementAcknowledged: authorized,
-        sourceExperienceId,
-        replacesRequestId,
-        acquisition: {
-          source: searchParams.get("utm_source") ?? undefined,
-          medium: searchParams.get("utm_medium") ?? undefined,
-          campaign: searchParams.get("utm_campaign") ?? undefined,
-          content: searchParams.get("utm_content") ?? undefined,
-          referralCode: searchParams.get("ref") ?? undefined
-        }
+        idempotencyKey: intent.current.key, organizationId: organization.id, createdByUserId: user.uid,
+        offeringId: offering.id, ...plan, participantEstimate: plan.participantEstimate ? Number(plan.participantEstimate) : undefined,
+        requestedPaymentMethod: payment, agreementAcknowledged: authorized, sourceExperienceId, replacesRequestId,
+        acquisition: { source: params.get("utm_source") ?? undefined, medium: params.get("utm_medium") ?? undefined, campaign: params.get("utm_campaign") ?? undefined, content: params.get("utm_content") ?? undefined, referralCode: params.get("ref") ?? undefined }
       });
       setRequestId(request.id);
-      setSubmittedMethod(paymentMethod);
-      if (paymentMethod === "card") {
-        window.location.assign(`/organization/invoices?organization=${encodeURIComponent(selectedOrganization.id)}&invoice=${encodeURIComponent(request.id)}`);
-        return;
-      }
-      continueTo("ready");
-    } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "We could not save this request.");
-    } finally {
-      setSaving(false);
-    }
+      await clearBookingDraft(user.uid, organization.id).catch(() => undefined);
+      if (payment === "card") router.push(`/organization/invoices?organization=${encodeURIComponent(organization.id)}&invoice=${encodeURIComponent(request.id)}`);
+      else go("ready");
+    });
   }
-
-  const organizationName = isStaticPreview ? previewOrganizationName : selectedOrganization?.name;
 
   return <main className={styles.shell}>
     <aside className={styles.storyPanel} aria-label="SongKeep">
       <Link className={styles.brand} href="/" aria-label="SongKeep home"><SongKeepLockup variant="full" inverse /></Link>
-      <div className={styles.storyCopy}>
-        <span className={styles.wave} aria-hidden="true"><i /><i /><i /><i /><i /></span>
-        <p>One account carries every experience forward.</p>
-        <small>Choose, plan, pay, invite, celebrate, and return.</small>
-      </div>
+      <div className={styles.storyCopy}><span className={styles.wave} aria-hidden="true"><i /><i /><i /><i /><i /></span><p>Bring your people together through song.</p><small>A shared moment. A keepsake for years to come.</small></div>
     </aside>
-
     <section className={styles.flow}>
       <header className={styles.flowHeader}>
         <Link className={styles.mobileBrand} href="/" aria-label="SongKeep home"><SongKeepLockup variant="app" /></Link>
-        {activeStep !== "ready" ? <nav className={styles.progress} aria-label="Planning progress">
-          {progressSteps.map((step, index) => <button
-            key={step}
-            type="button"
-            aria-current={step === activeStep ? "step" : undefined}
-            disabled={bookingSteps.indexOf(step) > furthestStepIndex}
-            onClick={() => moveTo(step)}
-          ><span aria-hidden="true">{index + 1}</span><small>{stepLabels[step]}</small></button>)}
-        </nav> : null}
+        {shownStep !== "ready" ? <nav className={styles.progress} aria-label="Booking progress">{steps.map((item, index) => <button key={item} type="button" aria-current={item === shownStep ? "step" : undefined}
+          disabled={saving || registrationBusy || (item === "organization" && !offering) || (item === "plan" && !accountReady) || (item === "payment" && (!accountReady || !reviewed))}
+          onClick={() => go(item)}><span aria-hidden="true">{index + 1}</span><small>{labels[item]}</small></button>)}</nav> : null}
+        {user ? <div className={styles.accountBar}><Link href={organizationId ? `/organization?org=${encodeURIComponent(organizationId)}` : "/organization"}>My account</Link><button type="button" disabled={saving || registrationBusy} onClick={() => void safeAction(signOut)}>Sign out</button></div> : null}
       </header>
-
       <div className={styles.content}>
-        {error ? <div className={styles.alert} role="alert"><strong>We could not continue.</strong><span>{error}</span></div> : null}
-        <p className={styles.eyebrow}>{activeStep === "ready" ? "Saved to your relationship" : stepLabels[activeStep as Exclude<BookingStep, "ready">]}</p>
-        <h1>{titleForStep(activeStep)}</h1>
-
-        {activeStep === "experience" ? <section className={styles.step} aria-label="Choose a SongKeep experience">
-          <p className={styles.lede}>All three experiences are purchased by an organization. Participants and families enter later through private invitations.</p>
-          <div className={styles.offerings} role="radiogroup" aria-label="SongKeep experiences">
-            {serviceOfferings.map((item) => <label key={item.id} className={styles.offering}>
-              <input type="radio" name="offering" value={item.id} checked={offeringId === item.id} onChange={() => chooseExperience(item.id)} />
-              <span className={styles.choiceMark} aria-hidden="true" />
-              <span className={styles.offeringBody}>
-                <span className={styles.offeringHeading}><strong>{item.name}</strong><b>{formatOfferingPrice(item.priceCents)}</b></span>
-                <small>{item.description}</small>
-                <span className={styles.inclusions}>{offeringDetails[item.id].map((detail) => <span key={detail}>{detail}</span>)}</span>
-              </span>
-            </label>)}
-          </div>
-          <button className={styles.primaryButton} type="button" disabled={!offering} onClick={() => continueTo("organization")}>Continue</button>
+        {error ? <div className={styles.alert} role="alert">{error}</div> : null}
+        <p className={styles.eyebrow}>{labels[shownStep]}</p><h1 ref={heading} tabIndex={-1}>{titles[shownStep]}</h1>
+        {shownStep === "experience" ? <section className={styles.step} aria-label="Choose a SongKeep experience">
+          <p className={styles.lede}>Find the right fit for your group.</p>
+          <div className={styles.offerings} role="radiogroup" aria-label="SongKeep experiences">{serviceOfferings.map(item => <label key={item.id} className={styles.offering}>
+            <input type="radio" name="offering" checked={offeringId === item.id} onChange={() => choose(item.id)} /><span className={styles.choiceMark} aria-hidden="true" />
+            <span className={styles.offeringBody}><span className={styles.offeringHeading}><strong>{item.name}</strong><b>{formatOfferingPrice(item.priceCents)}</b></span><small>{item.description}</small><span className={styles.inclusions}><span>{item.creativeOutput}</span><span>{item.presentation}</span></span></span>
+          </label>)}</div>
+          <button className={styles.primaryButton} disabled={!offering} onClick={() => go("organization")}>Continue</button>
         </section> : null}
-
-        {activeStep === "organization" ? <section className={styles.step} aria-label="Choose your organization">
-          {offering ? <div className={styles.selectionSummary}><div><span>Selected</span><strong>{offering.name}</strong><small>{formatOfferingPrice(offering.priceCents)}</small></div><button type="button" onClick={() => moveTo("experience")}>Change</button></div> : null}
-          {isStaticPreview ? <>
-            <label className={styles.field}><span>Organization name</span><input value={previewOrganizationName} onChange={(event) => setPreviewOrganizationName(event.target.value)} placeholder="Your organization" /></label>
-            <p className={styles.serviceNote}>Preview mode shows the journey without creating an account or saving information.</p>
-            <button className={styles.primaryButton} type="button" disabled={!previewOrganizationName.trim()} onClick={() => continueTo("plan")}>Continue</button>
+        {shownStep === "organization" ? <section className={styles.step} aria-label="Set up your account">
+          {offering ? <div className={styles.selectionSummary}><div><span>Your experience</span><strong>{offering.name}</strong><small>{formatOfferingPrice(offering.priceCents)} · {offering.creativeOutput}</small></div><button onClick={() => go("experience")}>Change</button></div> : null}
+          {!registrationBusy && (status === "loading" || loading) ? <p role="status">Opening your account…</p> : registrationBusy || accountMode === "create" || !user || !organizations.length ? <>
+            <p className={styles.lede}>{user ? "Add your group to continue." : "Create your account before planning the event. You can return to your invoices and experiences anytime."}</p>
+            {accountMode === "signin" && !user ? <><SignInForm next={returnPath} onComplete={() => setAccountMode("choose")} /><p><button className={styles.textButton} onClick={() => setAccountMode("create")}>Create a new account instead</button></p></> :
+              <AccountRegistrationForm onBusyChange={setRegistrationBusy} offeringId={offeringId} onComplete={completeAccount} onSignIn={() => setAccountMode("signin")} />}
+            {user && organizations.length ? <button className={styles.textButton} onClick={() => setAccountMode("choose")}>Use an existing organization</button> : null}
           </> : <>
-            {authStatus === "loading" || organizationLoading ? <p className={styles.statusLine} role="status">Opening your account…</p> : null}
-            {authStatus === "signed_out" ? <div className={styles.accountChoice}>
-              <p>Create the permanent organization account now. The primary contact remains separate and can be changed later.</p>
-              <div><Link className={styles.primaryLink} href={`/create-account?next=${encodeURIComponent(accountReturnPath())}`}>Create organization account</Link><Link className={styles.secondaryLink} href={`/login?next=${encodeURIComponent(accountReturnPath())}`}>Sign in</Link></div>
-            </div> : null}
-            {authStatus === "signed_in" && user && organizations.length ? <>
-              <div className={styles.organizationList} role="radiogroup" aria-label="Organization account">
-                {organizations.map((organization) => <label key={organization.id}>
-                  <input type="radio" name="organization" checked={selectedOrganizationId === organization.id} onChange={() => setSelectedOrganizationId(organization.id)} />
-                  <span className={styles.choiceMark} aria-hidden="true" />
-                  <span><strong>{organization.name}</strong><small>{organization.contact.displayName}{organization.contact.title ? ` · ${organization.contact.title}` : ""}</small></span>
-                </label>)}
-              </div>
-              <div className={styles.inlineActions}><Link className={styles.secondaryLink} href={`/create-account?next=${encodeURIComponent(accountReturnPath())}`}>Add another organization</Link></div>
-              <button className={styles.primaryButton} type="button" disabled={!selectedOrganization} onClick={() => continueTo("plan")}>Continue</button>
-            </> : null}
-            {authStatus === "signed_in" && user && !organizationLoading && !organizations.length ? <div className={styles.accountChoice}><p>Add the organization and primary point of contact to continue.</p><Link className={styles.primaryLink} href={`/create-account?next=${encodeURIComponent(accountReturnPath())}`}>Add organization</Link></div> : null}
-            {authStatus === "unavailable" ? <div className={styles.alert} role="status"><strong>Account access is unavailable.</strong><span>{configurationError ?? "Please try again from the live SongKeep site."}</span></div> : null}
+            <p className={styles.lede}>Welcome back, {user.displayName?.split(" ")[0] || "there"}. Which group is this for?</p>
+            <div className={styles.organizationList} role="radiogroup" aria-label="Organization account">{organizations.map(item => <label key={item.id}><input type="radio" name="organization" checked={organizationId === item.id} disabled={!canPlanExperience(item.membershipRole)} onChange={() => setOrganizationId(item.id)} /><span className={styles.choiceMark} aria-hidden="true" /><span><strong>{item.name}</strong><small>{canPlanExperience(item.membershipRole) ? item.contact.displayName : "Ask your administrator to book this experience."}</small></span></label>)}</div>
+            <button className={styles.primaryButton} disabled={!accountReady || saving} onClick={() => void safeAction(() => openPlan())}>{saving ? "Opening…" : "Continue to event details"}</button>
+            <button className={styles.textButton} onClick={() => setAccountMode("create")}>Add another group</button>
           </>}
         </section> : null}
-
-        {activeStep === "plan" ? <section className={styles.step} aria-label="Plan your experience">
-          <div className={styles.selectionSummary}><div><span>{organizationName}</span><strong>{offering?.name}</strong><small>{offering ? formatOfferingPrice(offering.priceCents) : ""}</small></div><button type="button" onClick={() => moveTo("experience")}>Change experience</button></div>
-          <div className={styles.twoColumns}>
-            <label className={styles.field}><span>Preferred date</span><input required type="date" value={preferredDate} onChange={(event) => setPreferredDate(event.target.value)} /></label>
-            <label className={styles.field}><span>Preferred start time</span><input required type="time" value={preferredTime} onChange={(event) => setPreferredTime(event.target.value)} /></label>
-          </div>
-          <label className={styles.field}><span>Location or room <small>Optional</small></span><input value={venue} onChange={(event) => setVenue(event.target.value)} placeholder="Community room or address" /></label>
-          <div className={styles.twoColumns}>
-            <label className={styles.field}><span>Estimated participants <small>Optional</small></span><input min="1" inputMode="numeric" type="number" value={participantEstimate} onChange={(event) => setParticipantEstimate(event.target.value)} /></label>
-            <label className={styles.field}><span>What should this experience accomplish?</span><input value={organizationGoal} onChange={(event) => setOrganizationGoal(event.target.value)} placeholder="Celebrate, preserve, connect…" /></label>
-          </div>
-          <p className={styles.serviceNote}>This is a preferred time, not a confirmed reservation. SongKeep confirms capacity, scope, and final documents from your account.</p>
-          <button className={styles.primaryButton} type="button" disabled={!preferredDate || !preferredTime} onClick={() => continueTo("payment")}>Review & complete</button>
-        </section> : null}
-
-        {activeStep === "payment" ? <section className={styles.step} aria-label="Choose payment or invoice">
-          <div className={styles.orderSummary}>
-            <div><strong>{offering?.name}</strong><span>{organizationName} · {preferredDate} at {preferredTime}</span></div>
-            <b>{offering ? formatOfferingPrice(offering.priceCents) : "—"}</b>
-          </div>
-          <fieldset className={styles.paymentChoices}>
-            <legend>How should the organization complete the purchase?</legend>
-            <label><input type="radio" name="paymentMethod" checked={paymentMethod === "card"} onChange={() => setPaymentMethod("card")} /><span><strong>Pay now</strong><small>{cardAvailable ? "Continue to secure checkout. Activation follows confirmed payment." : "Available when checkout is configured for this experience."}</small></span></label>
-            <label><input type="radio" name="paymentMethod" checked={paymentMethod === "invoice"} onChange={() => setPaymentMethod("invoice")} /><span><strong>Request an invoice</strong><small>The invoice and all payment follow-up stay connected to the organization account.</small></span></label>
+        {shownStep === "plan" ? <form className={styles.step} onSubmit={review} aria-label="Plan your experience">
+          <div className={styles.selectionSummary}><div><span>{organization?.name}</span><strong>{offering?.name}</strong><small>{offering?.creativeOutput}</small></div><button type="button" onClick={() => go("experience")}>Change experience</button></div>
+          <div className={styles.twoColumns}><label className={styles.field}><span>Preferred date</span><input required type="date" value={plan.preferredDate} onChange={e => setPlan({ ...plan, preferredDate: e.target.value })} /></label><label className={styles.field}><span>Preferred start time</span><input required type="time" value={plan.preferredTime} onChange={e => setPlan({ ...plan, preferredTime: e.target.value })} /></label></div>
+          <label className={styles.field}><span>Location or room <small>Optional</small></span><input maxLength={300} value={plan.venue} onChange={e => setPlan({ ...plan, venue: e.target.value })} /></label>
+          <label className={styles.field}><span>Estimated participants <small>Optional</small></span><input type="number" min={1} max={10000} step={1} inputMode="numeric" value={plan.participantEstimate} onChange={e => setPlan({ ...plan, participantEstimate: e.target.value })} /></label>
+          <label className={styles.field}><span>What are you celebrating? <small>Optional</small></span><input maxLength={1000} value={plan.organizationGoal} onChange={e => setPlan({ ...plan, organizationGoal: e.target.value })} placeholder="A milestone, a community, a life…" /></label>
+          <p className={styles.serviceNote}>We’ll confirm your date and time with you.</p>
+          <button className={styles.primaryButton} type="submit" disabled={saving}>{saving ? "Saving…" : "Review experience"}</button>
+          <button className={styles.textButton} type="button" disabled={saving} onClick={() => user && void safeAction(async () => { await saveBookingDraft(user.uid, draft()); router.push(`/organization?org=${organizationId}`); })}>Save and finish later</button>
+        </form> : null}
+        {shownStep === "payment" ? <section className={styles.step} aria-label="Review and payment">
+          <div className={styles.orderSummary}><div><strong>{offering?.name}</strong><span>{organization?.name}</span><span>{offering?.creativeOutput}</span><span>{plan.preferredDate} at {plan.preferredTime} · Awaiting date confirmation</span></div><b>{offering ? formatOfferingPrice(offering.priceCents) : ""}</b></div>
+          <button className={styles.textButton} onClick={() => go("plan")}>Edit event details</button>
+          <fieldset className={styles.paymentChoices}><legend>How would you like to pay?</legend>
+            {nativeCheckoutEnabled ? <label><input type="radio" name="payment" checked={payment === "card"} onChange={() => setPayment("card")} /><span><strong>Pay now</strong><small>Continue to secure checkout.</small></span></label> : null}
+            <label><input type="radio" name="payment" checked={payment === "invoice"} onChange={() => setPayment("invoice")} /><span><strong>Request an invoice</strong><small>Review and pay from your account.</small></span></label>
           </fieldset>
-          {offeringId === "songkeep-legacy-album" ? <div className={styles.contextNote}><strong>Legacy Album release terms</strong><span>Final scope also addresses artist identity, credits, AI disclosure, rights, approved distribution, and release authorization.</span></div> : null}
-          <label className={styles.authorization}><input type="checkbox" checked={authorized} onChange={(event) => setAuthorized(event.target.checked)} /><span>I am authorized to plan this experience for the organization and understand that final service, cancellation, privacy, and applicable release documents will be issued through the account.</span></label>
-          <button className={styles.primaryButton} type="button" disabled={!authorized || saving || (paymentMethod === "card" && !cardAvailable && !isStaticPreview)} onClick={submitRequest}>{saving ? "Saving…" : paymentMethod === "card" ? "Continue to secure payment" : "Request invoice"}</button>
-          {paymentMethod === "card" && !cardAvailable && !isStaticPreview ? <p className={styles.serviceNote}>Card checkout is not configured for this package. Choose invoice to save the request now.</p> : null}
+          <label className={styles.authorization}><input type="checkbox" checked={authorized} onChange={e => setAuthorized(e.target.checked)} /><span>I am authorized to book for this group. I understand the date is subject to confirmation and I’ll review the service terms before the experience.</span></label>
+          <button className={styles.primaryButton} disabled={!authorized || saving || Boolean(requestId)} onClick={() => void submit()}>{saving ? "Submitting…" : payment === "card" ? "Continue to payment" : "Request invoice"}</button>
         </section> : null}
-
-        {activeStep === "ready" ? <section className={styles.step} aria-label="Request saved">
-          {isStaticPreview ? <div className={styles.previewNotice}><strong>Preview complete</strong><span>No account, invoice, payment, or request was created in this static preview.</span></div> : null}
+        {shownStep === "ready" ? <section className={styles.step} aria-label="Invoice requested">
           <div className={styles.completionMark} aria-hidden="true">✓</div>
-          <p className={styles.lede}>{submittedMethod === "invoice"
-            ? "The invoice request is now part of the organization relationship. SongKeep can prepare the invoice, follow up on payment, and move directly into onboarding after payment is confirmed."
-            : "The request is saved. The experience becomes active only after SongKeep receives authoritative payment confirmation."}</p>
-          <div className={styles.nextSteps}>
-            <div><span>1</span><p><strong>Commercial follow-up</strong><small>Invoice or payment status stays with the organization account.</small></p></div>
-            <div><span>2</span><p><strong>Experience setup</strong><small>Paid experiences open the right participant, story, album, or event workflow.</small></p></div>
-            <div><span>3</span><p><strong>People & permissions</strong><small>Participants receive their own private permission links; the organization agreement never replaces individual consent.</small></p></div>
-          </div>
-          {!isStaticPreview && selectedOrganization ? <Link className={styles.primaryLink} href={`/organization/relationship?org=${selectedOrganization.id}${requestId ? `&request=${requestId}` : ""}`}>Open organization relationship</Link> : <button className={styles.primaryButton} type="button" onClick={() => moveTo("experience")}>Start again</button>}
+          <p className={styles.lede}>We’ve received your request. You can check your invoice and next steps in your account.</p>
+          <div className={styles.orderSummary}><div><strong>{offering?.name}</strong><span>{organization?.name}</span><span>{offering?.creativeOutput}</span></div><b>{offering ? formatOfferingPrice(offering.priceCents) : ""}</b></div>
+          <Link className={styles.primaryLink} href={`/organization?org=${organizationId}&request=${requestId}`}>Go to my account</Link>
+          <Link className={styles.secondaryLink} href={`/organization/invoices?organization=${organizationId}&invoice=${requestId}`}>View invoice</Link>
         </section> : null}
       </div>
-
-      <footer className={styles.footer}><span>Need help? Contact SongKeep.</span><Link href="/services">Compare experiences</Link></footer>
+      <footer className={styles.footer}><span>Made for your people.</span><Link href="/services">Compare experiences</Link></footer>
     </section>
   </main>;
 }

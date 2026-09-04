@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { MarketingImageSequence } from "@/components/marketing-image-sequence";
 import { SonicSignature } from "@/components/brand";
 import { PublicShell } from "@/components/public-shell";
 import styles from "./home-lifecycle.module.css";
@@ -7,24 +8,22 @@ export default function HomePage() {
   return (
     <PublicShell>
       <section className="consumerHero" id="hero-value-proposition" aria-labelledby="consumer-hero-title">
-        <div className="consumerHeroMedia" role="img" aria-label="A woman at a piano in a warm, lived-in home" />
+        <MarketingImageSequence className="consumerHeroMedia" priority />
         <div className="consumerHeroContent">
           <p className="eyebrow">Stories become songs.</p>
           <h1 id="consumer-hero-title">Bring their stories to life.</h1>
-          <p className="consumerHeroLead">SongKeep creates meaningful music experiences for the people your organization serves.</p>
+          <p className="consumerHeroLead">Turn the stories of your family, community, or team into original songs to share and keep.</p>
           <div className="consumerHeroActions">
             <Link className="button primary" href="/services">Choose an experience</Link>
             <Link className="button secondary" href="/how-it-works">How it works</Link>
           </div>
           <SonicSignature inverse label="Hear SongKeep" />
         </div>
-        <span className="consumerHeroCredit">Photo: Centre for Ageing Better / Pexels</span>
+
       </section>
 
       <section className="consumerScene" id="featured-stories-songs" aria-labelledby="listening-title">
-        <div className="consumerSceneImage" role="img" aria-label="A woman listening quietly in a sunlit room">
-          <span className="consumerSceneCredit">Photo: Los Muertos Crew / Pexels</span>
-        </div>
+        <MarketingImageSequence className="consumerSceneImage" collection="gathering" soft />
         <div className="consumerSceneCopy">
           <p className="eyebrow">Listen first.</p>
           <h2 id="listening-title">A life, heard.</h2>
@@ -57,7 +56,7 @@ export default function HomePage() {
             <div className="processSteps">
               <div className="processStep"><strong>01</strong><div><h3>Choose.</h3><p>Your organization selects the experience that fits.</p></div></div>
               <div className="processStep"><strong>02</strong><div><h3>Listen.</h3><p>People choose how their stories are recorded, shaped, shared, and kept.</p></div></div>
-              <div className="processStep"><strong>03</strong><div><h3>Celebrate.</h3><p>Share the music, then keep the relationship and approved products moving forward.</p></div></div>
+              <div className="processStep"><strong>03</strong><div><h3>Celebrate.</h3><p>Gather your people and celebrate the music you made together.</p></div></div>
             </div>
             <Link className="button primary" href="/how-it-works">How it works</Link>
           </div>
@@ -68,18 +67,18 @@ export default function HomePage() {
         <div className="visualIntro"><div><p className="eyebrow">Three ways to begin</p><h2 id="program-title">Choose your experience.</h2></div><Link className="textLink" href="/services">Compare all three →</Link></div>
         <div className={styles.offerRail}>
           <Link href="/begin?offering=single-song-group-event"><div><span>$200</span><h3>Group Event</h3><p>One shared story. One original song. One memorable presentation.</p></div></Link>
-          <Link href="/begin?offering=honor-a-life-song-experience"><div><span>$2,500</span><h3>Honor a Life Song</h3><p>Participant stories, multiple songs, and a follow-up concert.</p></div></Link>
-          <Link href="/begin?offering=songkeep-legacy-album"><div><span>$6,000</span><h3>Legacy Album</h3><p>A complete musical life story, packaged for an approved digital release.</p></div></Link>
+          <Link href="/begin?offering=honor-a-life-song-experience"><div><span>$2,500</span><h3>Honor a Life Song</h3><p>Participant stories, up to 6 songs, and a follow-up concert.</p></div></Link>
+          <Link href="/begin?offering=songkeep-legacy-album"><div><span>$6,000</span><h3>Legacy Album</h3><p>Up to 10 songs in a complete album, with a private reveal and release preparation.</p></div></Link>
         </div>
       </section>
 
       <section className="permissionScene" id="testimonials" aria-labelledby="permission-title">
         <div className="permissionSceneMark" aria-hidden="true">“</div>
-        <div><p className="eyebrow">Shared with care</p><h2 id="permission-title">Every person chooses.</h2><p>Organization agreements do not replace individual permission for recording, family sharing, performance, photos, video, testimonials, or public use.</p></div>
+        <div><p className="eyebrow">Shared with care</p><h2 id="permission-title">Every person chooses.</h2><p>Your story is yours. You choose what to share, and with whom.</p></div>
       </section>
 
       <section className="closingScene" id="request-a-song" aria-labelledby="closing-title">
-        <div><p className="eyebrow">SongKeep</p><h2 id="closing-title">Bring it to your community.</h2><p>Choose an experience. Create the organization relationship once. We’ll guide what happens next.</p><Link className="button" href="/begin">Get started</Link></div>
+        <div><p className="eyebrow">SongKeep</p><h2 id="closing-title">Bring it to your community.</h2><p>Choose an experience for your group. We’ll help you make it unforgettable.</p><Link className="button" href="/begin">Get started</Link></div>
       </section>
     </PublicShell>
   );

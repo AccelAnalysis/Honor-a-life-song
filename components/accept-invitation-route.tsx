@@ -1,5 +1,7 @@
 "use client";
 
+import { customerMessage } from "@/lib/customer-messages";
+
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -25,7 +27,7 @@ export function AcceptInvitationRoute() {
     getOrganizationInvitation(organizationId, invitationId)
       .then((nextInvitation) => { if (!cancelled) setInvitation(nextInvitation); })
       .catch((loadError) => {
-        if (!cancelled) setError(loadError instanceof Error ? loadError.message : "We could not open this invitation.");
+        if (!cancelled) setError(customerMessage(loadError, "We could not open this invitation."));
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -46,7 +48,7 @@ export function AcceptInvitationRoute() {
       });
       router.push(`/organization?org=${organizationId}`);
     } catch (acceptError) {
-      setError(acceptError instanceof Error ? acceptError.message : "We could not accept this invitation.");
+      setError(customerMessage(acceptError, "We could not accept this invitation."));
       setLoading(false);
     }
   }
