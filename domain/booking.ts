@@ -10,9 +10,9 @@ export const serviceOfferings = experienceOfferings;
 export type ServiceOfferingId = ExperienceOfferingId;
 
 /**
- * Facility booking is intentionally short and outcome-oriented. Account setup,
- * preferred date, agreement review, and payment choice are composed inside four
- * meaningful customer steps rather than exposed as seven internal stages.
+ * Organization booking is intentionally short and outcome-oriented. Account
+ * setup, preferred date, agreement review, and payment choice are composed
+ * inside four meaningful customer steps instead of exposing internal stages.
  */
 export const bookingSteps = ["experience", "details", "checkout", "ready"] as const;
 export type BookingStep = (typeof bookingSteps)[number];
@@ -24,17 +24,21 @@ export const bookingServiceCapabilities = {
   agreementPersistence: false,
   payments: false,
   invoiceRequest: true,
-  participantPersistence: false,
-  consentPersistence: false,
+  participantPersistence: true,
+  consentPersistence: true,
   notifications: false,
   experiencePersistence: true
 } as const;
 export type BookingServiceCapability = keyof typeof bookingServiceCapabilities;
 
+const paymentLinkEnvironmentKeys: Record<ServiceOfferingId, string | undefined> = {
+  "single-song-group-event": process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_SINGLE_SONG_GROUP_EVENT,
+  "honor-a-life-song-experience": process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_HONOR_A_LIFE_SONG_EXPERIENCE,
+  "songkeep-legacy-album": process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_SONGKEEP_LEGACY_ALBUM
+};
+
 export function getOfferingPaymentLink(id: ServiceOfferingId): string | undefined {
-  const value = id === "single-song-group-event"
-    ? process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_SINGLE_SONG_GROUP_EVENT
-    : process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK_HONOR_A_LIFE_SONG_EXPERIENCE;
+  const value = paymentLinkEnvironmentKeys[id];
   if (!value) return undefined;
   try {
     const url = new URL(value);
@@ -89,7 +93,8 @@ export type LegalDocumentKind =
   | "service_terms"
   | "privacy_notice"
   | "cancellation_policy"
-  | "electronic_records";
+  | "electronic_records"
+  | "album_release_terms";
 
 export interface LegalDocumentVersion {
   id: EntityId;
