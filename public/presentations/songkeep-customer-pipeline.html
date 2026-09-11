@@ -14,6 +14,7 @@
   font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Arial,sans-serif;
   color-scheme:light dark;
 }
+.slide,[style*="--stage"]{--stage-foreground:color-mix(in srgb,var(--stage) 82%,black)}
 *{box-sizing:border-box}
 html,body{margin:0;width:100%;height:100%;background:var(--soft);color:var(--ink);-webkit-font-smoothing:antialiased}
 body{overflow:hidden}
@@ -194,7 +195,7 @@ h1{font-size:clamp(38px,6.2vw,78px);line-height:.98;letter-spacing:-.045em;margi
   .chrome-btn:hover,.nav-step:hover,.menu-stage:hover{background:rgba(255,255,255,.07)}
   .stage-choice{background:var(--canvas)}
   .gradient-word{background:linear-gradient(90deg,#F4F5FA 0%,#9DA6FF 46%,#64C8FF 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
-  .stage-badge,.choice-number,.metric-mark,.activity-number,.menu-stage-number{background:color-mix(in srgb,var(--stage) 24%,#181A2D);color:var(--stage-foreground)}
+  .stage-badge,.choice-number,.metric-mark,.activity-number,.menu-stage-number,.gate-node span{background:color-mix(in srgb,var(--stage) 24%,#181A2D);color:var(--stage-foreground)}
   .stage-badge.neutral,.growth-node span{background:#292C47;color:var(--ink)}
   .close-btn{background:#292C47;color:var(--ink)}
   #stageDialog{background:var(--canvas);color:var(--ink)}
