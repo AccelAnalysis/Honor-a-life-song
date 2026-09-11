@@ -79,6 +79,8 @@ async function requestInvoice(page) {
   });
   await check('Returning sign-in and second package reuse the same organization', async () => {
    await page.goto(`${origin}/organization?org=${orgId}`); await button(page,'Sign out').click();
+   // Sign-out persists asynchronously. Observe its completed navigation before opening another flow.
+   await page.waitForURL('**/login'); await expect(button(page,'Sign in & continue')).toBeVisible();
    await page.goto(`${origin}/begin?offering=songkeep-legacy-album`); await button(page,'Sign in').click(); await signIn(page,ownerEmail); await button(page,'Continue to event details').click();
    await expect(page.getByText('Up to 10 songs',{exact:true})).toBeVisible(); await page.getByLabel('Preferred date',{exact:true}).fill('2028-01-20'); await page.getByLabel('Preferred start time',{exact:true}).fill('11:00');
    await requestInvoice(page); assert.equal((await db.collection('organizations').where('createdBy','==',owner.uid).get()).size,1);
