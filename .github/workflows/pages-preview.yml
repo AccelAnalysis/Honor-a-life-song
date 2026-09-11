@@ -50,6 +50,46 @@ jobs:
           echo "HALS_PREVIEW_PATH=${preview_path}" >> "$GITHUB_ENV"
           echo "PAGES_BASE_PATH=${base_path}" >> "$GITHUB_ENV"
 
+      - name: Load SongKeep Firebase web configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          config_file="$(mktemp)"
+          curl --fail --silent --show-error --retry 3 \
+            "https://songify-cc2c5.web.app/__/firebase/init.json" \
+            --output "${config_file}"
+
+          project_id="$(jq -r '.projectId // empty' "${config_file}")"
+          app_id="$(jq -r '.appId // empty' "${config_file}")"
+          api_key="$(jq -r '.apiKey // empty' "${config_file}")"
+          auth_domain="$(jq -r '.authDomain // empty' "${config_file}")"
+          storage_bucket="$(jq -r '.storageBucket // empty' "${config_file}")"
+          sender_id="$(jq -r '.messagingSenderId // empty' "${config_file}")"
+          measurement_id="$(jq -r '.measurementId // empty' "${config_file}")"
+
+          if [[ "${project_id}" != "songify-cc2c5" || "${app_id}" != "1:471693809116:web:e13d6b10bd310bd78aeb19" ]]; then
+            echo "Firebase Hosting returned configuration for an unexpected app." >&2
+            exit 1
+          fi
+
+          if [[ -z "${api_key}" || -z "${auth_domain}" ]]; then
+            echo "Firebase Hosting did not return the required Web SDK configuration." >&2
+            exit 1
+          fi
+
+          {
+            echo "NEXT_PUBLIC_FIREBASE_API_KEY=${api_key}"
+            echo "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${auth_domain}"
+            echo "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${project_id}"
+            echo "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${storage_bucket}"
+            echo "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${sender_id}"
+            echo "NEXT_PUBLIC_FIREBASE_APP_ID=${app_id}"
+            if [[ -n "${measurement_id}" ]]; then
+              echo "NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${measurement_id}"
+            fi
+          } >> "$GITHUB_ENV"
+
       - name: Build static Pages preview
         run: npm run build
         env:
@@ -69,7 +109,7 @@ jobs:
         run: |
           root="https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}"
           if [[ -n "${HALS_PREVIEW_PATH}" ]]; then
-            echo "### Visual preview target" >> "$GITHUB_STEP_SUMMARY"
+            echo "### Preview target" >> "$GITHUB_STEP_SUMMARY"
             echo "${root}/${HALS_PREVIEW_PATH}/" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "### Main Pages target" >> "$GITHUB_STEP_SUMMARY"
@@ -77,4 +117,4 @@ jobs:
           fi
 
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "This is a static visual-review projection. Production identity, persistence, payments, messaging and secure delivery remain separate runtime concerns." >> "$GITHUB_STEP_SUMMARY"
+          echo "Firebase Web SDK configuration is loaded from the linked SongKeep Firebase Hosting app at build time, so account creation and sign-in can use the production Firebase client. Payments, messaging, storage fulfillment and other server-backed services remain separate deployment concerns." >> "$GITHUB_STEP_SUMMARY"
