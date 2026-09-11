@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, it, expect } from "vitest";
 import { bookingReturnPath, contactName, canPlanExperience } from "../domain/account-onboarding";
 import { experienceOfferings } from "../domain/experience";
-import { customerMessage } from "../lib/customer-messages";
+import { customerErrorCode, customerMessage } from "../lib/customer-messages";
 const read = (name: string) => readFileSync(name, "utf8");
 describe("account-first booking", () => {
   it("preserves chosen offer and explicit organization without putting personal information in URLs", () => {
@@ -20,6 +20,18 @@ describe("account-first booking", () => {
     expect(source).not.toMatch(/preview-only|staticPreview|Preview Complete|Saved to your relationship/);
     expect(read("lib/firebase/customer-lifecycle.ts")).toContain("runTransaction");
   });
+  it("makes the organization creator the initial administrator and treats missing organization setup as onboarding", () => {
+    const lifecycle = read("lib/firebase/customer-lifecycle.ts");
+    const registration = read("components/account-registration-form.tsx");
+    const login = read("components/login-route.tsx");
+    const createAccount = read("components/create-account-route.tsx");
+    expect(lifecycle).toContain('role: "organization_admin"');
+    expect(lifecycle).toContain('relationshipRole: "primary_contact"');
+    expect(registration).toContain("You’ll start as this organization’s account administrator");
+    expect(login).toContain('router.replace("/create-account")');
+    expect(createAccount).toContain("Finish setting up your organization.");
+    expect(createAccount).toContain('customerErrorCode(cause) === "permission-denied"');
+  });
   it("does not let a viewer or coordinator become an organization buyer", () => {
     expect(canPlanExperience("organization_admin")).toBe(true); expect(canPlanExperience("viewer")).toBe(false); expect(canPlanExperience("coordinator")).toBe(false);
   });
@@ -32,10 +44,12 @@ describe("account-first booking", () => {
   it("removes the distracting internal relationship section from package selection", () => {
     expect(read("app/(public)/services/page.tsx")).not.toMatch(/One continuous relationship|The experience does not end|Loyalty &amp; advocacy/);
   });
-  it("does not expose technical failures to customers", () => {
+  it("does not expose technical or inappropriate administrator failures to customers", () => {
     expect(customerMessage({ code:"auth/email-already-in-use" })).toContain("Sign in");
     expect(customerMessage(new Error("FirebaseError: Missing index and SDK configuration"))).not.toMatch(/Firebase|index|SDK/);
     expect(customerMessage(new Error("The passwords do not match."))).toBe("The passwords do not match.");
+    expect(customerErrorCode({ code:"firestore/permission-denied" })).toBe("permission-denied");
+    expect(customerMessage({ code:"firestore/permission-denied" })).not.toMatch(/account administrator/i);
   });
   it("keeps photo motion optional and never adds automatic audio", () => {
     const motion = read("components/marketing-image-sequence.tsx");
