@@ -1,3 +1,4 @@
+import type { OrganizationMemberRole } from "./organization-account";
 import type { ConsentScope } from "./consent";
 import type { ExperienceOfferingId } from "./experience";
 import type { EntityId, ISODateTime, OrganizationKind } from "./types";
@@ -13,7 +14,7 @@ export interface OrganizationRelationshipProfile {
   id: EntityId;
   name: string;
   kind: OrganizationKind;
-  membershipRole?: "organization_admin" | "coordinator" | "viewer";
+  membershipRole?: OrganizationMemberRole;
   organizationEmail?: string;
   phone?: string;
   website?: string;

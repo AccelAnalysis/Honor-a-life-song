@@ -1,5 +1,6 @@
 "use client";
 
+import { organizationRoleLabel } from "@/domain/organization-roles";
 import { customerMessage } from "@/lib/customer-messages";
 
 import Link from "next/link";
@@ -73,7 +74,7 @@ export function AcceptInvitationRoute() {
   return <main className="centeredPage"><section className="authCard">
     <p className="eyebrow">Team invitation</p>
     <h1>Join your organization.</h1>
-    {invitation ? <p>{invitation.role.replaceAll("_", " ")}</p> : null}
+    {invitation ? <p>{organizationRoleLabel(invitation.role)}</p> : null}
     {error ? <p role="alert">{error}</p> : null}
     {invitation?.status === "pending" ? <button type="button" onClick={accept} disabled={loading}>{loading ? "Joining…" : "Join"}</button> : null}
     {invitation?.status === "accepted" ? <Link href={`/organization?org=${organizationId}`}>Open SongKeep</Link> : null}

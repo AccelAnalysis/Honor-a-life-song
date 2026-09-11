@@ -110,6 +110,9 @@ async function requestInvoice(page) {
    assert(await mobile.evaluate(() => document.documentElement.scrollWidth <= innerWidth+1)); await shot(mobile,'create-account-mobile');
    await mobile.setViewportSize({width:320,height:720}); assert(await mobile.evaluate(() => document.documentElement.scrollWidth <= innerWidth+1)); await mobileContext.close();
   });
+  await check('Canonical coordinator roles can manage people without purchasing authority', async () => {
+   await require('./team-roles.cjs').verifyTeamRoles({page,browser,db,auth,orgId,password,output});
+  });
   await check('Group photography loads, crossfades, pauses and respects reduced motion', async () => {
    await page.bringToFront(); await page.goto(origin); const hero = page.locator('.consumerHeroMedia');
    await expect.poll(() => hero.locator('img').first().evaluate(img => img.naturalWidth),{timeout:30000}).toBeGreaterThan(0);

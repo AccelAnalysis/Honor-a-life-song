@@ -40,6 +40,7 @@ import {
   listOrganizationExperiences,
   listOrganizationMembers
 } from "@/lib/firebase/organization-account";
+import { canManageExperiencePeople } from "@/domain/organization-roles";
 import { OrganizationTeam } from "./organization-team";
 import { listBookingDrafts } from "@/lib/firebase/booking-draft";
 import { bookingReturnPath, canPlanExperience, type BookingDraft } from "@/domain/account-onboarding";
@@ -106,7 +107,7 @@ export function OrganizationRelationship({ view = "home" }: OrganizationRelation
 
   const organization = (requestedOrganizationId ? organizations.find(item => item.id === requestedOrganizationId) : organizations[0]) ?? null;
   const canBook = canPlanExperience(organization?.membershipRole);
-  const canManagePeople = ["organization_admin", "coordinator"].includes(organization?.membershipRole ?? "");
+  const canManagePeople = canManageExperiencePeople(organization?.membershipRole);
   const savedPlan = drafts.find(item => item.organizationId === organization?.id);
   const savedOffering = getExperienceOffering(savedPlan?.offeringId);
   const completedExperiences = useMemo(() => experiences.filter(isCompleted), [experiences]);
