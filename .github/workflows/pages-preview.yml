@@ -50,48 +50,21 @@ jobs:
           echo "HALS_PREVIEW_PATH=${preview_path}" >> "$GITHUB_ENV"
           echo "PAGES_BASE_PATH=${base_path}" >> "$GITHUB_ENV"
 
-      # Production Firebase client configuration is public Web SDK configuration,
-      # but it must never be embedded into unreviewed PR JavaScript that shares
-      # the main GitHub Pages origin/session. Only trusted main/manual builds get it.
-      - name: Load SongKeep Firebase web configuration
+      # Firebase Web SDK configuration is public browser configuration. Keep it
+      # restricted to trusted main/manual builds so unreviewed PR JavaScript on
+      # the same Pages origin cannot inherit a reviewer's production Firebase session.
+      - name: Configure SongKeep Firebase web app
         if: github.event_name != 'pull_request'
         shell: bash
         run: |
-          set -euo pipefail
-
-          config_file="$(mktemp)"
-          curl --fail --silent --show-error --retry 3 \
-            "https://songify-cc2c5.web.app/__/firebase/init.json" \
-            --output "${config_file}"
-
-          project_id="$(jq -r '.projectId // empty' "${config_file}")"
-          app_id="$(jq -r '.appId // empty' "${config_file}")"
-          api_key="$(jq -r '.apiKey // empty' "${config_file}")"
-          auth_domain="$(jq -r '.authDomain // empty' "${config_file}")"
-          storage_bucket="$(jq -r '.storageBucket // empty' "${config_file}")"
-          sender_id="$(jq -r '.messagingSenderId // empty' "${config_file}")"
-          measurement_id="$(jq -r '.measurementId // empty' "${config_file}")"
-
-          if [[ "${project_id}" != "songify-cc2c5" || "${app_id}" != "1:471693809116:web:e13d6b10bd310bd78aeb19" ]]; then
-            echo "Firebase Hosting returned configuration for an unexpected app." >&2
-            exit 1
-          fi
-
-          if [[ -z "${api_key}" || -z "${auth_domain}" ]]; then
-            echo "Firebase Hosting did not return the required Web SDK configuration." >&2
-            exit 1
-          fi
-
           {
-            echo "NEXT_PUBLIC_FIREBASE_API_KEY=${api_key}"
-            echo "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${auth_domain}"
-            echo "NEXT_PUBLIC_FIREBASE_PROJECT_ID=${project_id}"
-            echo "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${storage_bucket}"
-            echo "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${sender_id}"
-            echo "NEXT_PUBLIC_FIREBASE_APP_ID=${app_id}"
-            if [[ -n "${measurement_id}" ]]; then
-              echo "NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=${measurement_id}"
-            fi
+            echo "NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyD5f4TF_sXVV-C8aFWpkTG0qMtACE3O_VY"
+            echo "NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=songify-cc2c5.firebaseapp.com"
+            echo "NEXT_PUBLIC_FIREBASE_PROJECT_ID=songify-cc2c5"
+            echo "NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=songify-cc2c5.firebasestorage.app"
+            echo "NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=471693809116"
+            echo "NEXT_PUBLIC_FIREBASE_APP_ID=1:471693809116:web:e13d6b10bd310bd78aeb19"
+            echo "NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID=G-NP4ZD25M79"
           } >> "$GITHUB_ENV"
 
       - name: Build static Pages preview
@@ -121,5 +94,5 @@ jobs:
             echo "### Main Pages target" >> "$GITHUB_STEP_SUMMARY"
             echo "${root}/" >> "$GITHUB_STEP_SUMMARY"
             echo "" >> "$GITHUB_STEP_SUMMARY"
-            echo "Firebase Web SDK configuration is loaded from the linked SongKeep Firebase Hosting app at build time, so account creation and sign-in can use the production Firebase client. Payments, messaging, storage fulfillment and other server-backed services remain separate deployment concerns." >> "$GITHUB_STEP_SUMMARY"
+            echo "The registered SongKeep Firebase Web SDK configuration is embedded at build time so account creation and sign-in can use the production Firebase client. Payments, messaging, storage fulfillment and other server-backed services remain separate deployment concerns." >> "$GITHUB_STEP_SUMMARY"
           fi
