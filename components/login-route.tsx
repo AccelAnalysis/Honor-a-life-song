@@ -10,7 +10,7 @@ import { isPlatformAdmin, listUserOrganizations } from "@/lib/firebase/organizat
 import { listUserExperienceAccess } from "@/lib/firebase/organization-invitations";
 import { listCreatorAssignments } from "@/lib/firebase/creator-deliverables";
 import { safeReturnPath } from "@/lib/safe-return-path";
-import { customerMessage } from "@/lib/customer-messages";
+import { customerErrorCode, customerMessage } from "@/lib/customer-messages";
 import styles from "./login-route.module.css";
 
 export function LoginRoute() {
@@ -26,11 +26,45 @@ export function LoginRoute() {
     setError(null);
     (async () => {
       if (next) { router.replace(next); return; }
-      if (await isPlatformAdmin(user.uid)) { if (!cancelled) router.replace("/admin"); return; }
-      const organizations = await listUserOrganizations(user.uid);
-      if (organizations.length) { if (!cancelled) router.replace("/organization"); return; }
-      const [access, assignments] = await Promise.all([listUserExperienceAccess(user.uid), listCreatorAssignments(user.uid)]);
-      if (!cancelled) router.replace(access.length ? "/memories" : assignments.length ? "/creator/deliverables" : "/create-account");
+
+      try {
+        if (await isPlatformAdmin(user.uid)) { if (!cancelled) router.replace("/admin"); return; }
+      } catch (cause) {
+        if (customerErrorCode(cause) !== "permission-denied") throw cause;
+      }
+
+      try {
+        const organizations = await listUserOrganizations(user.uid);
+        if (organizations.length) { if (!cancelled) router.replace("/organization"); return; }
+      } catch (cause) {
+        // A brand-new organization creator may be authenticated before the
+        // organization record exists. Route them to setup instead of treating
+        // that state as an authorization failure.
+        if (customerErrorCode(cause) === "permission-denied") {
+          if (!cancelled) router.replace("/create-account");
+          return;
+        }
+        throw cause;
+      }
+
+      const [accessResult, assignmentsResult] = await Promise.allSettled([
+        listUserExperienceAccess(user.uid),
+        listCreatorAssignments(user.uid)
+      ]);
+      if (accessResult.status === "fulfilled" && accessResult.value.length) {
+        if (!cancelled) router.replace("/memories");
+        return;
+      }
+      if (assignmentsResult.status === "fulfilled" && assignmentsResult.value.length) {
+        if (!cancelled) router.replace("/creator/deliverables");
+        return;
+      }
+      const unexpectedFailure = [accessResult, assignmentsResult]
+        .filter((result): result is PromiseRejectedResult => result.status === "rejected")
+        .map(result => result.reason)
+        .find(reason => customerErrorCode(reason) !== "permission-denied");
+      if (unexpectedFailure) throw unexpectedFailure;
+      if (!cancelled) router.replace("/create-account");
     })().catch(cause => { if (!cancelled) setError(customerMessage(cause, "We could not open your account. Please try again.")); });
     return () => { cancelled = true; };
   }, [user, next, retry, router]);
