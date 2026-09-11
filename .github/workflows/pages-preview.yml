@@ -50,7 +50,11 @@ jobs:
           echo "HALS_PREVIEW_PATH=${preview_path}" >> "$GITHUB_ENV"
           echo "PAGES_BASE_PATH=${base_path}" >> "$GITHUB_ENV"
 
+      # Production Firebase client configuration is public Web SDK configuration,
+      # but it must never be embedded into unreviewed PR JavaScript that shares
+      # the main GitHub Pages origin/session. Only trusted main/manual builds get it.
       - name: Load SongKeep Firebase web configuration
+        if: github.event_name != 'pull_request'
         shell: bash
         run: |
           set -euo pipefail
@@ -111,10 +115,11 @@ jobs:
           if [[ -n "${HALS_PREVIEW_PATH}" ]]; then
             echo "### Preview target" >> "$GITHUB_STEP_SUMMARY"
             echo "${root}/${HALS_PREVIEW_PATH}/" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Pull-request previews intentionally do not receive the production Firebase client configuration." >> "$GITHUB_STEP_SUMMARY"
           else
             echo "### Main Pages target" >> "$GITHUB_STEP_SUMMARY"
             echo "${root}/" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Firebase Web SDK configuration is loaded from the linked SongKeep Firebase Hosting app at build time, so account creation and sign-in can use the production Firebase client. Payments, messaging, storage fulfillment and other server-backed services remain separate deployment concerns." >> "$GITHUB_STEP_SUMMARY"
           fi
-
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Firebase Web SDK configuration is loaded from the linked SongKeep Firebase Hosting app at build time, so account creation and sign-in can use the production Firebase client. Payments, messaging, storage fulfillment and other server-backed services remain separate deployment concerns." >> "$GITHUB_STEP_SUMMARY"
