@@ -1,0 +1,1224 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F7F8FC">
+<title>SongKeep Customer Pipeline</title>
+<style>
+:root {
+  --ink:#141648; --muted:#62657A; --line:#E1E4F0; --canvas:#FFFFFF; --soft:#F7F8FC;
+  --indigo:#4858BE; --azure:#1572C6; --sky:#1C8BD3; --violet:#834AB4; --magenta:#D53FA3;
+  --focus:#0A84FF; --shadow:0 18px 55px rgba(20,22,72,.10);
+  --top:70px; --bottom:72px; --radius:20px;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue",Arial,sans-serif;
+  color-scheme:light dark;
+}
+.slide,[style*="--stage"]{--stage-foreground:color-mix(in srgb,var(--stage) 82%,black)}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;background:var(--soft);color:var(--ink);-webkit-font-smoothing:antialiased}
+body{overflow:hidden}
+button{font:inherit;color:inherit}
+button:focus-visible, [tabindex]:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+.skip-link{position:fixed;left:12px;top:-80px;z-index:1000;padding:12px 16px;border-radius:12px;background:#fff;color:#000;box-shadow:var(--shadow)}
+.skip-link:focus{top:12px}
+.topbar{
+ position:fixed;z-index:100;left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));
+ top:max(10px,env(safe-area-inset-top));height:56px;display:flex;align-items:center;gap:10px;padding:6px;
+ border:1px solid rgba(20,22,72,.08);border-radius:18px;background:rgba(255,255,255,.82);
+ -webkit-backdrop-filter:saturate(160%) blur(22px);backdrop-filter:saturate(160%) blur(22px);box-shadow:0 10px 30px rgba(20,22,72,.08)
+}
+.brand-title{display:flex;align-items:center;gap:10px;min-width:0;margin-right:auto}
+.brand-accent{width:30px;height:30px;border-radius:10px;background:linear-gradient(135deg,#D53FA3 0%,#834AB4 35%,#4858BE 62%,#1572C6 82%,#1C8BD3 100%);box-shadow:inset 0 1px rgba(255,255,255,.35)}
+.brand-copy{min-width:0}
+.brand-copy strong{display:block;font-size:14px;line-height:1.05}
+.brand-copy span{display:block;font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:34vw}
+.chrome-btn{min-height:44px;min-width:44px;border:0;border-radius:12px;background:transparent;color:var(--ink);display:flex;align-items:center;justify-content:center;gap:7px;padding:0 12px;font-weight:700;cursor:pointer}
+.chrome-btn:hover{background:rgba(72,88,190,.07)}
+.chrome-btn:active{background:rgba(72,88,190,.12)}
+.chrome-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.chrome-label{font-size:13px}
+.presentation{position:fixed;inset:0;padding-top:var(--top);padding-bottom:var(--bottom)}
+.slide{height:100%;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding:clamp(22px,4vw,58px) max(22px,calc((100vw - 1240px)/2));background:var(--soft)}
+.slide[hidden]{display:none!important}
+.slide-content{width:min(1180px,100%);min-height:100%;margin:0 auto;display:flex;flex-direction:column;justify-content:center}
+.home-content{justify-content:flex-start;padding-top:clamp(14px,3vh,36px);padding-bottom:24px}
+.home-hero{max-width:820px}
+.eyebrow,.stage-badge,.section-label,.market-label,.north-star>span{text-transform:uppercase;letter-spacing:.075em;font-size:12px;font-weight:800}
+.eyebrow{color:var(--muted);margin:0 0 8px}
+h1{font-size:clamp(38px,6.2vw,78px);line-height:.98;letter-spacing:-.045em;margin:0;color:var(--ink);font-weight:780}
+.gradient-word{background:linear-gradient(90deg,#141648 0%,#4858BE 45%,#1572C6 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lede{font-size:clamp(17px,2vw,24px);line-height:1.38;color:var(--muted);max-width:900px;margin:18px 0 0}
+.market-band{margin:clamp(24px,4vh,44px) 0 18px;padding:13px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;gap:18px;align-items:baseline;color:var(--muted);font-size:14px}
+.market-label{color:var(--ink);white-space:nowrap}
+.pipeline{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px}
+.stage-choice{min-height:150px;border:1px solid var(--line);border-radius:18px;background:var(--canvas);padding:15px;text-align:left;display:flex;flex-direction:column;justify-content:space-between;gap:12px;cursor:pointer;position:relative;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.stage-choice:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(20,22,72,.09);border-color:color-mix(in srgb,var(--stage) 35%,var(--line))}
+.choice-leading{display:flex;align-items:center;justify-content:space-between}
+.choice-number{width:30px;height:30px;border-radius:10px;background:color-mix(in srgb,var(--stage) 11%,white);color:var(--stage-foreground,var(--stage));display:grid;place-items:center;font-weight:850}
+.stage-icon{width:31px;height:31px;fill:none;stroke:var(--stage-foreground,var(--stage));stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.choice-copy strong{display:block;font-size:16px;line-height:1.15;letter-spacing:-.015em}
+.choice-copy small{display:block;margin-top:7px;color:var(--muted);font-size:10px;line-height:1.25;font-weight:700}
+.choice-chevron{position:absolute;right:13px;bottom:10px;color:var(--stage-foreground,var(--stage));font-size:22px}
+.loop-note{margin-top:18px;display:flex;align-items:flex-start;gap:12px;padding:16px 0;color:var(--muted);max-width:900px}
+.loop-note p{margin:0;line-height:1.45}
+.loop-note strong{color:var(--ink)}
+.loop-glyph{width:32px;height:32px;border-radius:50%;flex:0 0 auto;display:grid;place-items:center;background:linear-gradient(135deg,#D53FA3,#1572C6);color:white;font-weight:900}
+.stage-heading{max-width:960px}
+.stage-heading.compact h1{font-size:clamp(34px,5vw,64px)}
+.stage-badge{display:inline-flex;min-height:30px;align-items:center;border-radius:9px;padding:0 10px;background:color-mix(in srgb,var(--stage) 10%,white);color:var(--stage-foreground,var(--stage));margin-bottom:16px}
+.stage-badge.neutral{background:#EDEEF7;color:var(--ink)}
+.overview{display:grid;grid-template-columns:1.15fr .85fr;gap:clamp(28px,6vw,80px);margin-top:clamp(38px,6vh,70px);align-items:start}
+.section-label{margin:0 0 16px;color:var(--muted)}
+.mindset blockquote{font-family:Georgia,"Times New Roman",serif;font-size:clamp(27px,3.6vw,46px);line-height:1.14;letter-spacing:-.025em;margin:0;color:var(--ink)}
+.outcome-line{margin-top:30px;padding-top:18px;border-top:1px solid var(--line);display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.outcome-line span{color:var(--muted);font-size:14px}
+.outcome-line strong{color:var(--stage-foreground,var(--stage));font-size:16px;letter-spacing:.02em}
+.metrics ul{list-style:none;padding:0;margin:0}
+.metrics li{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--line);font-size:17px;line-height:1.34}
+.metric-mark{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto;background:color-mix(in srgb,var(--stage) 10%,white);color:var(--stage-foreground,var(--stage));font-size:12px;font-weight:900}
+.offer-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:32px}
+.offer{padding:18px 0;border-top:2px solid color-mix(in srgb,var(--stage) 32%,var(--line));display:flex;flex-direction:column;gap:5px}
+.offer strong{font-size:28px;color:var(--stage-foreground,var(--stage))}
+.offer span{font-weight:800}
+.offer small{color:var(--muted);line-height:1.35}
+.activity-list,.capability-list{list-style:none;padding:0;margin:clamp(30px,4.6vh,52px) 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:clamp(28px,5vw,70px);row-gap:0}
+.activity,.capability{display:grid;grid-template-columns:38px 1fr;gap:13px;padding:15px 0;border-top:1px solid var(--line)}
+.activity-number{width:30px;height:30px;border-radius:10px;background:color-mix(in srgb,var(--stage) 10%,white);color:var(--stage-foreground,var(--stage));display:grid;place-items:center;font-weight:850;font-size:13px}
+.activity strong,.capability strong{font-size:16px;line-height:1.25}
+.activity p,.capability p{margin:5px 0 0;color:var(--muted);font-size:14px;line-height:1.42}
+.capability-symbol{width:30px;height:30px;display:grid;place-items:center;color:var(--stage-foreground,var(--stage));font-size:13px}
+.gate-flow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:9px;margin-top:clamp(38px,6vh,70px)}
+.gate-node{border:0;border-top:3px solid var(--stage);background:transparent;text-align:left;padding:15px 7px 12px;cursor:pointer;min-height:122px}
+.gate-node span{display:grid;place-items:center;width:30px;height:30px;border-radius:10px;background:color-mix(in srgb,var(--stage) 10%,white);color:var(--stage-foreground,var(--stage));font-weight:850;margin-bottom:12px}
+.gate-node strong{display:block;font-size:14px;line-height:1.18}
+.gate-node small{display:block;color:var(--muted);font-size:10px;line-height:1.25;margin-top:7px;font-weight:700}
+.principles{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.principles strong{display:block;font-size:17px}
+.principles span{display:block;color:var(--muted);font-size:13px;margin-top:4px}
+.growth-content{justify-content:center}
+.growth-diagram{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:18px;align-items:center;margin-top:clamp(42px,7vh,76px)}
+.growth-node{min-height:160px;padding:22px 0;border-top:3px solid var(--indigo)}
+.growth-node span{width:36px;height:36px;border-radius:12px;background:#EDEEF7;display:grid;place-items:center;font-weight:850;color:var(--indigo)}
+.growth-node strong{display:block;font-size:24px;margin-top:18px}
+.growth-node small{display:block;margin-top:7px;color:var(--muted);line-height:1.4}
+.growth-arrow{font-size:30px;color:var(--muted)}
+.north-star{margin-top:34px;padding:22px 0;border-top:1px solid var(--line)}
+.north-star>span{color:var(--muted)}
+.north-star>strong{display:block;margin-top:7px;font-size:clamp(27px,4vw,46px);letter-spacing:-.025em}
+.north-star p{margin:10px 0 0;color:var(--muted);max-width:820px;line-height:1.45}
+.bottom-bar{
+ position:fixed;z-index:100;left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom));
+ min-height:54px;border:1px solid rgba(20,22,72,.08);border-radius:18px;background:rgba(255,255,255,.86);
+ -webkit-backdrop-filter:saturate(160%) blur(22px);backdrop-filter:saturate(160%) blur(22px);box-shadow:0 -8px 28px rgba(20,22,72,.06);
+ display:grid;grid-template-columns:120px 1fr 120px;align-items:center;padding:5px 6px
+}
+.nav-step{min-height:44px;border:0;border-radius:12px;background:transparent;color:var(--ink);display:flex;align-items:center;justify-content:center;gap:7px;font-weight:800;cursor:pointer}
+.nav-step:hover{background:rgba(72,88,190,.07)}
+.nav-step:disabled{opacity:.35;cursor:default}
+.progress-wrap{display:flex;align-items:center;justify-content:center;gap:12px;min-width:0;padding:0 10px}
+.progress-track{height:5px;background:#E8EAF3;border-radius:99px;overflow:hidden;width:min(32vw,360px)}
+.progress-fill{height:100%;width:0;background:linear-gradient(90deg,#D53FA3,#834AB4,#1572C6);border-radius:99px;transition:width .24s ease}
+.progress-text{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+#stageDialog{border:0;border-radius:22px;padding:0;width:min(520px,calc(100vw - 32px));max-height:min(78vh,680px);background:var(--canvas);color:var(--ink);box-shadow:0 28px 90px rgba(20,22,72,.26)}
+#stageDialog::backdrop{background:rgba(20,22,72,.28);-webkit-backdrop-filter:blur(5px);backdrop-filter:blur(5px)}
+.dialog-head{display:flex;align-items:center;justify-content:space-between;padding:18px 18px 10px}
+.dialog-head h2{margin:0;font-size:24px;letter-spacing:-.025em}
+.close-btn{width:44px;height:44px;border:0;border-radius:14px;background:#F0F1F7;color:var(--ink);font-size:24px;cursor:pointer}
+.stage-menu{padding:4px 14px 18px}
+.menu-stage{width:100%;min-height:62px;border:0;border-top:1px solid var(--line);background:transparent;text-align:left;display:grid;grid-template-columns:42px 1fr 24px;gap:10px;align-items:center;cursor:pointer;padding:8px 4px}
+.menu-stage:hover{background:rgba(72,88,190,.05)}
+.menu-stage-number{width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--stage) 10%,white);color:var(--stage-foreground,var(--stage));display:grid;place-items:center;font-weight:850}
+.menu-stage strong{display:block;font-size:15px}
+.menu-stage small{display:block;color:var(--muted);font-size:11px;margin-top:3px;font-weight:700}
+.sr-status{position:fixed;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (max-width:980px){
+  .pipeline{grid-template-columns:repeat(4,1fr)}
+  .gate-flow{grid-template-columns:repeat(4,1fr)}
+  .slide{padding-left:28px;padding-right:28px}
+}
+@media (max-width:720px){
+  :root{--top:68px;--bottom:70px}
+  .topbar{left:8px;right:8px;top:max(7px,env(safe-area-inset-top));height:54px}
+  .brand-copy span{max-width:36vw}
+  .chrome-label.hide-small{display:none}
+  .slide{padding:24px 18px 30px}
+  .slide-content{justify-content:flex-start;padding-top:12px}
+  h1{font-size:clamp(35px,11vw,52px)}
+  .lede{font-size:17px}
+  .market-band{display:block;line-height:1.45}
+  .market-label{display:block;margin-bottom:5px}
+  .pipeline{grid-template-columns:1fr 1fr;gap:9px}
+  .stage-choice{min-height:126px;padding:13px}
+  .choice-copy strong{font-size:15px}
+  .overview{grid-template-columns:1fr;gap:30px;margin-top:34px}
+  .mindset blockquote{font-size:31px}
+  .offer-row{grid-template-columns:1fr}
+  .activity-list,.capability-list{grid-template-columns:1fr;margin-top:28px}
+  .activity,.capability{grid-template-columns:34px 1fr;padding:14px 0}
+  .gate-flow{grid-template-columns:1fr 1fr}
+  .gate-node{min-height:104px}
+  .principles{grid-template-columns:1fr;gap:14px}
+  .growth-diagram{grid-template-columns:1fr;gap:6px}
+  .growth-arrow{transform:rotate(90deg);text-align:center;font-size:24px}
+  .growth-node{min-height:auto;padding:16px 0}
+  .bottom-bar{left:8px;right:8px;bottom:max(7px,env(safe-area-inset-bottom));grid-template-columns:58px 1fr 58px}
+  .nav-step{font-size:0}
+  .nav-step span{font-size:24px}
+  .progress-track{width:min(40vw,220px)}
+}
+@media (max-width:420px){
+  .brand-copy span{display:none}
+  .pipeline{grid-template-columns:1fr}
+  .stage-choice{min-height:88px;display:grid;grid-template-columns:46px 1fr 22px;align-items:center;gap:8px}
+  .choice-leading{display:block}
+  .stage-icon{display:none}
+  .choice-chevron{position:static}
+  .loop-note{font-size:14px}
+  .gate-flow{grid-template-columns:1fr}
+  .gate-node{min-height:auto;display:grid;grid-template-columns:38px 1fr;column-gap:10px}
+  .gate-node span{grid-row:1 / span 2}
+}
+@media (prefers-reduced-motion:reduce){
+  *{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}
+@media (prefers-contrast:more){
+  :root{--line:#A7ABC2;--muted:#464A61}
+  .topbar,.bottom-bar{border-color:#7E839E;background:#fff}
+  .stage-choice{border-color:#9AA0BA}
+}
+@media (prefers-color-scheme:dark){
+  .slide,[style*="--stage"]{--stage-foreground:color-mix(in srgb,var(--stage) 44%,white)}
+  :root{--ink:#F4F5FA;--muted:#B6B9C9;--line:#343750;--canvas:#181A2D;--soft:#101223}
+  html,body{background:var(--soft);color:var(--ink)}
+  .topbar,.bottom-bar{background:rgba(24,26,45,.86);border-color:rgba(255,255,255,.08)}
+  .chrome-btn:hover,.nav-step:hover,.menu-stage:hover{background:rgba(255,255,255,.07)}
+  .stage-choice{background:var(--canvas)}
+  .gradient-word{background:linear-gradient(90deg,#F4F5FA 0%,#9DA6FF 46%,#64C8FF 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stage-badge,.choice-number,.metric-mark,.activity-number,.menu-stage-number,.gate-node span{background:color-mix(in srgb,var(--stage) 24%,#181A2D);color:var(--stage-foreground)}
+  .stage-badge.neutral,.growth-node span{background:#292C47;color:var(--ink)}
+  .close-btn{background:#292C47;color:var(--ink)}
+  #stageDialog{background:var(--canvas);color:var(--ink)}
+  .progress-track{background:#30334D}
+}
+</style>
+</head>
+<body>
+<a href="#slide-root" class="skip-link">Skip to presentation</a>
+
+<header class="topbar" aria-label="Presentation controls">
+  <div class="brand-title">
+    <span class="brand-accent" aria-hidden="true"></span>
+    <div class="brand-copy">
+      <strong>SongKeep customer pipeline</strong>
+      <span id="contextLabel">Pipeline overview</span>
+    </div>
+  </div>
+  <button class="chrome-btn" id="homeBtn" type="button" data-go="home" aria-label="Return to pipeline overview">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M9.5 20v-6h5v6"/></svg>
+    <span class="chrome-label hide-small">Pipeline</span>
+  </button>
+  <button class="chrome-btn" id="stageMenuBtn" type="button" aria-haspopup="dialog" aria-controls="stageDialog">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+    <span class="chrome-label hide-small">Stages</span>
+  </button>
+  <button class="chrome-btn" id="fullBtn" type="button" aria-label="Enter fullscreen">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5"/></svg>
+    <span class="chrome-label hide-small">Present</span>
+  </button>
+</header>
+
+<main class="presentation" id="slide-root">
+
+<section class="slide" id="home" data-stage="0" aria-labelledby="home-title" aria-hidden="false">
+  <div class="slide-content home-content">
+    <div class="home-hero">
+      <p class="eyebrow">SongKeep</p>
+      <h1 id="home-title"><span class="gradient-word">Customer Pipeline</span></h1>
+      <p class="lede">From organizational awareness to fanatical advocacy — one connected operating system.</p>
+    </div>
+    <div class="market-band" role="note" aria-label="Market opportunity">
+      <span class="market-label">Market opportunity</span>
+      <span>Senior living · businesses · nonprofits · faith communities · healthcare · schools · veterans · community groups</span>
+    </div>
+    <div class="pipeline" aria-label="Select a customer pipeline stage">
+
+      <button class="stage-choice" type="button" data-go="stage-1" style="--stage:#1572C6">
+        <span class="choice-leading"><span class="choice-number">1</span><svg viewBox="0 0 24 24" class="stage-icon" aria-hidden="true"><path d="M5 12h3l5-4v8l-5-4H5z"/><path d="M16 9.5c1.3 1.3 1.3 3.7 0 5"/><path d="M18.5 7c2.6 2.6 2.6 7.4 0 10"/></svg></span>
+        <span class="choice-copy"><strong>Awareness</strong><small>ENGAGED</small></span>
+        <span class="choice-chevron" aria-hidden="true">›</span>
+      </button>
+
+      <button class="stage-choice" type="button" data-go="stage-2" style="--stage:#2F6B4F">
+        <span class="choice-leading"><span class="choice-number">2</span><svg viewBox="0 0 24 24" class="stage-icon" aria-hidden="true"><circle cx="10.5" cy="10.5" r="5.5"/><path d="m15 15 4.5 4.5"/></svg></span>
+        <span class="choice-copy"><strong>Consideration</strong><small>DECISION READY</small></span>
+        <span class="choice-chevron" aria-hidden="true">›</span>
+      </button>
+
+      <button class="stage-choice" type="button" data-go="stage-3" style="--stage:#A55200">
+        <span class="choice-leading"><span class="choice-number">3</span><svg viewBox="0 0 24 24" class="stage-icon" aria-hidden="true"><path d="M6 8h12l-1 11H7L6 8Z"/><path d="M9 8a3 3 0 0 1 6 0"/><path d="M9 12h.01M15 12h.01"/></svg></span>
+        <span class="choice-copy"><strong>Booking &amp; Purchase</strong><small>BOOKED &amp; READY</small></span>
+        <span class="choice-chevron" aria-hidden="true">›</span>
+      </button>
+
+      <button class="stage-choice" type="button" data-go="stage-4" style="--stage:#6E4FB3">
+        <span class="choice-leading"><span class="choice-number">4</span><svg viewBox="0 0 24 24" class="stage-icon" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/></svg></span>
+        <span class="choice-copy"><strong>Story Capture</strong><small>STORY READY</small></span>
+        <span class="choice-chevron" aria-hidden="true">›</span>
+      </button>
+
+      <button class="stage-choice" type="button" data-go="stage-5" style="--stage:#007C91">
+        <span class="choice-leading"><span class="choice-number">5</span><svg viewBox="0 0 24 24" class="stage-icon" aria-hidden="true"><path d="M9 18V6l10-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="16" cy="16" r="3"/></svg></span>
+        <span class="choice-copy"><strong>Song Creation &amp; Delivery</strong><small>EXPERIENCE COMPLETE</small></span>
+        <span class="choice-chevron" aria-hidden="true">›</span>
+      </button>
+
+      <button class="stage-choice" type="button" data-go="stage-6" style="--stage:#006F78">
+        <span class="choice-leading"><span class="choice-number">6</span><svg viewBox="0 0 24 24" class="stage-icon" aria-hidden="true"><path d="M20 8.5c0 5-8 10.5-8 10.5S4 13.5 4 8.5A4.5 4.5 0 0 1 12 5a4.5 4.5 0 0 1 8 3.5Z"/></svg></span>
+        <span class="choice-copy"><strong>Loyalty</strong><small>RENEWAL / EXPANSION</small></span>
+        <span class="choice-chevron" aria-hidden="true">›</span>
+      </button>
+
+      <button class="stage-choice" type="button" data-go="stage-7" style="--stage:#141648">
+        <span class="choice-leading"><span class="choice-number">7</span><svg viewBox="0 0 24 24" class="stage-icon" aria-hidden="true"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c.6-4 2.8-6 6-6s5.4 2 6 6"/><path d="M14 15c3.2-.5 5.7 1.2 7 4"/></svg></span>
+        <span class="choice-copy"><strong>Advocacy</strong><small>ADVOCACY → AWARENESS</small></span>
+        <span class="choice-chevron" aria-hidden="true">›</span>
+      </button>
+
+    </div>
+    <div class="loop-note">
+      <span class="loop-glyph" aria-hidden="true">↺</span>
+      <p><strong>The pipeline is a loop.</strong> Exceptional delivery creates loyalty; loyalty creates advocacy; advocacy creates the next generation of organizational awareness.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="stage-1" data-stage="1" style="--stage:#1572C6" aria-labelledby="stage-1-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading">
+      <span class="stage-badge">Stage 1</span>
+      <h1 id="stage-1-title">Awareness</h1>
+      <p class="lede">Make the right organizations aware of SongKeep, understand the emotional promise, and intentionally explore whether it fits their people.</p>
+    </div>
+    <div class="overview">
+      <div class="mindset">
+        <p class="section-label">Customer mindset</p>
+        <blockquote>“Could this be meaningful for the people our organization serves?”</blockquote>
+        <div class="outcome-line">
+          <span>Stage outcome</span>
+          <strong>ENGAGED</strong>
+        </div>
+      </div>
+      <div class="metrics">
+        <p class="section-label">Key metrics</p>
+        <ul><li><span class="metric-mark" aria-hidden="true">✓</span>Reach &amp; qualified audience exposure</li><li><span class="metric-mark" aria-hidden="true">✓</span>Sample-song plays &amp; video completion</li><li><span class="metric-mark" aria-hidden="true">✓</span>Engaged visits &amp; return visits</li><li><span class="metric-mark" aria-hidden="true">✓</span>Cost per qualified organization opportunity</li></ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="slide" id="stage-1-actions" data-stage="1" style="--stage:#1572C6" aria-labelledby="stage-1-actions-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading compact">
+      <span class="stage-badge">Stage 1 · Awareness</span>
+      <h1 id="stage-1-actions-title">What actually happens</h1>
+      <p class="lede">The human and operational work SongKeep performs in this stage.</p>
+    </div>
+    <ol class="activity-list">
+        <li class="activity">
+          <span class="activity-number">1</span>
+          <div><strong>Define ideal audiences</strong><p>Prioritize organization types, decision roles, geography, use cases, and moments that fit SongKeep.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">2</span>
+          <div><strong>Lead with the human result</strong><p>Publish reaction moments, songs, stories, short-form video, and emotional proof rather than software features.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">3</span>
+          <div><strong>Make the music easy to hear</strong><p>Use sample songs and listening content as a primary awareness mechanism.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">4</span>
+          <div><strong>Show each organization its use case</strong><p>Tailor examples for senior living, businesses, nonprofits, faith communities, healthcare, schools, veterans, and community groups.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">5</span>
+          <div><strong>Create multiple paths to discovery</strong><p>Use organic and paid media, partnerships, events, PR, direct outreach, and advocate referrals.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">6</span>
+          <div><strong>Capture the signal</strong><p>Record source, campaign, referral, and engagement so Awareness hands off cleanly to Consideration.</p></div>
+        </li></ol>
+  </div>
+</section>
+
+<section class="slide" id="stage-1-platform" data-stage="1" style="--stage:#1572C6" aria-labelledby="stage-1-platform-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading compact">
+      <span class="stage-badge">Stage 1 · Awareness</span>
+      <h1 id="stage-1-platform-title">How the SongKeep platform supports it</h1>
+      <p class="lede">The platform supports the work without turning the pipeline stage itself into software.</p>
+    </div>
+    <ul class="capability-list">
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Public acquisition experience</strong><p>Organization-first homepage, use-case pages, campaign landing pages, and clear calls to explore SongKeep.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Permission-aware media</strong><p>Approved songs, stories, testimonials, images, and video publish only when the required permissions are active.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Campaign &amp; segment management</strong><p>Campaigns connect organization segments, channels, offers, and creative assets.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Source attribution</strong><p>UTM, event, partner, outreach, and advocate-source data follows the prospect through the pipeline.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Engagement analytics</strong><p>Song plays, video completion, CTA clicks, engaged visits, and repeat visits become meaningful intent signals.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Canonical inquiry handoff</strong><p>Identified interest becomes an organization Inquiry in the shared SongKeep operating system.</p></div>
+        </li></ul>
+  </div>
+</section>
+
+<section class="slide" id="stage-2" data-stage="2" style="--stage:#2F6B4F" aria-labelledby="stage-2-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading">
+      <span class="stage-badge">Stage 2</span>
+      <h1 id="stage-2-title">Consideration</h1>
+      <p class="lede">Turn an interested organization into a qualified, informed, decision-ready opportunity that trusts SongKeep and knows which experience fits.</p>
+    </div>
+    <div class="overview">
+      <div class="mindset">
+        <p class="section-label">Customer mindset</p>
+        <blockquote>“Would SongKeep work for us?”</blockquote>
+        <div class="outcome-line">
+          <span>Stage outcome</span>
+          <strong>DECISION READY</strong>
+        </div>
+      </div>
+      <div class="metrics">
+        <p class="section-label">Key metrics</p>
+        <ul><li><span class="metric-mark" aria-hidden="true">✓</span>Qualified inquiry rate</li><li><span class="metric-mark" aria-hidden="true">✓</span>Consultation booking &amp; show rate</li><li><span class="metric-mark" aria-hidden="true">✓</span>Proposal / quote acceptance</li><li><span class="metric-mark" aria-hidden="true">✓</span>Consideration → booking conversion</li></ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="slide" id="stage-2-actions" data-stage="2" style="--stage:#2F6B4F" aria-labelledby="stage-2-actions-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading compact">
+      <span class="stage-badge">Stage 2 · Consideration</span>
+      <h1 id="stage-2-actions-title">What actually happens</h1>
+      <p class="lede">The human and operational work SongKeep performs in this stage.</p>
+    </div>
+    <ol class="activity-list">
+        <li class="activity">
+          <span class="activity-number">1</span>
+          <div><strong>Demonstrate fit</strong><p>Explain the organizational value proposition and tailor examples to the buyer’s use case.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">2</span>
+          <div><strong>Provide credible proof</strong><p>Let prospects hear songs, see stories, review outcomes, and learn from testimonials and case studies.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">3</span>
+          <div><strong>Compare the offer ladder</strong><p>Clarify when the $200, $2,500, and $6,000 experiences are the right fit.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">4</span>
+          <div><strong>Qualify explicitly</strong><p>Confirm goal, audience, timing, location, budget/funding, authority, and important constraints.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">5</span>
+          <div><strong>Run the consultation</strong><p>Align decision-makers and stakeholders around scope, participants, timing, and the likely experience.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">6</span>
+          <div><strong>Resolve uncertainty</strong><p>Answer objections, recommend the best offer, provide a proposal when needed, and nurture buyers who are not ready yet.</p></div>
+        </li></ol>
+  </div>
+</section>
+
+<section class="slide" id="stage-2-platform" data-stage="2" style="--stage:#2F6B4F" aria-labelledby="stage-2-platform-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading compact">
+      <span class="stage-badge">Stage 2 · Consideration</span>
+      <h1 id="stage-2-platform-title">How the SongKeep platform supports it</h1>
+      <p class="lede">The platform supports the work without turning the pipeline stage itself into software.</p>
+    </div>
+    <ul class="capability-list">
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Proof library</strong><p>Sample songs, case studies, testimonials, use-case pages, and album examples are organized for fast decision-making.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>CRM-lite inquiry workspace</strong><p>Every inquiry has organization, contact, source, goals, status, notes, and next action.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Qualification checklist</strong><p>Staff see why an opportunity is qualified instead of relying on an opaque score.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Consultation scheduling</strong><p>Shared availability supports booking, preparation, notes, outcomes, and follow-up.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Stakeholder map</strong><p>Champion, signer, payer, program lead, and other decision roles are tracked against the opportunity.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Recommendation &amp; proposal</strong><p>Offer recommendation, rationale, scope, price, objections, proposal, and decision state remain connected.</p></div>
+        </li></ul>
+  </div>
+</section>
+
+<section class="slide" id="stage-3" data-stage="3" style="--stage:#A55200" aria-labelledby="stage-3-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading">
+      <span class="stage-badge">Stage 3</span>
+      <h1 id="stage-3-title">Booking &amp; Purchase</h1>
+      <p class="lede">Convert a qualified organization into a committed, paid or contractually approved customer and create the operating experience Stage 4 can begin delivering.</p>
+    </div>
+    <div class="overview">
+      <div class="mindset">
+        <p class="section-label">Customer mindset</p>
+        <blockquote>“We know what we want. Make it easy and trustworthy to commit.”</blockquote>
+        <div class="outcome-line">
+          <span>Stage outcome</span>
+          <strong>BOOKED &amp; READY</strong>
+        </div>
+      </div>
+      <div class="metrics">
+        <p class="section-label">Key metrics</p>
+        <ul><li><span class="metric-mark" aria-hidden="true">✓</span>Booking conversion rate</li><li><span class="metric-mark" aria-hidden="true">✓</span>Quote → book rate</li><li><span class="metric-mark" aria-hidden="true">✓</span>Payment / invoice completion</li><li><span class="metric-mark" aria-hidden="true">✓</span>Average initial purchase value</li></ul>
+      </div>
+    </div>
+    <div class="offer-row" aria-label="SongKeep offer ladder">
+            <div class="offer">
+              <strong>$200</strong>
+              <span>Single-Song Group Event</span>
+              <small>Shared group story → one song → presentation</small>
+            </div>
+            <div class="offer">
+              <strong>$2,500</strong>
+              <span>Honor a Life Song Experience</span>
+              <small>Named participants → interviews → up to 6 songs → concert</small>
+            </div>
+            <div class="offer">
+              <strong>$6,000</strong>
+              <span>SongKeep Legacy Album</span>
+              <small>Expanded story architecture → up to 10 songs → album → distribution / release</small>
+            </div></div>
+  </div>
+</section>
+
+<section class="slide" id="stage-3-actions" data-stage="3" style="--stage:#A55200" aria-labelledby="stage-3-actions-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading compact">
+      <span class="stage-badge">Stage 3 · Booking &amp; Purchase</span>
+      <h1 id="stage-3-actions-title">What actually happens</h1>
+      <p class="lede">The human and operational work SongKeep performs in this stage.</p>
+    </div>
+    <ol class="activity-list">
+        <li class="activity">
+          <span class="activity-number">1</span>
+          <div><strong>Select the experience</strong><p>Confirm the $200 group event, $2,500 full experience, or $6,000 Legacy Album.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">2</span>
+          <div><strong>Establish the organization</strong><p>Create or reuse the organization account and confirm the authorized buyer or signatory.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">3</span>
+          <div><strong>Confirm scope and capacity</strong><p>Lock location, participant model, deliverables, timing, and SongKeep capacity.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">4</span>
+          <div><strong>Execute agreements</strong><p>Complete service terms, privacy/media requirements, and album-specific release terms when applicable.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">5</span>
+          <div><strong>Complete the commercial step</strong><p>Collect payment or deposit, or establish an approved invoice/funding path.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">6</span>
+          <div><strong>Create the operating container</strong><p>Instantiate the correct Organization Experience, confirm next actions, and launch Stage 4.</p></div>
+        </li></ol>
+  </div>
+</section>
+
+<section class="slide" id="stage-3-platform" data-stage="3" style="--stage:#A55200" aria-labelledby="stage-3-platform-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading compact">
+      <span class="stage-badge">Stage 3 · Booking &amp; Purchase</span>
+      <h1 id="stage-3-platform-title">How the SongKeep platform supports it</h1>
+      <p class="lede">The platform supports the work without turning the pipeline stage itself into software.</p>
+    </div>
+    <ul class="capability-list">
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Canonical offer catalog</strong><p>$200 Single-Song Group Event, $2,500 Honor a Life Song Experience, and $6,000 SongKeep Legacy Album.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Organization identity</strong><p>Long-lived organization accounts retain contacts, agreements, purchases, experiences, and relationship history.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Package-aware scope builder</strong><p>Each offering captures the scope fields, deliverables, participant model, and readiness requirements it needs.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Availability &amp; capacity</strong><p>Dates and production commitments are checked against shared scheduling and delivery capacity.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Agreements &amp; rights</strong><p>Versioned agreements record signer, version, timestamp, and applicable rights.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Server-authoritative commerce</strong><p>Payments, invoices, receipts, exceptions, and booking state are authoritative before the experience is created.</p></div>
+        </li></ul>
+  </div>
+</section>
+
+<section class="slide" id="stage-4" data-stage="4" style="--stage:#6E4FB3" aria-labelledby="stage-4-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading">
+      <span class="stage-badge">Stage 4</span>
+      <h1 id="stage-4-title">Story Capture</h1>
+      <p class="lede">Capture the human story completely, accurately, respectfully, and with sufficient permission for the creative team to transform it into music.</p>
+    </div>
+    <div class="overview">
+      <div class="mindset">
+        <p class="section-label">Customer mindset</p>
+        <blockquote>“I trust SongKeep with something meaningful.”</blockquote>
+        <div class="outcome-line">
+          <span>Stage outcome</span>
+          <strong>STORY READY</strong>
+        </div>
+      </div>
+      <div class="metrics">
+        <p class="section-label">Key metrics</p>
+        <ul><li><span class="metric-mark" aria-hidden="true">✓</span>Consent readiness</li><li><span class="metric-mark" aria-hidden="true">✓</span>Interview / session completion</li><li><span class="metric-mark" aria-hidden="true">✓</span>Fact-verification completion</li><li><span class="metric-mark" aria-hidden="true">✓</span>Story-readiness cycle time</li></ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="slide" id="stage-4-actions" data-stage="4" style="--stage:#6E4FB3" aria-labelledby="stage-4-actions-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading compact">
+      <span class="stage-badge">Stage 4 · Story Capture</span>
+      <h1 id="stage-4-actions-title">What actually happens</h1>
+      <p class="lede">The human and operational work SongKeep performs in this stage.</p>
+    </div>
+    <ol class="activity-list">
+        <li class="activity">
+          <span class="activity-number">1</span>
+          <div><strong>Choose the capture model</strong><p>Use the right group, participant, family, and album-story structure for the purchased experience.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">2</span>
+          <div><strong>Establish participants &amp; contributors</strong><p>Identify the people involved, family/representatives, accommodations, and contribution roles.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">3</span>
+          <div><strong>Obtain granular permission</strong><p>Capture participation, recording, creative use, sharing, performance, photo/video, marketing, and testimonial scopes separately.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">4</span>
+          <div><strong>Prepare and schedule</strong><p>Offer simple prompts, accessibility support, and interview/story-session scheduling.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">5</span>
+          <div><strong>Conduct the human conversation</strong><p>Listen, probe, clarify people and relationships, identify themes, and capture the details that make the story true.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">6</span>
+          <div><strong>Gather and organize source material</strong><p>Collect authorized notes, audio, photos, documents, family input, facts, pronunciations, music preferences, and sensitive-content guidance.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">7</span>
+          <div><strong>Close gaps</strong><p>Resolve missing facts, unclear relationships, required family input, permissions, and follow-up conversations.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">8</span>
+          <div><strong>Review readiness</strong><p>Confirm the story is complete enough to hand to a creator without reconstructing the brief from scattered materials.</p></div>
+        </li></ol>
+  </div>
+</section>
+
+<section class="slide" id="stage-4-platform" data-stage="4" style="--stage:#6E4FB3" aria-labelledby="stage-4-platform-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading compact">
+      <span class="stage-badge">Stage 4 · Story Capture</span>
+      <h1 id="stage-4-platform-title">How the SongKeep platform supports it</h1>
+      <p class="lede">The platform supports the work without turning the pipeline stage itself into software.</p>
+    </div>
+    <ul class="capability-list">
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Participant workspace</strong><p>Experience rosters connect each participant to contacts, accessibility needs, participation status, and family relationships.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Granular consent engine</strong><p>Versioned permission scopes actively govern recording, creative use, family access, performance, public use, and retention.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Guided story preparation</strong><p>Prompts, life timeline, people, places, events, values, sayings, music preferences, and uploads support assisted preparation.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Shared scheduling</strong><p>Group sessions, individual interviews, family calls, follow-ups, and accessibility details use one scheduling boundary.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Story &amp; interview workspace</strong><p>Notes, source audio, contributions, themes, timeline, important people, facts, pronunciations, and sensitive flags remain traceable.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Story Ready gate</strong><p>Permissions, source material, verification, unresolved blockers, and creative readiness are evaluated before creator assignment.</p></div>
+        </li></ul>
+  </div>
+</section>
+
+<section class="slide" id="stage-5" data-stage="5" style="--stage:#007C91" aria-labelledby="stage-5-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading">
+      <span class="stage-badge">Stage 5</span>
+      <h1 id="stage-5-title">Song Creation &amp; Delivery</h1>
+      <p class="lede">Transform the captured story into an emotionally exceptional finished SongKeep experience, present it beautifully, and deliver it securely.</p>
+    </div>
+    <div class="overview">
+      <div class="mindset">
+        <p class="section-label">Customer mindset</p>
+        <blockquote>“This feels true to us — and extraordinary.”</blockquote>
+        <div class="outcome-line">
+          <span>Stage outcome</span>
+          <strong>EXPERIENCE COMPLETE</strong>
+        </div>
+      </div>
+      <div class="metrics">
+        <p class="section-label">Key metrics</p>
+        <ul><li><span class="metric-mark" aria-hidden="true">✓</span>Story ready → first draft</li><li><span class="metric-mark" aria-hidden="true">✓</span>Revision &amp; approval rate</li><li><span class="metric-mark" aria-hidden="true">✓</span>Quality-review pass rate</li><li><span class="metric-mark" aria-hidden="true">✓</span>Delivery completion &amp; delight</li></ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="slide" id="stage-5-actions" data-stage="5" style="--stage:#007C91" aria-labelledby="stage-5-actions-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading compact">
+      <span class="stage-badge">Stage 5 · Song Creation &amp; Delivery</span>
+      <h1 id="stage-5-actions-title">What actually happens</h1>
+      <p class="lede">The human and operational work SongKeep performs in this stage.</p>
+    </div>
+    <ol class="activity-list">
+        <li class="activity">
+          <span class="activity-number">1</span>
+          <div><strong>Create the creative brief</strong><p>Translate verified source material into a clear emotional idea, narrative arc, tone, musical direction, and boundaries.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">2</span>
+          <div><strong>Develop lyrics with version history</strong><p>Draft, refine, verify details, and preserve every reviewable version rather than overwriting one document.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">3</span>
+          <div><strong>Review, revise, approve</strong><p>Collect feedback from the right reviewer, track revision requests, and require authoritative approval before production.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">4</span>
+          <div><strong>Produce the music</strong><p>Move through composition, arrangement, recording, editing, mixing, and finalization with clear ownership and states.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">5</span>
+          <div><strong>Run quality review</strong><p>Verify lyric version, names, pronunciations, audio quality, metadata, assets, permissions, and presentation readiness.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">6</span>
+          <div><strong>Reveal the experience</strong><p>Coordinate the presentation, concert, or release moment — including run of show, accessibility, guests, and permitted media capture.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">7</span>
+          <div><strong>Deliver securely</strong><p>Provide entitled recipients with the final song, lyrics, approved story/media, album materials, and keepsakes.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">8</span>
+          <div><strong>Confirm completion</strong><p>Create the authoritative completion event that starts Loyalty and Advocacy timing.</p></div>
+        </li></ol>
+  </div>
+</section>
+
+<section class="slide" id="stage-5-platform" data-stage="5" style="--stage:#007C91" aria-labelledby="stage-5-platform-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading compact">
+      <span class="stage-badge">Stage 5 · Song Creation &amp; Delivery</span>
+      <h1 id="stage-5-platform-title">How the SongKeep platform supports it</h1>
+      <p class="lede">The platform supports the work without turning the pipeline stage itself into software.</p>
+    </div>
+    <ul class="capability-list">
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Creative workspace</strong><p>Source material, creative brief, lyrics, version comparison, customer feedback, approvals, production tasks, and media stay connected.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Production guardrails</strong><p>Approved lyrics gate production; tasks move through defined states with owners, deadlines, blockers, and quality review.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Media versioning</strong><p>Working files, final masters, lyric PDFs, artwork, video, delivery assets, and derivatives are governed media assets.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Event &amp; reveal support</strong><p>Venue, run of show, guests, accessibility, participant order, permissions, and event completion are managed from the experience.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Secure delivery</strong><p>Token or identity verification, entitlement, consent, asset authorization, time-bounded access, and download audit protect final materials.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Legacy Album release management</strong><p>Track sequencing, AI disclosure where applicable, human creative direction, rights, credits, artwork, metadata, distribution, and live links are managed as one release.</p></div>
+        </li></ul>
+  </div>
+</section>
+
+<section class="slide" id="stage-6" data-stage="6" style="--stage:#006F78" aria-labelledby="stage-6-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading">
+      <span class="stage-badge">Stage 6</span>
+      <h1 id="stage-6-title">Loyalty</h1>
+      <p class="lede">Keep customers in the SongKeep ecosystem, recognize the next meaningful need, and create the next purchase or institutional renewal.</p>
+    </div>
+    <div class="overview">
+      <div class="mindset">
+        <p class="section-label">Customer mindset</p>
+        <blockquote>“We trust the brand and would do this again.”</blockquote>
+        <div class="outcome-line">
+          <span>Stage outcome</span>
+          <strong>RENEWAL / EXPANSION</strong>
+        </div>
+      </div>
+      <div class="metrics">
+        <p class="section-label">Key metrics</p>
+        <ul><li><span class="metric-mark" aria-hidden="true">✓</span>Repeat purchase rate</li><li><span class="metric-mark" aria-hidden="true">✓</span>Renewal rate</li><li><span class="metric-mark" aria-hidden="true">✓</span>Time to second experience</li><li><span class="metric-mark" aria-hidden="true">✓</span>Customer lifetime value</li></ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="slide" id="stage-6-actions" data-stage="6" style="--stage:#006F78" aria-labelledby="stage-6-actions-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading compact">
+      <span class="stage-badge">Stage 6 · Loyalty</span>
+      <h1 id="stage-6-actions-title">What actually happens</h1>
+      <p class="lede">The human and operational work SongKeep performs in this stage.</p>
+    </div>
+    <ol class="activity-list">
+        <li class="activity">
+          <span class="activity-number">1</span>
+          <div><strong>Maintain the relationship</strong><p>Keep every past and future experience inside one persistent organization account.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">2</span>
+          <div><strong>Make the next step obvious</strong><p>Show past/upcoming experiences, a clear Plan Another action, and suggested future dates.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">3</span>
+          <div><strong>Orchestrate renewal</strong><p>Move completed experience → outcome review → next recommendation → dates → scope → booking.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">4</span>
+          <div><strong>Create recurring institutional value</strong><p>Support annual, quarterly, seasonal, cohort, multi-location, and sponsor-supported relationships.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">5</span>
+          <div><strong>Expand the relationship</strong><p>Recommend another experience, eligible post-experience products, upgrades, and related organizational opportunities.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">6</span>
+          <div><strong>Re-engage at meaningful moments</strong><p>Use post-delivery follow-up, anniversaries, seasonal planning cycles, and personalized nurture without overwhelming the customer.</p></div>
+        </li></ol>
+  </div>
+</section>
+
+<section class="slide" id="stage-6-platform" data-stage="6" style="--stage:#006F78" aria-labelledby="stage-6-platform-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading compact">
+      <span class="stage-badge">Stage 6 · Loyalty</span>
+      <h1 id="stage-6-platform-title">How the SongKeep platform supports it</h1>
+      <p class="lede">The platform supports the work without turning the pipeline stage itself into software.</p>
+    </div>
+    <ul class="capability-list">
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Persistent organization history</strong><p>Accounts retain completed work, upcoming experiences, materials, contacts, commercial history, and relationship context.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Renewal opportunities</strong><p>Next experience, suggested date, owner, expected value, likelihood, and renewal timing are tracked deliberately.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Nurture campaigns</strong><p>Completion, anniversary, planning-cycle, and interest triggers enroll customers into permission-aware sequences with suppressions.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Recommendation &amp; add-on commerce</strong><p>Eligible next experiences and post-experience products are recommended from actual history and rights.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Relationship expansion</strong><p>Related facilities, departments, locations, and parent organizations become new opportunities without losing attribution.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Loyalty analytics</strong><p>Repeat order rate, renewal rate, cohort retention, expansion revenue, time to second purchase, and CLV are measured consistently.</p></div>
+        </li></ul>
+  </div>
+</section>
+
+<section class="slide" id="stage-7" data-stage="7" style="--stage:#141648" aria-labelledby="stage-7-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading">
+      <span class="stage-badge">Stage 7</span>
+      <h1 id="stage-7-title">Advocacy</h1>
+      <p class="lede">Turn people who love SongKeep into active generators of new demand through referrals, introductions, reviews, testimonials, and shareable stories.</p>
+    </div>
+    <div class="overview">
+      <div class="mindset">
+        <p class="section-label">Customer mindset</p>
+        <blockquote>“I’m proud to share this — and bring others in.”</blockquote>
+        <div class="outcome-line">
+          <span>Stage outcome</span>
+          <strong>ADVOCACY → AWARENESS</strong>
+        </div>
+      </div>
+      <div class="metrics">
+        <p class="section-label">Key metrics</p>
+        <ul><li><span class="metric-mark" aria-hidden="true">✓</span>NPS / promoter %</li><li><span class="metric-mark" aria-hidden="true">✓</span>Referred leads &amp; bookings</li><li><span class="metric-mark" aria-hidden="true">✓</span>Referral conversion &amp; revenue</li><li><span class="metric-mark" aria-hidden="true">✓</span>Advocate-generated revenue %</li></ul>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="slide" id="stage-7-actions" data-stage="7" style="--stage:#141648" aria-labelledby="stage-7-actions-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading compact">
+      <span class="stage-badge">Stage 7 · Advocacy</span>
+      <h1 id="stage-7-actions-title">What actually happens</h1>
+      <p class="lede">The human and operational work SongKeep performs in this stage.</p>
+    </div>
+    <ol class="activity-list">
+        <li class="activity">
+          <span class="activity-number">1</span>
+          <div><strong>Measure satisfaction</strong><p>Ask NPS/CSAT after the experience and learn what was most meaningful or needs recovery.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">2</span>
+          <div><strong>Branch by behavior</strong><p>Route detractors to recovery, passives to light nurture, and promoters to an advocacy journey.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">3</span>
+          <div><strong>Ask for the next advocacy action</strong><p>Request a referral, warm introduction, testimonial, public review, or approved share.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">4</span>
+          <div><strong>Make advocacy easy</strong><p>Provide permissioned story cards, clips, quote graphics, captions, streaming links, and introduction flows.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">5</span>
+          <div><strong>Recognize successful advocacy</strong><p>Apply tasteful referral rewards or benefits only when the defined success event occurs.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">6</span>
+          <div><strong>Amplify authentic proof</strong><p>Turn approved testimonials, UGC, reviews, case studies, and releases into Awareness content.</p></div>
+        </li>
+        <li class="activity">
+          <span class="activity-number">7</span>
+          <div><strong>Attribute the outcome</strong><p>Carry referral identity from advocate → inquiry → organization → purchase → revenue.</p></div>
+        </li></ol>
+  </div>
+</section>
+
+<section class="slide" id="stage-7-platform" data-stage="7" style="--stage:#141648" aria-labelledby="stage-7-platform-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading compact">
+      <span class="stage-badge">Stage 7 · Advocacy</span>
+      <h1 id="stage-7-platform-title">How the SongKeep platform supports it</h1>
+      <p class="lede">The platform supports the work without turning the pipeline stage itself into software.</p>
+    </div>
+    <ul class="capability-list">
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Feedback &amp; promoter segmentation</strong><p>ExperienceFeedback records NPS/CSAT, comments, promoter state, and recovery status.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Service recovery</strong><p>Low scores create owned recovery tasks and suppress referral/testimonial asks until the issue is resolved.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Referral &amp; introduction engine</strong><p>Referral source, referred contact, relationship, status, introduction, booking, and revenue remain connected.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Rewards ledger</strong><p>Eligibility, benefit, award state, redemption, expiration, and fraud controls govern referral incentives.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Permission-aware advocacy kit</strong><p>Only approved songs, images, quotes, videos, testimonials, and release links can become shareable assets.</p></div>
+        </li>
+        <li class="capability">
+          <span class="capability-symbol" aria-hidden="true">●</span>
+          <div><strong>Growth attribution</strong><p>Reviews, referrals, testimonials, social shares, campaigns, and repeat experiences are tied to downstream pipeline and revenue.</p></div>
+        </li></ul>
+  </div>
+</section>
+
+<section class="slide" id="operating-system" data-stage="0" aria-labelledby="operating-title" hidden aria-hidden="true" inert>
+  <div class="slide-content">
+    <div class="stage-heading">
+      <span class="stage-badge neutral">Pipeline operating logic</span>
+      <h1 id="operating-title">Seven stages. Clear handoffs.</h1>
+      <p class="lede">Each stage has a distinct job, observable exit condition, and platform support. The platform connects the work; it does not replace the work.</p>
+    </div>
+    <div class="gate-flow">
+    <button class="gate-node" type="button" data-go="stage-1" style="--stage:#1572C6">
+      <span>1</span><strong>Awareness</strong><small>ENGAGED</small>
+    </button>
+    <button class="gate-node" type="button" data-go="stage-2" style="--stage:#2F6B4F">
+      <span>2</span><strong>Consideration</strong><small>DECISION READY</small>
+    </button>
+    <button class="gate-node" type="button" data-go="stage-3" style="--stage:#A55200">
+      <span>3</span><strong>Booking &amp; Purchase</strong><small>BOOKED &amp; READY</small>
+    </button>
+    <button class="gate-node" type="button" data-go="stage-4" style="--stage:#6E4FB3">
+      <span>4</span><strong>Story Capture</strong><small>STORY READY</small>
+    </button>
+    <button class="gate-node" type="button" data-go="stage-5" style="--stage:#007C91">
+      <span>5</span><strong>Song Creation &amp; Delivery</strong><small>EXPERIENCE COMPLETE</small>
+    </button>
+    <button class="gate-node" type="button" data-go="stage-6" style="--stage:#006F78">
+      <span>6</span><strong>Loyalty</strong><small>RENEWAL / EXPANSION</small>
+    </button>
+    <button class="gate-node" type="button" data-go="stage-7" style="--stage:#141648">
+      <span>7</span><strong>Advocacy</strong><small>ADVOCACY → AWARENESS</small>
+    </button></div>
+    <div class="principles">
+      <div><strong>Organization-first acquisition</strong><span>Stages 1–3</span></div>
+      <div><strong>Participant-centered delivery</strong><span>Stages 4–5</span></div>
+      <div><strong>Post-experience growth</strong><span>Stages 6–7</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" id="growth-loop" data-stage="0" aria-labelledby="growth-title" hidden aria-hidden="true" inert>
+  <div class="slide-content growth-content">
+    <div class="stage-heading">
+      <span class="stage-badge neutral">The growth loop</span>
+      <h1 id="growth-title">Stage 7 creates Stage 1.</h1>
+      <p class="lede">The most scalable Awareness assets are produced by remarkable experiences and the people who choose to advocate for them.</p>
+    </div>
+    <div class="growth-diagram" aria-label="Advocacy creates awareness and new revenue">
+      <div class="growth-node"><span>7</span><strong>Advocacy</strong><small>referrals · reviews · stories · introductions</small></div>
+      <span class="growth-arrow" aria-hidden="true">→</span>
+      <div class="growth-node"><span>1</span><strong>Awareness</strong><small>new organizations discover SongKeep</small></div>
+      <span class="growth-arrow" aria-hidden="true">→</span>
+      <div class="growth-node"><span>$</span><strong>New revenue</strong><small>attributed back to the advocate and source</small></div>
+    </div>
+    <div class="north-star">
+      <span>Executive north star</span>
+      <strong>Advocate-Generated Revenue %</strong>
+      <p>Revenue from new customers whose acquisition can be traced to an existing SongKeep customer, participant, family advocate, or partner.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="bottom-bar" aria-label="Slide navigation">
+  <button class="nav-step" id="prevBtn" type="button" aria-label="Previous slide"><span aria-hidden="true">‹</span> Previous</button>
+  <div class="progress-wrap">
+    <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="progressFill"></div></div>
+    <span class="progress-text" id="progressText">1 / 24</span>
+  </div>
+  <button class="nav-step" id="nextBtn" type="button" aria-label="Next slide">Next <span aria-hidden="true">›</span></button>
+</footer>
+
+<dialog id="stageDialog" aria-labelledby="stageDialogTitle">
+  <div class="dialog-head">
+    <h2 id="stageDialogTitle">Jump to a stage</h2>
+    <button class="close-btn" id="closeDialog" type="button" aria-label="Close stage menu">×</button>
+  </div>
+  <div class="stage-menu">
+    <button type="button" class="menu-stage" data-go="home">
+      <span class="menu-stage-number" style="--stage:#4858BE">⌂</span>
+      <span><strong>Pipeline overview</strong><small>Interactive seven-stage map</small></span>
+      <span aria-hidden="true">›</span>
+    </button>
+
+    <button type="button" class="menu-stage" data-go="stage-1">
+      <span class="menu-stage-number" style="--stage:#1572C6">1</span>
+      <span><strong>Awareness</strong><small>ENGAGED</small></span>
+      <span aria-hidden="true">›</span>
+    </button>
+    <button type="button" class="menu-stage" data-go="stage-2">
+      <span class="menu-stage-number" style="--stage:#2F6B4F">2</span>
+      <span><strong>Consideration</strong><small>DECISION READY</small></span>
+      <span aria-hidden="true">›</span>
+    </button>
+    <button type="button" class="menu-stage" data-go="stage-3">
+      <span class="menu-stage-number" style="--stage:#A55200">3</span>
+      <span><strong>Booking &amp; Purchase</strong><small>BOOKED &amp; READY</small></span>
+      <span aria-hidden="true">›</span>
+    </button>
+    <button type="button" class="menu-stage" data-go="stage-4">
+      <span class="menu-stage-number" style="--stage:#6E4FB3">4</span>
+      <span><strong>Story Capture</strong><small>STORY READY</small></span>
+      <span aria-hidden="true">›</span>
+    </button>
+    <button type="button" class="menu-stage" data-go="stage-5">
+      <span class="menu-stage-number" style="--stage:#007C91">5</span>
+      <span><strong>Song Creation &amp; Delivery</strong><small>EXPERIENCE COMPLETE</small></span>
+      <span aria-hidden="true">›</span>
+    </button>
+    <button type="button" class="menu-stage" data-go="stage-6">
+      <span class="menu-stage-number" style="--stage:#006F78">6</span>
+      <span><strong>Loyalty</strong><small>RENEWAL / EXPANSION</small></span>
+      <span aria-hidden="true">›</span>
+    </button>
+    <button type="button" class="menu-stage" data-go="stage-7">
+      <span class="menu-stage-number" style="--stage:#141648">7</span>
+      <span><strong>Advocacy</strong><small>ADVOCACY → AWARENESS</small></span>
+      <span aria-hidden="true">›</span>
+    </button>
+    <button type="button" class="menu-stage" data-go="operating-system">
+      <span class="menu-stage-number" style="--stage:#4858BE">→</span>
+      <span><strong>Operating logic</strong><small>Stage gates and handoffs</small></span>
+      <span aria-hidden="true">›</span>
+    </button>
+    <button type="button" class="menu-stage" data-go="growth-loop">
+      <span class="menu-stage-number" style="--stage:#D53FA3">↺</span>
+      <span><strong>Growth loop</strong><small>Advocacy creates Awareness</small></span>
+      <span aria-hidden="true">›</span>
+    </button>
+  </div>
+</dialog>
+
+<div class="sr-status" id="srStatus" aria-live="polite" aria-atomic="true"></div>
+
+<script>
+(() => {
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const prev = document.getElementById('prevBtn');
+  const next = document.getElementById('nextBtn');
+  const progress = document.getElementById('progressFill');
+  const progressText = document.getElementById('progressText');
+  const context = document.getElementById('contextLabel');
+  const status = document.getElementById('srStatus');
+  const dialog = document.getElementById('stageDialog');
+  let current = 0;
+
+  function getTitle(slide) {
+    const h = slide.querySelector('h1');
+    return h ? h.textContent.trim() : 'SongKeep customer pipeline';
+  }
+
+  function setSlide(index, pushHash = true, moveFocus = true) {
+    index = Math.max(0, Math.min(slides.length - 1, index));
+    slides.forEach((slide, i) => {
+      const active = i === index;
+      slide.hidden = !active;
+      slide.setAttribute('aria-hidden', String(!active));
+      if ('inert' in slide) slide.inert = !active;
+    });
+    current = index;
+    const active = slides[current];
+    active.scrollTop = 0;
+    prev.disabled = current === 0;
+    next.disabled = current === slides.length - 1;
+    progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+    progressText.textContent = `${current + 1} / ${slides.length}`;
+    const title = getTitle(active);
+    const stage = Number(active.dataset.stage || 0);
+    context.textContent = stage ? `Stage ${stage} · ${title}` : title;
+    status.textContent = `Slide ${current + 1} of ${slides.length}: ${title}`;
+    if (pushHash) history.replaceState(null, '', `#${active.id}`);
+    if (moveFocus) {
+      const heading = active.querySelector('h1');
+      if (heading) {
+        heading.setAttribute('tabindex','-1');
+        requestAnimationFrame(() => heading.focus({preventScroll:true}));
+      }
+    }
+  }
+
+  function goToId(id, focus=true) {
+    const index = slides.findIndex(s => s.id === id);
+    if (index >= 0) setSlide(index, true, focus);
+    if (dialog.open) dialog.close();
+  }
+
+  document.addEventListener('click', e => {
+    const go = e.target.closest('[data-go]');
+    if (go) goToId(go.dataset.go);
+  });
+  prev.addEventListener('click', () => setSlide(current - 1));
+  next.addEventListener('click', () => setSlide(current + 1));
+
+  document.getElementById('stageMenuBtn').addEventListener('click', () => dialog.showModal());
+  document.getElementById('closeDialog').addEventListener('click', () => dialog.close());
+  dialog.addEventListener('click', e => {
+    if (e.target === dialog) dialog.close();
+  });
+
+  document.getElementById('fullBtn').addEventListener('click', async () => {
+    try {
+      if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+      else await document.exitFullscreen();
+    } catch (_) {}
+  });
+  document.addEventListener('fullscreenchange', () => {
+    const b = document.getElementById('fullBtn');
+    b.setAttribute('aria-label', document.fullscreenElement ? 'Exit fullscreen' : 'Enter fullscreen');
+  });
+
+  document.addEventListener('keydown', e => {
+    if (dialog.open || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.target instanceof Element && e.target.closest('button,a,input,textarea,select,[contenteditable=true]')) return;
+    if (['ArrowRight','PageDown',' '].includes(e.key)) {
+      e.preventDefault(); setSlide(current + 1);
+    } else if (['ArrowLeft','PageUp'].includes(e.key)) {
+      e.preventDefault(); setSlide(current - 1);
+    } else if (e.key === 'Home') {
+      e.preventDefault(); setSlide(0);
+    } else if (e.key === 'End') {
+      e.preventDefault(); setSlide(slides.length - 1);
+    }
+  });
+
+  const initialId = location.hash.replace('#','');
+  const initial = slides.findIndex(s => s.id === initialId);
+  setSlide(initial >= 0 ? initial : 0, false, false);
+})();
+</script>
+</body>
+</html>
