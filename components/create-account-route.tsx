@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { listUserOrganizations } from "@/lib/firebase/organization-account";
-import { customerMessage } from "@/lib/customer-messages";
+import { customerErrorCode, customerMessage } from "@/lib/customer-messages";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "./auth-provider";
 import { SongKeepLockup } from "./brand";
@@ -31,8 +31,19 @@ export function CreateAccountRoute() {
     listUserOrganizations(user.uid).then(items => {
       if (cancelled) return;
       if (items.length || accessOnly) router.replace(next ?? "/organization");
-      else setChecking(false);
-    }).catch(cause => { if (!cancelled) { setError(customerMessage(cause)); setChecking(false); } });
+      else { setError(null); setChecking(false); }
+    }).catch(cause => {
+      if (cancelled) return;
+      // A signed-in person who has not completed organization provisioning is a
+      // first-time account creator, not an unauthorized organization member.
+      if (!accessOnly && customerErrorCode(cause) === "permission-denied") {
+        setError(null);
+        setChecking(false);
+        return;
+      }
+      setError(customerMessage(cause));
+      setChecking(false);
+    });
     return () => { cancelled = true; };
   }, [user, status, registering, addGroup, accessOnly, next, router]);
   async function complete({ organizationId }: AccountRegistrationResult) {
@@ -41,6 +52,18 @@ export function CreateAccountRoute() {
       router.replace(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
     } else router.replace(organizationId ? `/organization?org=${encodeURIComponent(organizationId)}` : "/memories");
   }
+  const title = accessOnly
+    ? "Create your sign-in."
+    : user
+      ? addGroup ? "Add another organization." : "Finish setting up your organization."
+      : "Who should SongKeep work with?";
+  const intro = accessOnly
+    ? "Use the email address that received your invitation."
+    : user
+      ? addGroup
+        ? "Create the organization account. You’ll be its administrator and can invite its team afterward."
+        : "Your sign-in is ready. Create the organization account to continue; you’ll be its administrator."
+      : "Create the account for your organization. You’ll be its administrator, and we’ll ask about the event next.";
   return <main className={styles.shell}>
     <section className={styles.story}>
       <Link href="/" className={styles.brand} aria-label="SongKeep home"><SongKeepLockup variant="full" inverse /></Link>
@@ -48,8 +71,8 @@ export function CreateAccountRoute() {
     </section>
     <section className={styles.formSide} aria-labelledby="create-account-title"><div className={styles.formInner}>
       <Link href="/" className={styles.formBrand} aria-label="SongKeep home"><SongKeepLockup variant="app" /></Link>
-      <p className={styles.kicker}>Your account</p><h2 id="create-account-title">{accessOnly ? "Create your sign-in." : user ? "Add your group." : "Who should SongKeep work with?"}</h2>
-      <p className={styles.intro}>{accessOnly ? "Use the email address that received your invitation." : "Set up your account now. We’ll ask about the event next."}</p>
+      <p className={styles.kicker}>Your account</p><h2 id="create-account-title">{title}</h2>
+      <p className={styles.intro}>{intro}</p>
       {offering ? <p className={styles.selectedOffer}><strong>{offering.name}</strong><span>{formatOfferingPrice(offering.priceCents)} · {offering.creativeOutput}</span><Link href="/services">Change experience</Link></p> : null}
       {error ? <p role="alert">{error}</p> : null}
       {checking && !registering ? <p role="status">Opening your account…</p> : <AccountRegistrationForm onBusyChange={setRegistering} onComplete={complete} accessOnly={accessOnly} offeringId={offering?.id} signInHref={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} />}
