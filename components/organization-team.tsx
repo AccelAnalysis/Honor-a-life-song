@@ -51,7 +51,7 @@ export function OrganizationTeam({ organizationId, members, canManage }: { organ
     {canManage ? <>
       <details className={styles.capturePanel}><summary>Invite a team member</summary><form onSubmit={invite}>
         <label><span>Email address</span><input required type="email" name="email" /></label>
-        <label><span>Access</span><select name="role" defaultValue="viewer"><option value="viewer">View only</option><option value="coordinator">Event coordinator</option><option value="organization_admin">Administrator</option></select></label>
+        <label><span id="team-invitation-access">Access</span><select name="role" aria-labelledby="team-invitation-access" defaultValue="viewer"><option value="viewer">View only</option><option value="coordinator">Event coordinator</option><option value="organization_admin">Administrator</option></select></label>
         <p>Administrators can book and manage billing. Coordinators can help plan events. View-only members can see shared account information.</p>
         <button type="submit" disabled={busy}>{busy ? "Creating…" : "Create invitation"}</button>
       </form></details>

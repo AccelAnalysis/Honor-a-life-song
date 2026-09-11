@@ -83,7 +83,7 @@ export function AccountRegistrationForm({ onComplete, accessOnly = false, offeri
       {!accessOnly ? <fieldset disabled={busy}>
         <legend>Your organization or group</legend>
         <label><span>Organization or group name</span><input required maxLength={160} name="organizationName" autoComplete="organization" /></label>
-        <label><span>Group type</span><select name="organizationKind" defaultValue="community_partner">{organizationKinds.map(kind => <option key={kind.value} value={kind.value}>{kind.label}</option>)}</select></label>
+        <label><span id="registration-group-type">Group type</span><select name="organizationKind" aria-labelledby="registration-group-type" defaultValue="community_partner">{organizationKinds.map(kind => <option key={kind.value} value={kind.value}>{kind.label}</option>)}</select></label>
         <details className={styles.optionalDetails}><summary>Add your role and phone number <small>Optional</small></summary>
           <div className={styles.optionalFields}>
             <label><span>Title or role</span><input name="contactTitle" maxLength={120} autoComplete="organization-title" /></label>
