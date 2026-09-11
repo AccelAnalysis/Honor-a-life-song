@@ -10,7 +10,7 @@ import type { ExperienceOfferingId } from "@/domain/experience";
 import type { OrganizationKind } from "@/domain/types";
 import { createOrganizationWithPrimaryContact } from "@/lib/firebase/customer-lifecycle";
 import { getFirebaseFirestore } from "@/lib/firebase/client";
-import { customerMessage } from "@/lib/customer-messages";
+import { customerErrorCode, customerMessage } from "@/lib/customer-messages";
 import styles from "./create-account-route.module.css";
 
 export type AccountRegistrationResult = { user: User; organizationId?: string };
@@ -52,9 +52,11 @@ export function AccountRegistrationForm({ onComplete, accessOnly = false, offeri
       setError("The passwords do not match."); formRef.current?.querySelector<HTMLInputElement>('[name="confirmPassword"]')?.focus(); return;
     }
     setBusy(true); onBusyChange?.(true); submitted.current = true; setError(null);
+    let signInReady = Boolean(user);
     try {
       const displayName = contactName(firstName, lastName);
       const accountUser = user ?? await createAccount({ firstName, lastName, email: value("email"), password });
+      signInReady = true;
       if (accessOnly) { await onComplete({ user: accountUser }); return; }
       attempt.current ??= crypto.randomUUID();
       const organizationId = await createOrganizationWithPrimaryContact({
@@ -65,7 +67,11 @@ export function AccountRegistrationForm({ onComplete, accessOnly = false, offeri
       });
       await onComplete({ user: accountUser, organizationId });
     } catch (cause) {
-      setError(customerMessage(cause, "Your sign-in may already be ready. Please retry to finish setting up your organization."));
+      if (!accessOnly && signInReady && customerErrorCode(cause) === "permission-denied") {
+        setError("Your sign-in is ready, but SongKeep could not finish creating your organization. Choose Save & continue to try again.");
+      } else {
+        setError(customerMessage(cause, "Your sign-in may already be ready. Please retry to finish setting up your organization."));
+      }
     } finally { setBusy(false); onBusyChange?.(false); }
   }
 
@@ -82,6 +88,7 @@ export function AccountRegistrationForm({ onComplete, accessOnly = false, offeri
       </fieldset>
       {!accessOnly ? <fieldset disabled={busy}>
         <legend>Your organization or group</legend>
+        <small>You’ll start as this organization’s account administrator and can invite your team after setup.</small>
         <label><span>Organization or group name</span><input required maxLength={160} name="organizationName" autoComplete="organization" /></label>
         <label><span id="registration-group-type">Group type</span><select name="organizationKind" aria-labelledby="registration-group-type" defaultValue="community_partner">{organizationKinds.map(kind => <option key={kind.value} value={kind.value}>{kind.label}</option>)}</select></label>
         <details className={styles.optionalDetails}><summary>Add your role and phone number <small>Optional</small></summary>
@@ -101,7 +108,7 @@ export function AccountRegistrationForm({ onComplete, accessOnly = false, offeri
       </fieldset> : null}
       {error ? <p className={styles.error} role="alert">{error}</p> : null}
       {configurationError ? <p className={styles.error} role="status">{configurationError}</p> : null}
-      <button type="submit" disabled={busy || status === "unavailable" || status === "loading"}>{busy ? "Creating your account…" : user ? "Save & continue" : "Create account & continue"}</button>
+      <button type="submit" disabled={busy || status === "unavailable" || status === "loading"}>{busy ? (user ? "Creating your organization…" : "Creating your account…") : user ? "Save & continue" : "Create account & continue"}</button>
     </form>
     {!user ? <p className={styles.signIn}>Already have an account? {onSignIn ? <button type="button" onClick={onSignIn}>Sign in</button> : <Link href={signInHref}>Sign in</Link>}</p> : null}
   </>;
