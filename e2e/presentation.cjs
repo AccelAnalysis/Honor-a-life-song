@@ -50,18 +50,21 @@ async function verifySlide(id){
     const ids=await page.locator('.slide').evaluateAll(slides=>slides.map(s=>s.id));assert.equal(ids.length,24);assert.equal(new Set(ids).size,24);
     for(let i=0;i<ids.length;i++) {
      await verifySlide(ids[i]);
+     // Wait for the intentional animation-frame focus handoff before sending another key.
+     if(i>0) await expect(page.locator('.slide:not([hidden]) h1')).toBeFocused();
      if(ids[i]==='home'||ids[i]==='stage-7') await page.screenshot({path:path.join(output,`${label}-${ids[i]}.png`),fullPage:true});
      if(i<ids.length-1) await page.locator('#nextBtn').click();
     }
     await expect(page.locator('#nextBtn')).toBeDisabled();await expect(page.locator('#progressText')).toHaveText('24 / 24');
    });
    await check(`${label}: native keyboard controls, menu and touch targets`,async()=>{
-    await page.locator('#homeBtn').focus();await page.keyboard.press('Space');await verifySlide('home');
+    await page.locator('#homeBtn').focus();await expect(page.locator('#homeBtn')).toBeFocused();await page.keyboard.press('Space');await verifySlide('home');
+    await expect(page.locator('#home h1')).toBeFocused();
     await page.locator('#stageMenuBtn').click();await expect(page.locator('#stageDialog')).toBeVisible();
     const contrast=await contrastReport(page);assert(contrast.every(item=>item.ratio>=4.5),JSON.stringify(contrast.filter(item=>item.ratio<4.5)));
     await page.locator('#stageDialog [data-go="stage-7"]').click();await verifySlide('stage-7');
     await expect(page.locator('#stage-7 h1')).toBeFocused();await page.keyboard.press('ArrowRight');await verifySlide('stage-7-actions');
-    await page.keyboard.press('Home');await verifySlide('home');
+    await expect(page.locator('#stage-7-actions h1')).toBeFocused();await page.keyboard.press('Home');await verifySlide('home');await expect(page.locator('#home h1')).toBeFocused();
     await page.locator('#stageMenuBtn').click();await page.keyboard.press('Escape');await expect(page.locator('#stageDialog')).not.toBeVisible();await expect(page.locator('#stageMenuBtn')).toBeFocused();
     const small=await page.locator('button:visible').evaluateAll(buttons=>buttons.filter(button=>{const r=button.getBoundingClientRect();return r.width<44||r.height<44;}).map(button=>button.id||button.textContent.trim()));assert.deepEqual(small,[]);
     assert(await page.locator('#progressFill').evaluate(el=>parseFloat(getComputedStyle(el).transitionDuration)<.01));
