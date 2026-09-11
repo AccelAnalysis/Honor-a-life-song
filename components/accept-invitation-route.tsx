@@ -1,5 +1,8 @@
 "use client";
 
+import { organizationRoleLabel } from "@/domain/organization-roles";
+import { customerMessage } from "@/lib/customer-messages";
+
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -25,7 +28,7 @@ export function AcceptInvitationRoute() {
     getOrganizationInvitation(organizationId, invitationId)
       .then((nextInvitation) => { if (!cancelled) setInvitation(nextInvitation); })
       .catch((loadError) => {
-        if (!cancelled) setError(loadError instanceof Error ? loadError.message : "We could not open this invitation.");
+        if (!cancelled) setError(customerMessage(loadError, "We could not open this invitation."));
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -46,7 +49,7 @@ export function AcceptInvitationRoute() {
       });
       router.push(`/organization?org=${organizationId}`);
     } catch (acceptError) {
-      setError(acceptError instanceof Error ? acceptError.message : "We could not accept this invitation.");
+      setError(customerMessage(acceptError, "We could not accept this invitation."));
       setLoading(false);
     }
   }
@@ -71,7 +74,7 @@ export function AcceptInvitationRoute() {
   return <main className="centeredPage"><section className="authCard">
     <p className="eyebrow">Team invitation</p>
     <h1>Join your organization.</h1>
-    {invitation ? <p>{invitation.role.replaceAll("_", " ")}</p> : null}
+    {invitation ? <p>{organizationRoleLabel(invitation.role)}</p> : null}
     {error ? <p role="alert">{error}</p> : null}
     {invitation?.status === "pending" ? <button type="button" onClick={accept} disabled={loading}>{loading ? "Joining…" : "Join"}</button> : null}
     {invitation?.status === "accepted" ? <Link href={`/organization?org=${organizationId}`}>Open SongKeep</Link> : null}

@@ -1,5 +1,7 @@
 "use client";
 
+import { customerMessage } from "@/lib/customer-messages";
+
 import Link from "next/link";
 import { AuthorizedAsset } from "@/components/authorized-asset";
 import { useSearchParams } from "next/navigation";
@@ -126,7 +128,7 @@ export function OrganizationWorkspace({ sectionId }: OrganizationWorkspaceProps)
       setSuggestedDates(detail[3]);
       setAssets(detail[4]);
     })().catch((loadError) => {
-      if (!cancelled) setError(loadError instanceof Error ? loadError.message : "We could not open this account.");
+      if (!cancelled) setError(customerMessage(loadError, "We could not open this account."));
     }).finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [requestedOrganizationId, status, user]);
@@ -150,7 +152,7 @@ export function OrganizationWorkspace({ sectionId }: OrganizationWorkspaceProps)
       setEntitlements(nextEntitlements);
       setAccessInvitations(nextInvitations);
     }).catch((loadError) => {
-      if (!cancelled) setError(loadError instanceof Error ? loadError.message : "We could not open this experience.");
+      if (!cancelled) setError(customerMessage(loadError, "We could not open this experience."));
     }).finally(() => { if (!cancelled) setExperienceLoading(false); });
     return () => { cancelled = true; };
   }, [canManageExperience, selectedExperience, selectedOrganization]);
@@ -206,7 +208,7 @@ export function OrganizationWorkspace({ sectionId }: OrganizationWorkspaceProps)
       setInviteLink(`${window.location.origin}/accept-invitation?org=${selectedOrganization.id}&id=${invitation.id}`);
       event.currentTarget.reset();
     } catch (inviteError) {
-      setError(inviteError instanceof Error ? inviteError.message : "We could not create the invitation.");
+      setError(customerMessage(inviteError, "We could not create the invitation."));
     } finally {
       setBusyAction(null);
     }
@@ -230,7 +232,7 @@ export function OrganizationWorkspace({ sectionId }: OrganizationWorkspaceProps)
       setSigningAgreementId(null);
       await refreshOrganization();
     } catch (signatureError) {
-      setError(signatureError instanceof Error ? signatureError.message : "We could not save this signature.");
+      setError(customerMessage(signatureError, "We could not save this signature."));
     } finally {
       setBusyAction(null);
     }
@@ -244,7 +246,7 @@ export function OrganizationWorkspace({ sectionId }: OrganizationWorkspaceProps)
       await expressInterestInSuggestedDate(selectedOrganization.id, suggestionId);
       await refreshOrganization();
     } catch (dateError) {
-      setError(dateError instanceof Error ? dateError.message : "We could not save your interest.");
+      setError(customerMessage(dateError, "We could not save your interest."));
     } finally {
       setBusyAction(null);
     }
@@ -267,7 +269,7 @@ export function OrganizationWorkspace({ sectionId }: OrganizationWorkspaceProps)
       event.currentTarget.reset();
       await refreshExperience();
     } catch (participantError) {
-      setError(participantError instanceof Error ? participantError.message : "We could not add the participant.");
+      setError(customerMessage(participantError, "We could not add the participant."));
     } finally {
       setBusyAction(null);
     }
@@ -294,7 +296,7 @@ export function OrganizationWorkspace({ sectionId }: OrganizationWorkspaceProps)
       setAccessLink(`${window.location.origin}/claim?org=${selectedOrganization.id}&experience=${selectedExperience.id}&id=${invitation.id}`);
       await refreshExperience();
     } catch (shareError) {
-      setError(shareError instanceof Error ? shareError.message : "We could not create private access.");
+      setError(customerMessage(shareError, "We could not create private access."));
     } finally {
       setBusyAction(null);
     }

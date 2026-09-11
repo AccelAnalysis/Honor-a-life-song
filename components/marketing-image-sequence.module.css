@@ -1,0 +1,13 @@
+.sequence { isolation: isolate; overflow: hidden; background-color: #252651; }
+.photos { position: absolute; inset: 0; }
+.photos img { object-fit: cover; transition: opacity 1600ms ease-in-out; }
+.active { opacity: 1; }
+.inactive { opacity: 0; }
+.overlay, .softOverlay { position: absolute; inset: 0; pointer-events: none; }
+.overlay { background: linear-gradient(90deg, rgba(20,22,72,.88), rgba(20,22,72,.56) 47%, rgba(20,22,72,.15)), linear-gradient(0deg, rgba(20,22,72,.38), transparent 60%); }
+.softOverlay { background: linear-gradient(0deg, rgba(20,22,72,.45), transparent 55%); }
+.credit { position: absolute; bottom: 1rem; left: 1.25rem; color: #fff; font-size: .66rem; text-shadow: 0 1px 3px #111; z-index: 2; max-width: calc(100% - 145px); }
+.pause { position: absolute; bottom: .6rem; right: 1rem; z-index: 3; min-width: 100px; min-height: 44px; padding: .5rem .75rem; border: 1px solid #ffffff55; border-radius: 8px; background: #141648b8; color: white; font: inherit; font-size: .8rem; cursor: pointer; }
+.pause:focus-visible { outline: 3px solid white; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .photos img { transition: none; } }
+@media (max-width: 720px) { .overlay { background: linear-gradient(0deg, rgba(20,22,72,.94), rgba(20,22,72,.2) 90%); } }

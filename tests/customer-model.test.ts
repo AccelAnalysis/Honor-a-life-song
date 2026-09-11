@@ -38,7 +38,7 @@ describe("governing customer model", () => {
         buyer: "organization",
         templateKind: "full_program",
         participantMode: "named_roster",
-        creativeOutput: "Multiple participant songs",
+        creativeOutput: "Up to 6 songs",
         presentation: "Follow-up concert"
       }),
       expect.objectContaining({
@@ -64,7 +64,9 @@ describe("governing customer model", () => {
     expect(lifecycleDomain).toContain("OrganizationExperienceRequest");
     expect(lifecycleDomain).toContain("ParticipantPermissionInvitation");
     expect(lifecycleDomain).toContain("IndividualPurchaseRequest");
-    expect(accountCreation).toContain("The person and the organization remain separate");
+    expect(accountCreation).toContain("AccountRegistrationForm");
+    expect(lifecycleRepository).toContain("createOrganizationWithPrimaryContact");
+    expect(lifecycleRepository).toContain("transaction.set(organizationRef");
     expect(organizationDomain).toContain("experienceId: EntityId");
   });
 
@@ -92,7 +94,7 @@ describe("governing customer model", () => {
   });
 
   it("keeps public acquisition organization-facing across all three offers", () => {
-    expect(publicHome).toContain("SongKeep creates meaningful music experiences for the people your organization serves.");
+    expect(publicHome).toContain("Turn the stories of your family, community, or team into original songs to share and keep.");
     expect(publicHome).toContain("Three ways to begin");
     expect(publicHome).toContain("$200");
     expect(publicHome).toContain("$2,500");
@@ -102,7 +104,7 @@ describe("governing customer model", () => {
 
   it("turns accepted participant/family access into source-attributed individual commerce", () => {
     expect(memoriesHub).toContain("createIndividualPurchaseRequest");
-    expect(memoriesHub).toContain("Every purchase stays connected to the organization event");
+    expect(memoriesHub).toContain("Keepsakes from your experience");
     expect(lifecycleRepository).toContain('nativeAction<{ request: IndividualPurchaseRequest; checkoutUrl?: string }>("purchase"');
     expect(trustedLifecycle).toContain("accessId:input.accessId");
     expect(firestoreRules).toContain("validPurchaseRequestCreate");

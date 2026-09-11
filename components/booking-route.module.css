@@ -273,3 +273,13 @@
 @media (prefers-reduced-motion: reduce) {
   .shell, .shell *, .shell::before, .shell *::before, .shell::after, .shell *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
 }
+.accountBar { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; margin-top: .5rem; font-size: .875rem; }
+.accountBar a, .accountBar button, .textButton { min-height: 44px; display: inline-flex; align-items: center; border: 0; background: none; color: #1268b3; font: inherit; font-weight: 650; cursor: pointer; }
+.textButton { padding: .75rem; }
+.accountBar button:focus-visible, .textButton:focus-visible { outline: 3px solid #1572c6; outline-offset: 3px; }
+.field input, .field select { font-size: 1rem; }
+.content > h1:focus { outline: none; }
+.step > .primaryButton { margin-top: 1rem; }
+.step > .secondaryLink { margin: 1rem .5rem; }
+@media (max-width: 940px) { .storyPanel { display: none; } .content { margin-block: 0; } }
+@media (max-width: 620px) { .progress { grid-template-columns: repeat(4, minmax(0, 1fr)); overflow: visible; } .progress button { display: flex; flex-direction: column; align-items: flex-start; } .progress button small { font-size: .72rem; } }

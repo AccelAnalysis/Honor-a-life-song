@@ -1,4 +1,6 @@
 "use client";
+
+import { customerMessage } from "@/lib/customer-messages";
 import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/components/auth-provider";
@@ -37,7 +39,7 @@ export function CreatorDeliverySurface({ admin = false }: { admin?: boolean }) {
   useEffect(() => { load().catch(reason => setError(reason.message)); }, [load]);
   useEffect(() => { if (!organizationId) return; listOrganizationExperiences(organizationId).then(setExperiences).catch(reason => setError(reason.message)); }, [organizationId]);
   useEffect(() => { if (!organizationId || !experienceId) { setParticipants([]); return; } listExperienceParticipants(organizationId, experienceId).then(setParticipants).catch(reason => setError(reason.message)); }, [organizationId, experienceId]);
-  async function run(work: () => Promise<unknown>, message: string) { setBusy(true); setError(""); setNotice(""); try { await work(); await load(); setNotice(message); } catch (reason) { setError(reason instanceof Error ? reason.message : "Unable to complete this action."); } finally { setBusy(false); setProgress(null); } }
+  async function run(work: () => Promise<unknown>, message: string) { setBusy(true); setError(""); setNotice(""); try { await work(); await load(); setNotice(message); } catch (reason) { setError(customerMessage(reason, "Unable to complete this action.")); } finally { setBusy(false); setProgress(null); } }
   async function assign(event: FormEvent<HTMLFormElement>) { event.preventDefault(); const data = new FormData(event.currentTarget),person=people.find(item=>item.userId===val(data,"creator")),org=organizations.find(item=>item.id===organizationId),experience=experiences.find(item=>item.id===experienceId),participant=participants.find(item=>item.id===val(data,"participant")); if (!person || !org || !experience || !user) return;
     await run(() => createAdminCreatorAssignment({assignedUser:person,organizationId:org.id,organizationName:org.name,experienceId:experience.id,experienceTitle:experience.title,participantId:participant?.id,participantName:participant?.displayName,role:val(data,"role") as CreatorAssignmentRole,dueAt:val(data,"dueAt")||undefined,createdByUserId:user.uid}), "Assignment saved. The creator can now submit materials privately.");
   }

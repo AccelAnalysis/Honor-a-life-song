@@ -232,61 +232,15 @@ function accessInvitationFrom(organizationId: string, experienceId: string, data
   };
 }
 
-export async function ensureUserProfile(user: { uid: string; email: string | null; displayName: string | null }) {
+export async function ensureUserProfile(user: { uid: string; email: string | null; displayName: string | null; firstName?: string; lastName?: string }) {
   const db = getFirebaseFirestore();
   await setDoc(doc(db, "users", user.uid), {
     email: user.email ?? "",
-    displayName: user.displayName ?? user.email ?? "Honor a Life Song user",
+    ...(user.displayName ? { displayName: user.displayName } : {}),
+    ...(user.firstName ? { firstName: user.firstName } : {}),
+    ...(user.lastName ? { lastName: user.lastName } : {}),
     updatedAt: serverTimestamp()
   }, { merge: true });
-}
-
-export async function createOrganizationAccount(input: {
-  userId: string;
-  email: string;
-  displayName: string;
-  organizationName: string;
-  kind: OrganizationKind;
-}) {
-  if (!input.organizationName.trim()) throw new Error("Enter the organization name.");
-  const db = getFirebaseFirestore();
-  const existingOrganizations = await listUserOrganizations(input.userId);
-  if (existingOrganizations[0]) return existingOrganizations[0].id;
-
-  const organizationRef = doc(collection(db, "organizations"));
-  const memberRef = doc(db, "organizations", organizationRef.id, "members", input.userId);
-  const userOrganizationRef = doc(db, "users", input.userId, "organizations", organizationRef.id);
-  const userRef = doc(db, "users", input.userId);
-  const batch = writeBatch(db);
-
-  batch.set(organizationRef, {
-    name: input.organizationName.trim(),
-    kind: input.kind,
-    createdBy: input.userId,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp()
-  });
-  batch.set(memberRef, {
-    userId: input.userId,
-    email: input.email.toLowerCase(),
-    displayName: input.displayName,
-    role: "organization_admin",
-    status: "active",
-    joinedAt: serverTimestamp()
-  });
-  batch.set(userOrganizationRef, {
-    organizationId: organizationRef.id,
-    role: "organization_admin",
-    joinedAt: serverTimestamp()
-  });
-  batch.set(userRef, {
-    email: input.email.toLowerCase(),
-    displayName: input.displayName,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
-
-  await batch.commit();
-  return organizationRef.id;
 }
 
 export async function listUserOrganizations(userId: string): Promise<OrganizationAccount[]> {

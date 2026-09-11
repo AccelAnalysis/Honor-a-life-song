@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useAuth } from "./auth-provider";
 import { usePathname } from "next/navigation";
 import { publicNavigation, type PublicHierarchyItem } from "@/lib/public-navigation";
 
@@ -33,19 +34,20 @@ function TopLevelLinks({ pathname }: { pathname: string }) {
 
 export function PublicNavigation() {
   const pathname = usePathname();
+  const { user } = useAuth();
 
   return (
     <nav className="publicNav" aria-label="Public navigation">
       <div className="publicNavDesktop">
         <TopLevelLinks pathname={pathname} />
-        <Link className="button small secondary" href="/login">Sign in</Link>
+        <Link className="button small secondary" href="/login">{user ? "My account" : "Sign in"}</Link>
       </div>
 
       <details className="publicNavMobile">
         <summary>Menu</summary>
         <div className="publicMobilePanel">
           <TopLevelLinks pathname={pathname} />
-          <Link className="button small secondary" href="/login">Sign in</Link>
+          <Link className="button small secondary" href="/login">{user ? "My account" : "Sign in"}</Link>
         </div>
       </details>
     </nav>

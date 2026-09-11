@@ -1,5 +1,7 @@
 "use client";
 
+import { customerMessage } from "@/lib/customer-messages";
+
 import Link from "next/link";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { participantPermissionScopes } from "@/domain/booking";
@@ -94,7 +96,7 @@ export function AdminOrganizationSurface({ organizationId }: AdminOrganizationSu
     (organizationId
       ? loadDetail(organizationId).then((detail) => { if (!cancelled) applyDetail(detail); })
       : listAdminOrganizations().then((items) => { if (!cancelled) setOrganizations(items); }))
-      .catch((loadError) => { if (!cancelled) setError(loadError instanceof Error ? loadError.message : "Unable to load organization accounts."); })
+      .catch((loadError) => { if (!cancelled) setError(customerMessage(loadError, "Unable to load organization accounts.")); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [applyDetail, loadDetail, organizationId]);
@@ -107,7 +109,7 @@ export function AdminOrganizationSurface({ organizationId }: AdminOrganizationSu
     let cancelled = false;
     listExperienceParticipants(organizationId, selectedExperienceId)
       .then((items) => { if (!cancelled) setParticipants(items); })
-      .catch((loadError) => { if (!cancelled) setError(loadError instanceof Error ? loadError.message : "Unable to load participants."); });
+      .catch((loadError) => { if (!cancelled) setError(customerMessage(loadError, "Unable to load participants.")); });
     return () => { cancelled = true; };
   }, [organizationId, selectedExperienceId]);
 
@@ -138,7 +140,7 @@ export function AdminOrganizationSurface({ organizationId }: AdminOrganizationSu
       event.currentTarget.reset();
       await refreshDetail();
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : "Unable to create the experience.");
+      setError(customerMessage(actionError, "Unable to create the experience."));
     } finally {
       setBusy(null);
     }
@@ -161,7 +163,7 @@ export function AdminOrganizationSurface({ organizationId }: AdminOrganizationSu
       event.currentTarget.reset();
       await refreshParticipants();
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : "Unable to add the participant.");
+      setError(customerMessage(actionError, "Unable to add the participant."));
     } finally {
       setBusy(null);
     }
@@ -193,7 +195,7 @@ export function AdminOrganizationSurface({ organizationId }: AdminOrganizationSu
       event.currentTarget.reset();
       await refreshParticipants();
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : "Unable to record participant permission.");
+      setError(customerMessage(actionError, "Unable to record participant permission."));
     } finally {
       setBusy(null);
     }
@@ -217,7 +219,7 @@ export function AdminOrganizationSurface({ organizationId }: AdminOrganizationSu
       event.currentTarget.reset();
       await refreshDetail();
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : "Unable to create the agreement request.");
+      setError(customerMessage(actionError, "Unable to create the agreement request."));
     } finally {
       setBusy(null);
     }
@@ -238,7 +240,7 @@ export function AdminOrganizationSurface({ organizationId }: AdminOrganizationSu
       event.currentTarget.reset();
       await refreshDetail();
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : "Unable to suggest the date.");
+      setError(customerMessage(actionError, "Unable to suggest the date."));
     } finally {
       setBusy(null);
     }
@@ -264,7 +266,7 @@ export function AdminOrganizationSurface({ organizationId }: AdminOrganizationSu
       event.currentTarget.reset();
       await refreshDetail();
     } catch (actionError) {
-      setError(actionError instanceof Error ? actionError.message : "Unable to add the event material.");
+      setError(customerMessage(actionError, "Unable to add the event material."));
     } finally {
       setBusy(null);
     }
@@ -353,7 +355,7 @@ export function AdminOrganizationSurface({ organizationId }: AdminOrganizationSu
     </section>
 
     <section className={styles.section}>
-      <div className={styles.sectionHeading}><div><h3>Post-event materials &amp; entitlements</h3><p>Release organization materials separately from participant and designated-family materials. Participant access requires an active consent record with the needed scope.</p></div></div>
+      <div className={styles.sectionHeading}><div><h3>Post-event materials &amp; access</h3><p>Release organization materials separately from participant and designated-family materials. Participant access requires an active consent record with the needed scope.</p></div></div>
       <div className={styles.rows}>{assets.map((asset) => <div className={styles.row} key={asset.id}><div><strong>{asset.title}</strong><span>{titleize(asset.kind)} · {asset.organizationVisible ? "Organization visible" : "Participant delivery only"}</span></div><span>{titleize(asset.status)}</span></div>)}</div>
       {selectedExperienceId ? <details className={styles.actionPanel}><summary>Add material to the selected experience</summary><form onSubmit={handleAddAsset}>
         <label><span>Title</span><input required name="title" /></label>

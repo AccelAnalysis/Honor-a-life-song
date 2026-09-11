@@ -4,7 +4,7 @@ import { OrganizationRelationship } from "@/components/organization-relationship
 
 export const metadata: Metadata = {
   title: "Organization | SongKeep",
-  description: "Manage the ongoing SongKeep relationship for your organization."
+  description: "Your SongKeep events, songs, invoices, and team."
 };
 
 export default function OrganizationRelationshipPage() {

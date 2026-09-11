@@ -134,3 +134,12 @@
 @media (prefers-reduced-motion: reduce) {
   .shell, .shell *, .shell::before, .shell *::before, .shell::after, .shell *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }
+
+.form input, .form select { font-size: 1rem; }
+.form fieldset:disabled { opacity: .7; }
+.signIn button { border: 0; background: none; color: #1268b3; font: inherit; font-weight: 750; min-height: 44px; cursor: pointer; text-decoration: underline; }
+.signIn button:focus-visible { outline: 3px solid #1572c6; outline-offset: 3px; }
+.optionalDetails summary { gap: .5rem; flex-wrap: wrap; }
+.selectedOffer { display: grid; gap: .5rem; padding: 1rem 0; border-block: 1px solid #e3e6ef; margin-bottom: 2rem; }
+.selectedOffer a { min-height: 44px; display: flex; align-items: center; color: #1268b3; }
+@media (max-width: 900px) { .story { display: none; } }

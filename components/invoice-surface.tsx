@@ -1,5 +1,7 @@
 "use client";
 
+import { customerMessage } from "@/lib/customer-messages";
+
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
@@ -59,7 +61,7 @@ export function InvoiceSurface({ admin = false }: { admin?: boolean }) {
     if (authStatus !== "signed_in" || !user) { setLoading(false); return; }
     let active = true;
     setLoading(true);
-    load().catch(reason => { if (active) setError(reason instanceof Error ? reason.message : "Unable to open billing."); }).finally(() => { if (active) setLoading(false); });
+    load().catch(reason => { if (active) setError(customerMessage(reason, "Unable to open billing.")); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [authStatus, user, load]);
 
@@ -72,7 +74,7 @@ export function InvoiceSurface({ admin = false }: { admin?: boolean }) {
       setInvoice(current);
       if (current.commercial && !current.viewedAt && !admin) nativeAction("viewed", { organizationId, invoiceId: selectedId }).catch(() => undefined);
 
-    }, reason => setError(reason.message));
+    }, reason => setError(customerMessage(reason, "We could not load your invoices. Please try again.")));
   }, [admin, organizationId, selectedId, user]);
 
   useEffect(() => {
@@ -80,13 +82,13 @@ export function InvoiceSurface({ admin = false }: { admin?: boolean }) {
     if (!user || !organizationId || !selectedId) return;
     return onSnapshot(collection(getFirebaseFirestore(), "organizations", organizationId, "invoices", selectedId, "invoiceMessages"), messages => {
       setActivity(messages.docs.map(item => ({ ...normalizeRecord(item.data()) as InvoiceActivity, id: item.id })).sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? "")));
-    }, reason => setError(reason.message));
+    }, reason => setError(customerMessage(reason, "We could not load your invoices. Please try again.")));
   }, [organizationId, selectedId, user]);
 
   async function run(work: () => Promise<unknown>, success?: string) {
     setBusy(true); setError(""); setNotice("");
     try { await work(); if (success) setNotice(success); await load(); }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "The action could not be completed."); }
+    catch (reason) { setError(customerMessage(reason, "The action could not be completed.")); }
     finally { setBusy(false); }
   }
   function choose(item: NativeInvoice) { setOrganizationId(item.organizationId); setSelectedId(item.id); setError(""); setNotice(""); }
@@ -159,8 +161,8 @@ export function InvoiceSurface({ admin = false }: { admin?: boolean }) {
             {invoice.experienceId ? <Link className={styles.primary} href={`/organization?org=${organizationId}&experience=${invoice.experienceId}`}>Open your experience</Link> : null}
             <details open={Boolean(payable && !nativeCheckoutEnabled)}><summary>Payment instructions</summary><p className={styles.preserve}>{invoice.commercial.paymentInstructions}</p><p>{invoice.commercial.paymentTerms}</p></details>
             <details><summary>Send a copy to a billing contact</summary><form className={styles.form} onSubmit={event => { event.preventDefault(); const data = new FormData(event.currentTarget); void run(() => nativeAction("send", { ...context, email: field(data, "email"), idempotencyKey: crypto.randomUUID() }), "Copy requested. See delivery status below."); }}><label>Email<input required type="email" name="email" defaultValue={invoice.commercial.buyer.email} /></label><p>Additional billing contacts need an invitation to your organization account to open the invoice.</p><button disabled={busy} type="submit">Send copy</button></form></details>
-            <details><summary>Scope, terms & original details</summary><p>{invoice.commercial.buyer.address}</p><p>{invoice.commercial.buyer.purchaseOrder ? `Purchase order: ${invoice.commercial.buyer.purchaseOrder}` : ""}</p><p>Preferred service date: {date(invoice.commercial.serviceDate)}. Subject to confirmation.</p><p className={styles.preserve}>{invoice.commercial.terms}</p><p>{invoice.commercial.taxNote}</p><p>The issued PDF is preserved unchanged. Payments and refunds are recorded separately.</p></details>
-          </> : <p>{invoice.preparationNotice ?? "Confirm the billing details below. SongKeep will issue your invoice after reviewing its commercial details."}</p>}
+            <details><summary>Scope & terms</summary><p>{invoice.commercial.buyer.address}</p><p>{invoice.commercial.buyer.purchaseOrder ? `Purchase order: ${invoice.commercial.buyer.purchaseOrder}` : ""}</p><p>Preferred service date: {date(invoice.commercial.serviceDate)}. Subject to confirmation.</p><p className={styles.preserve}>{invoice.commercial.terms}</p><p>{invoice.commercial.taxNote}</p><p>The issued PDF is preserved unchanged. Payments and refunds are recorded separately.</p></details>
+          </> : <p>{invoice.preparationNotice ?? "Confirm the billing details below. SongKeep will issue your invoice after reviewing the details."}</p>}
           {invoice.status === "draft" ? <form className={styles.form} onSubmit={handleIssue}>{admin ? <label>Approved discount, in dollars<input type="number" min="0" step="0.01" name="discount" defaultValue="0" /></label> : null}<p>Issuing an invoice freezes its scope, price, tax treatment, and billing details. It does not confirm payment or reserve a date.</p><button className={styles.primary} disabled={busy} type="submit">{admin ? "Issue invoice & generate PDF" : "Prepare my invoice"}</button></form> : null}
           {admin && invoice.commercial ? <>
             <details><summary>Record a confirmed payment</summary><form className={styles.form} onSubmit={event => handlePayment(event)}><p>Record money already received. This action does not charge a card or initiate a transfer.</p><label>Amount received, in dollars<input required type="number" min="0.01" step="0.01" max={invoice.amountDueCents / 100} name="amount" /></label><label>Method<select name="method"><option value="check">Cleared check</option><option value="bank_transfer">Confirmed bank transfer</option><option value="cash">Cash</option></select></label><label>Unique payment reference<input required name="reference" maxLength={200} /></label><label className={styles.check}><input required type="checkbox" name="confirmed" />I verified that these funds were received.</label><button disabled={busy || !payable} type="submit">Record payment</button></form></details>

@@ -1,3 +1,4 @@
+import type { OrganizationMemberRole } from "./organization-account";
 import type { ConsentScope } from "./consent";
 import type { ExperienceOfferingId } from "./experience";
 import type { EntityId, ISODateTime, OrganizationKind } from "./types";
@@ -13,6 +14,7 @@ export interface OrganizationRelationshipProfile {
   id: EntityId;
   name: string;
   kind: OrganizationKind;
+  membershipRole?: OrganizationMemberRole;
   organizationEmail?: string;
   phone?: string;
   website?: string;
@@ -110,15 +112,15 @@ export function branchForNps(score: number): NpsBranch {
 export const npsBranchCopy: Record<NpsBranch, { title: string; body: string }> = {
   service_recovery: {
     title: "Thank you for telling us.",
-    body: "A SongKeep team member should follow up before any referral or review request is made."
+    body: "Your feedback helps us understand what needs attention. Please contact us so we can make it right."
   },
   relationship_nurture: {
     title: "Thank you for sharing your experience.",
-    body: "SongKeep can stay connected and use your feedback to improve the next experience."
+    body: "Your feedback helps us make the next experience even better."
   },
   promoter: {
-    title: "Thank you for being a SongKeep advocate.",
-    body: "You can now introduce another organization or share an approved testimonial."
+    title: "Thank you for sharing the love.",
+    body: "Know another group that would enjoy this? Share an introduction below."
   }
 };
 

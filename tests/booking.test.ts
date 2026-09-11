@@ -17,8 +17,8 @@ describe("organization experience catalog", () => {
   it("locks the three organization prices and distinct outputs", () => {
     expect(serviceOfferings).toEqual([
       expect.objectContaining({ id: "single-song-group-event", priceCents: 20_000, buyer: "organization", creativeOutput: "One shared song" }),
-      expect.objectContaining({ id: "honor-a-life-song-experience", priceCents: 250_000, buyer: "organization", creativeOutput: "Multiple participant songs" }),
-      expect.objectContaining({ id: "songkeep-legacy-album", priceCents: 600_000, buyer: "organization", creativeOutput: "A cohesive multi-track legacy album" })
+      expect.objectContaining({ id: "honor-a-life-song-experience", priceCents: 250_000, buyer: "organization", creativeOutput: "Up to 6 songs" }),
+      expect.objectContaining({ id: "songkeep-legacy-album", priceCents: 600_000, buyer: "organization", creativeOutput: "Up to 10 songs" })
     ]);
     expect(formatOfferingPrice(20_000)).toBe("$200");
     expect(formatOfferingPrice(250_000)).toBe("$2,500");
@@ -43,9 +43,11 @@ describe("booking truthfulness", () => {
   });
 
   it("does not simulate paid status or a confirmed schedule", () => {
-    expect(bookingSource).toContain("This is a preferred time, not a confirmed reservation.");
-    expect(bookingSource).toContain("The experience becomes active only after SongKeep receives authoritative payment confirmation.");
-    expect(bookingSource).toContain("No account, invoice, payment, or request was created in this static preview.");
+    expect(bookingSource).toContain("We’ll confirm your date and time with you.");
+    expect(bookingSource).toContain("createOrganizationExperienceRequest");
+    expect(bookingSource).toContain("if (!accountReady || !user");
+    expect(bookingSource).not.toContain("staticPreview");
+    expect(bookingSource).not.toContain("preview-only");
     expect(bookingSource).not.toContain("Payment successful");
   });
 });

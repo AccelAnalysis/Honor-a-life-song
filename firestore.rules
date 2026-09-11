@@ -281,6 +281,24 @@ service cloud.firestore {
       allow create, update: if signedIn() && request.auth.uid == userId;
       allow delete: if platformAdmin();
 
+      match /organizationSetups/{setupId} {
+        allow read: if signedIn() && request.auth.uid == userId;
+        allow create: if signedIn() && request.auth.uid == userId
+          && request.resource.data.keys().hasOnly(['organizationId', 'createdAt'])
+          && getAfter(/databases/$(database)/documents/organizations/$(request.resource.data.organizationId)).data.createdBy == userId
+          && request.resource.data.createdAt == request.time;
+        allow update, delete: if false;
+      }
+      match /bookingDrafts/{orgId} {
+        allow read, delete: if signedIn() && request.auth.uid == userId;
+        allow create, update: if signedIn() && request.auth.uid == userId
+          && getAfter(/databases/$(database)/documents/organizations/$(orgId)/members/$(userId)).data.role == 'organization_admin'
+          && getAfter(/databases/$(database)/documents/organizations/$(orgId)/members/$(userId)).data.status == 'active'
+          && request.resource.data.organizationId == orgId
+          && request.resource.data.offeringId in ['single-song-group-event', 'honor-a-life-song-experience', 'songkeep-legacy-album']
+          && request.resource.data.keys().hasOnly(['organizationId', 'offeringId', 'preferredDate', 'preferredTime', 'venue', 'participantEstimate', 'organizationGoal', 'sourceExperienceId', 'replacesRequestId', 'requestKey', 'requestSignature', 'updatedAt'])
+          && request.resource.data.updatedAt == request.time;
+      }
       match /organizations/{orgId} {
         allow read: if signedIn() && (request.auth.uid == userId || platformAdmin());
         allow create: if organizationPointerCreate(userId, orgId) || platformAdmin();

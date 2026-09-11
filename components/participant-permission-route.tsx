@@ -1,5 +1,7 @@
 "use client";
 
+import { customerMessage } from "@/lib/customer-messages";
+
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
@@ -48,7 +50,7 @@ export function ParticipantPermissionRoute() {
         if (result?.status === "submitted" || result?.status === "approved") setComplete(true);
       })
       .catch((loadError) => {
-        if (!cancelled) setError(loadError instanceof Error ? loadError.message : "We could not open this invitation.");
+        if (!cancelled) setError(customerMessage(loadError, "We could not open this invitation."));
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -86,7 +88,7 @@ export function ParticipantPermissionRoute() {
       });
       setComplete(true);
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "We could not submit your choices.");
+      setError(customerMessage(submitError, "We could not submit your choices."));
     } finally {
       setBusy(false);
     }

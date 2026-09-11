@@ -26,7 +26,7 @@ export function AdminAccessGate({ children }: { children: ReactNode }) {
   }
 
   if (status === "unavailable") {
-    return <section className="unavailable large"><strong>Admin access is not configured in this environment.</strong><span>{configurationError ?? "Add the Firebase web configuration before opening Operations."}</span></section>;
+    return <section className="unavailable large"><strong>Account access is temporarily unavailable.</strong><span>{configurationError ?? "Please try again or contact SongKeep for help."}</span></section>;
   }
 
   if (status === "signed_out" || !user) {

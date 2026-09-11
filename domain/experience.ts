@@ -27,6 +27,7 @@ export type ExperienceOffering = {
   name: string;
   shortName: string;
   priceCents: number;
+  maxSongs: number;
   currency: "USD";
   buyer: "organization";
   templateKind: ExperienceTemplateKind;
@@ -46,6 +47,7 @@ export const experienceOfferings: readonly ExperienceOffering[] = [
     name: "Single-Song Group Event",
     shortName: "Group Event",
     priceCents: 20_000,
+    maxSongs: 1,
     currency: "USD",
     buyer: "organization",
     templateKind: "group_event",
@@ -63,14 +65,15 @@ export const experienceOfferings: readonly ExperienceOffering[] = [
     name: "Honor a Life Song Experience",
     shortName: "Full Experience",
     priceCents: 250_000,
+    maxSongs: 6,
     currency: "USD",
     buyer: "organization",
     templateKind: "full_program",
     participantMode: "named_roster",
-    description: "A multi-touch experience where individual stories become songs and return to the community in concert.",
+    description: "Personal stories become up to 6 original songs, brought together in a follow-up concert.",
     bestFor: "Organizations seeking deeper participant and family engagement",
-    storyCapture: "Several participant interviews and family contributions",
-    creativeOutput: "Multiple participant songs",
+    storyCapture: "Participant interviews and family contributions",
+    creativeOutput: "Up to 6 songs",
     presentation: "Follow-up concert",
     postEvent: "Songs, lyrics, approved video, photos, reports, and keepsakes",
     sections: ["overview", "participants", "interviews", "songs", "concert", "materials"]
@@ -80,16 +83,17 @@ export const experienceOfferings: readonly ExperienceOffering[] = [
     name: "SongKeep Legacy Album",
     shortName: "Legacy Album",
     priceCents: 600_000,
+    maxSongs: 10,
     currency: "USD",
     buyer: "organization",
     templateKind: "legacy_album",
     participantMode: "album_subject",
-    description: "A complete musical life story developed as a cohesive album and prepared for an approved digital release.",
+    description: "Up to 10 original songs that tell your story as a complete album, with a private reveal and release preparation.",
     bestFor: "A person, family, organization, or community whose story deserves a full album",
     storyCapture: "Extended interviews, collaborator input, and life-story mapping",
-    creativeOutput: "A cohesive multi-track legacy album",
+    creativeOutput: "Up to 10 songs",
     presentation: "Private reveal or release experience",
-    postEvent: "Album, artwork, release metadata, private listening, and approved distribution links",
+    postEvent: "Album, artwork, private listening, and approved release links",
     sections: ["overview", "participants", "interviews", "album_map", "tracks", "release", "materials"]
   }
 ] as const;

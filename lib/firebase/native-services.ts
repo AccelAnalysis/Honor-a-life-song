@@ -1,17 +1,17 @@
-import { getFunctions, httpsCallable } from "firebase/functions";
+import { httpsCallable } from "firebase/functions";
 import { collection, collectionGroup, getDocs, type Timestamp } from "firebase/firestore";
 import type { NativeInvoice } from "@/domain/invoice";
-import { getFirebaseClientApp, getFirebaseFirestore } from "./client";
+import { getFirebaseFunctions, getFirebaseFirestore } from "./client";
 
 // Authentication comes from the Firebase ID token. Never accept an actor or administrator flag from a form.
 export async function nativeAction<T = unknown>(action: string, input: object = {}): Promise<T> {
-  const call = httpsCallable<object, T>(getFunctions(getFirebaseClientApp(), "us-central1"), "songkeepBilling");
+  const call = httpsCallable<object, T>(getFirebaseFunctions(), "songkeepBilling");
   try { return (await call(JSON.parse(JSON.stringify({ operation: action, ...input })))).data; }
   catch (error) { throw new Error(error instanceof Error ? error.message.replace(/^Firebase:\s*/, "") : "This action could not be completed. Please try again."); }
 }
 export const nativeCheckoutEnabled = process.env.NEXT_PUBLIC_NATIVE_CHECKOUT_ENABLED === "true";
 export async function openInvoiceCheckout(organizationId: string, invoiceId: string, cancel = false) {
-  const call = httpsCallable<object, { url?: string; paid?: boolean; cancelled?: boolean }>(getFunctions(getFirebaseClientApp(), "us-central1"), "songkeepCheckout");
+  const call = httpsCallable<object, { url?: string; paid?: boolean; cancelled?: boolean }>(getFirebaseFunctions(), "songkeepCheckout");
   return (await call({ organizationId, invoiceId, cancel })).data;
 }
 export function normalizeRecord(value: unknown): unknown {
@@ -34,11 +34,11 @@ export async function invoicePdf(organizationId: string, invoiceId: string): Pro
   return { url: URL.createObjectURL(new Blob([bytes], { type: "application/pdf" })), fileName: result.fileName };
 }
 export async function authorizedMediaUrl(input: { organizationId: string; assetId: string; accessId?: string }): Promise<string> {
-  const call = httpsCallable<object, { url: string }>(getFunctions(getFirebaseClientApp(), "us-central1"), "songkeepMedia");
+  const call = httpsCallable<object, { url: string }>(getFirebaseFunctions(), "songkeepMedia");
   return (await call(JSON.parse(JSON.stringify(input)))).data.url;
 }
 
 export async function openIndividualCheckout(requestId: string) {
-  const call = httpsCallable<object, { url?: string; paid?: boolean }>(getFunctions(getFirebaseClientApp(), "us-central1"), "songkeepIndividualCheckout");
+  const call = httpsCallable<object, { url?: string; paid?: boolean }>(getFirebaseFunctions(), "songkeepIndividualCheckout");
   return (await call({ requestId })).data;
 }
