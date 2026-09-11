@@ -1,0 +1,47 @@
+name: Finalize presentation source
+on:
+  push:
+    branches: [design/hig-customer-pipeline-presentation]
+    paths: [.github/workflows/presentation-source.yml]
+permissions:
+  contents: write
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preserve reviewed slides and fix stage contrast
+        run: |
+          python3 - <<'PY'
+          import base64, gzip, pathlib
+          folder = pathlib.Path('public/presentations')
+          parts = [folder / f'songkeep-customer-pipeline.part{i}.txt' for i in range(1,7)]
+          html = gzip.decompress(base64.b64decode(''.join(p.read_text() for p in parts))).decode()
+          assert html.count('class="slide"') == 24
+          html = html.replace('button{font:inherit}', 'button{font:inherit;color:inherit}')
+          html = html.replace('color:var(--stage)', 'color:var(--stage-foreground,var(--stage))')
+          html = html.replace('stroke:var(--stage)', 'stroke:var(--stage-foreground,var(--stage))')
+          html = html.replace('@media (prefers-color-scheme:dark){', '@media (prefers-color-scheme:dark){\n  .slide,[style*="--stage"]{--stage-foreground:color-mix(in srgb,var(--stage) 44%,white)}')
+          html = html.replace('color:color-mix(in srgb,var(--stage) 58%,white)', 'color:var(--stage-foreground)')
+          html = html.replace('.stage-badge.neutral,.growth-node span{background:#292C47}', '.stage-badge.neutral,.growth-node span{background:#292C47;color:var(--ink)}')
+          html = html.replace('Named participants → interviews → multiple songs → concert', 'Named participants → interviews → up to 6 songs → concert')
+          html = html.replace('Expanded story architecture → album → distribution / release', 'Expanded story architecture → up to 10 songs → album → distribution / release')
+          needle = "    if (dialog.open) return;\n    if (['ArrowRight'"
+          assert needle in html
+          html = html.replace(needle, "    if (dialog.open || e.altKey || e.ctrlKey || e.metaKey) return;\n    if (e.target instanceof Element && e.target.closest('button,a,input,textarea,select,[contenteditable=true]')) return;\n    if (['ArrowRight'")
+          (folder / 'songkeep-customer-pipeline.html').write_text(html)
+          for part in parts: part.unlink()
+          print('Preserved 24 slides in readable standalone HTML; removed six encoded fragments.')
+          PY
+      - name: Check and publish only presentation source
+        env:
+          EXPECTED_HEAD: ${{ github.sha }}
+        run: |
+          test "$(git ls-remote origin refs/heads/design/hig-customer-pipeline-presentation | cut -f1)" = "$EXPECTED_HEAD"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/presentations
+          git diff --cached --check
+          git commit -m 'fix: readable standalone presentation, dark contrast and native keyboard controls'
+          git push origin HEAD:design/hig-customer-pipeline-presentation
