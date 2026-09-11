@@ -109,11 +109,13 @@ async function requestInvoice(page) {
    await mobile.setViewportSize({width:320,height:720}); assert(await mobile.evaluate(() => document.documentElement.scrollWidth <= innerWidth+1)); await mobileContext.close();
   });
   await check('Group photography loads, crossfades, pauses and respects reduced motion', async () => {
-   await page.goto(origin); const hero = page.locator('.consumerHeroMedia');
+   await page.bringToFront(); await page.goto(origin); const hero = page.locator('.consumerHeroMedia');
    await expect.poll(() => hero.locator('img').first().evaluate(img => img.naturalWidth),{timeout:30000}).toBeGreaterThan(0);
-   await page.mouse.move(1435,995); await expect(button(hero,'Pause photos')).toBeVisible(); await shot(page,'group-marketing');
+   // Hover pauses the hero by design. Keep the pointer on the header, outside the photography.
+   await page.locator('.publicHeader').hover(); await expect(button(hero,'Pause photos')).toBeVisible(); await shot(page,'group-marketing');
+   assert.equal(await page.evaluate(() => document.visibilityState),'visible');
    const initial = await hero.getAttribute('data-photo'); await expect.poll(() => hero.getAttribute('data-photo'),{timeout:15000}).not.toBe(initial);
-   await button(hero,'Pause photos').click(); await page.mouse.move(1435,995); const paused = await hero.getAttribute('data-photo'); await page.waitForTimeout(9000); assert.equal(await hero.getAttribute('data-photo'),paused);
+   await button(hero,'Pause photos').click(); await page.locator('.publicHeader').hover(); const paused = await hero.getAttribute('data-photo'); await page.waitForTimeout(9000); assert.equal(await hero.getAttribute('data-photo'),paused);
    await page.emulateMedia({reducedMotion:'reduce'}); await expect(hero).toHaveAttribute('data-reduced-motion','true'); await expect(hero.getByRole('button')).toHaveCount(0);
   });
   assert.deepEqual(errors,[]); console.log(`${passed.length} end-to-end scenarios passed.`);
