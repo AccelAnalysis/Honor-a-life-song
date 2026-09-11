@@ -1,6 +1,12 @@
 /** Translate provider failures at the UI boundary; never show SDK/configuration diagnostics. */
+export function customerErrorCode(error: unknown): string {
+  return error && typeof error === "object" && "code" in error
+    ? String(error.code).split("/").pop() ?? ""
+    : "";
+}
+
 export function customerMessage(error: unknown, fallback = "We could not complete that. Please try again."): string {
-  const code = error && typeof error === "object" && "code" in error ? String(error.code).split("/").pop() ?? "" : "";
+  const code = customerErrorCode(error);
   const messages: Record<string, string> = {
     "email-already-in-use": "There is already an account with this email. Sign in to continue.",
     "invalid-credential": "The email or password does not match. Please try again.",
@@ -11,7 +17,7 @@ export function customerMessage(error: unknown, fallback = "We could not complet
     "weak-password": "Choose a stronger password with at least 8 characters.",
     "too-many-requests": "Please wait a moment before trying again.",
     "network-request-failed": "Check your connection and try again.",
-    "permission-denied": "You do not have access to this action. Ask your account administrator for help.",
+    "permission-denied": "We could not complete that action for this signed-in account. Please try again or contact SongKeep for help.",
     "unauthenticated": "Please sign in again to continue.",
     "unavailable": "This service is temporarily unavailable. Please try again shortly.",
     "internal": "This service is temporarily unavailable. Please try again shortly.",
