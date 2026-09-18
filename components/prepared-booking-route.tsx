@@ -163,7 +163,7 @@ export function PreparedBookingRoute({ token: suppliedToken }: { token?: string 
           {organizations.map(item=><label key={item.id}><input type="radio" name="organization" checked={selectedOrganizationId===item.id} onChange={()=>setSelectedOrganizationId(item.id)}/><span><strong>{item.name}</strong><small>{item.contact.displayName}</small></span></label>)}
           <button className={styles.primary} disabled={!selectedOrganizationId||busy} onClick={()=>run(()=>claim(selectedOrganizationId))}>{busy?"Connecting…":"Use this organization"}</button>
           <button className={styles.textButton} onClick={()=>setOrganizations([])}>Create another organization</button>
-        </div>:accountMode==="signin"&&!user?<><SignInForm next={`/complete/${token}`} onComplete={()=>setAccountMode("create")}/><button className={styles.textButton} onClick={()=>setAccountMode("create")}>Create an account instead</button></>:<AccountRegistrationForm
+        </div>:accountMode==="signin"&&!user?<><SignInForm next={`/complete?booking=${encodeURIComponent(token)}`} onComplete={()=>setAccountMode("create")}/><button className={styles.textButton} onClick={()=>setAccountMode("create")}>Create an account instead</button></>:<AccountRegistrationForm
           offeringId={booking.offeringId}
           onComplete={completeAccount}
           onSignIn={()=>setAccountMode("signin")}
