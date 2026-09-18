@@ -190,13 +190,13 @@ function makePreparedBookingService(db, {getBilling, now = () => new Date()} = {
   }
 
   async function requestChange(actor,input) {
-    const doc=await requireBookingByToken(input.token), ref=doc.ref;
-    requireValue(actor?.uid&&doc.data().claimedByUserId===actor.uid,'Claim this booking before requesting a change.','permission-denied');
+    const doc=await requireBookingByToken(input.token), ref=doc.ref, data=doc.data();
+    if(data.claimedByUserId)requireValue(actor?.uid===data.claimedByUserId,'Sign in with the account connected to this booking.','permission-denied');
     const change=ref.collection('changeRequests').doc();
     await db.runTransaction(async tx=>{
-      tx.create(change,{category:text(input.category||'other','change category',80),message:text(input.message,'change request',2000),status:'open',requestedByUserId:actor.uid,createdAt:nowField()});
+      tx.create(change,{category:text(input.category||'other','change category',80),message:text(input.message,'change request',2000),status:'open',requestedByUserId:actor?.uid||null,recipientEmail:data.recipientEmail,createdAt:nowField()});
       tx.update(ref,{status:'change_requested',updatedAt:nowField()});
-      activity(tx,ref,'change_requested',actor.uid,{changeRequestId:change.id});
+      activity(tx,ref,'change_requested',actor?.uid||null,{changeRequestId:change.id});
     });
     return {id:change.id};
   }
