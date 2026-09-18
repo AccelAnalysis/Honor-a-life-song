@@ -12,6 +12,7 @@ type PreparedBookingOperation =
   | "claim"
   | "sign"
   | "requestChange"
+  | "revise"
   | "rotate"
   | "revoke"
   | "complete";
@@ -54,6 +55,10 @@ export async function signPreparedBooking(input: {
 
 export async function requestPreparedBookingChange(token: string, category: string, message: string): Promise<{ id: string }> {
   return callPrepared<{ id: string }>("requestChange", { token, category, message });
+}
+
+export async function revisePreparedBooking(bookingId: string, input: Partial<PreparedBookingCreateInput>): Promise<PreparedBookingCustomerView> {
+  return callPrepared<PreparedBookingCustomerView>("revise", { bookingId, ...input });
 }
 
 export async function rotatePreparedBookingLink(bookingId: string): Promise<{ token: string; completionPath: string }> {
