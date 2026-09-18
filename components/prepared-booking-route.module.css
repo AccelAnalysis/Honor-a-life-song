@@ -312,3 +312,13 @@
   }
 }
 .accountMismatch{display:grid;gap:.8rem;padding:1rem 0;border-top:1px solid #dfe2e9;border-bottom:1px solid #dfe2e9}.accountMismatch p,.accountMismatch small{margin:0}.accountMismatch small{color:#74788a}
+.previewAccount {
+  display: grid;
+  gap: .9rem;
+  padding: 1rem 0;
+  border-top: 1px solid #dfe2e9;
+  border-bottom: 1px solid #dfe2e9;
+}
+.previewAccount > div { display: grid; gap: .2rem; }
+.previewAccount span { color: #74788a; font-size: .82rem; }
+.previewAccount p { margin: .2rem 0; color: #74788a; font-size: .78rem; line-height: 1.5; }
