@@ -14,13 +14,15 @@ import { customerErrorCode, customerMessage } from "@/lib/customer-messages";
 import styles from "./create-account-route.module.css";
 
 export type AccountRegistrationResult = { user: User; organizationId?: string };
-export function AccountRegistrationForm({ onComplete, accessOnly = false, offeringId, signInHref = "/login", onSignIn, onBusyChange, initialValues }: {
+export function AccountRegistrationForm({ onComplete, accessOnly = false, offeringId, signInHref = "/login", onSignIn, onBusyChange, initialValues, lockEmail = false, lockOrganization = false }: {
   onComplete: (result: AccountRegistrationResult) => Promise<void> | void;
   accessOnly?: boolean;
   offeringId?: ExperienceOfferingId;
   signInHref?: string;
   onSignIn?: () => void;
   onBusyChange?: (busy: boolean) => void;
+  lockEmail?: boolean;
+  lockOrganization?: boolean;
   initialValues?: {
     firstName?: string;
     lastName?: string;
@@ -93,13 +95,13 @@ export function AccountRegistrationForm({ onComplete, accessOnly = false, offeri
           <label><span>First name</span><input required maxLength={80} name="firstName" autoComplete="given-name" defaultValue={names.firstName} /></label>
           <label><span>Last name</span><input required maxLength={80} name="lastName" autoComplete="family-name" defaultValue={names.lastName} /></label>
         </div>
-        <label><span>Email</span><input required type="email" name="email" autoComplete="email" defaultValue={user?.email ?? initialValues?.email ?? ""} readOnly={Boolean(user)} /></label>
+        <label><span>Email</span><input required type="email" name="email" autoComplete="email" defaultValue={user?.email ?? initialValues?.email ?? ""} readOnly={Boolean(user) || lockEmail} /></label>
       </fieldset>
       {!accessOnly ? <fieldset disabled={busy}>
         <legend>Your organization or group</legend>
         <small>You’ll start as this organization’s account administrator and can invite your team after setup.</small>
-        <label><span>Organization or group name</span><input required maxLength={160} name="organizationName" autoComplete="organization" defaultValue={initialValues?.organizationName ?? ""} /></label>
-        <label><span id="registration-group-type">Group type</span><select name="organizationKind" aria-labelledby="registration-group-type" defaultValue={initialValues?.organizationKind ?? "community_partner"}>{organizationKinds.map(kind => <option key={kind.value} value={kind.value}>{kind.label}</option>)}</select></label>
+        <label><span>Organization or group name</span><input required maxLength={160} name="organizationName" autoComplete="organization" defaultValue={initialValues?.organizationName ?? ""} readOnly={lockOrganization} /></label>
+        <label><span id="registration-group-type">Group type</span><select name={lockOrganization ? undefined : "organizationKind"} aria-labelledby="registration-group-type" defaultValue={initialValues?.organizationKind ?? "community_partner"} disabled={lockOrganization}>{organizationKinds.map(kind => <option key={kind.value} value={kind.value}>{kind.label}</option>)}</select>{lockOrganization ? <input type="hidden" name="organizationKind" value={initialValues?.organizationKind ?? "community_partner"} /> : null}</label>
         <details className={styles.optionalDetails}><summary>Add your role and phone number <small>Optional</small></summary>
           <div className={styles.optionalFields}>
             <label><span>Title or role</span><input name="contactTitle" maxLength={120} autoComplete="organization-title" defaultValue={initialValues?.contactTitle ?? ""} /></label>
