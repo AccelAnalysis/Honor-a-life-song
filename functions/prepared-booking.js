@@ -86,6 +86,7 @@ function makePreparedBookingService(db, {getBilling, now = () => new Date()} = {
   }
 
   async function create(actor,input) {
+    requireValue(actor?.uid,'Sign in to prepare a booking.','unauthenticated');
     let rawToken=token(), bookingRef=db.collection('preparedBookings').doc(), versionRef=bookingRef.collection('versions').doc('v1');
     const offering=catalog[input.offeringId];
     requireValue(offering,'Choose an available SongKeep experience.','invalid-argument');
