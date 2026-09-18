@@ -175,6 +175,8 @@ export function PreparedBookingRoute({ token: suppliedToken }: { token?: string 
           offeringId={booking.offeringId}
           onComplete={completeAccount}
           onSignIn={()=>setAccountMode("signin")}
+          lockEmail
+          lockOrganization
           initialValues={{
             ...names,email:booking.recipientEmail,organizationName:booking.organizationName,
             organizationKind:booking.organizationKind,contactTitle:booking.recipientTitle,contactPhone:booking.recipientPhone
