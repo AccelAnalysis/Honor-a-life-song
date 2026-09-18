@@ -14,6 +14,7 @@ import {
   rotatePreparedBookingLink
 } from "@/lib/firebase/prepared-booking";
 import { customerMessage } from "@/lib/customer-messages";
+import { appPath } from "@/lib/app-path";
 import styles from "./prepared-booking-admin.module.css";
 
 function formatDate(value: string) {
@@ -68,7 +69,7 @@ export function PreparedBookingAdmin() {
         paymentOptions,
         invoiceActivationPolicy:String(form.get("invoiceActivationPolicy")??"payment_required") as "payment_required" | "approved_receivable"
       });
-      const absolute=`${window.location.origin}${result.completionPath}`;
+      const absolute=`${window.location.origin}${appPath(result.completionPath)}`;
       setCreatedLink(absolute);setSelectedId(result.id);setNotice("Booking link created.");
       (event.currentTarget as HTMLFormElement).reset();
       await load();
@@ -130,7 +131,7 @@ export function PreparedBookingAdmin() {
               <label><span>Invoice activation</span><select name="invoiceActivationPolicy" defaultValue={selected.invoiceActivationPolicy}><option value="payment_required">Begin after payment</option><option value="approved_receivable">Approved terms — begin when invoice is issued</option></select></label>
               <button type="submit">Save revision</button>
             </form></details>:null}
-            {!["booked","revoked"].includes(selected.status)?<div className={styles.actions}><button type="button" onClick={()=>run(async()=>{const value=await rotatePreparedBookingLink(selected.id);const absolute=`${window.location.origin}${value.completionPath}`;setCreatedLink(absolute);await copy(absolute);await load();})}>New link</button><button type="button" className={styles.danger} onClick={()=>run(async()=>{await revokePreparedBooking(selected.id);await load();})}>Revoke</button></div>:null}
+            {!["booked","revoked"].includes(selected.status)?<div className={styles.actions}><button type="button" onClick={()=>run(async()=>{const value=await rotatePreparedBookingLink(selected.id);const absolute=`${window.location.origin}${appPath(value.completionPath)}`;setCreatedLink(absolute);await copy(absolute);await load();})}>New link</button><button type="button" className={styles.danger} onClick={()=>run(async()=>{await revokePreparedBooking(selected.id);await load();})}>Revoke</button></div>:null}
           </section>:null}
         </aside>
       </div>
