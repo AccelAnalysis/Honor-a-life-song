@@ -45,10 +45,10 @@ export function AccountRegistrationForm({ onComplete, accessOnly = false, offeri
     let cancelled = false;
     setProfileLoading(true);
     getDoc(doc(getFirebaseFirestore(), "users", user.uid)).then(snapshot => {
-      if (!cancelled) setNames({ firstName: snapshot.data()?.firstName ?? "", lastName: snapshot.data()?.lastName ?? "" });
+      if (!cancelled) setNames({ firstName: snapshot.data()?.firstName ?? initialValues?.firstName ?? "", lastName: snapshot.data()?.lastName ?? initialValues?.lastName ?? "" });
     }).catch(() => undefined).finally(() => { if (!cancelled) setProfileLoading(false); });
     return () => { cancelled = true; };
-  }, [user]);
+  }, [initialValues?.firstName, initialValues?.lastName, user]);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
