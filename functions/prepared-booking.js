@@ -169,7 +169,7 @@ function makePreparedBookingService(db, {getBilling, now = () => new Date()} = {
     requireValue(input.electronicRecordsAccepted===true,'Accept electronic records before signing.');
     const doc=await requireBookingByToken(input.token), ref=doc.ref, data=doc.data();
     requireValue(data.claimedByUserId===actor.uid&&data.organizationId,'Claim this booking before signing.');
-    requireValue(!['revoked','expired','booked'].includes(data.status),'This booking cannot be signed in its current state.');
+    requireValue(data.status==='claimed','SongKeep is reviewing this booking before it can be signed.');
     const agreementId=`prepared-${doc.id}-v${data.currentVersion}`, agreementRef=db.doc(`organizations/${data.organizationId}/agreements/${agreementId}`);
     const commercialSnapshot=snapshot(data), commercialSnapshotHash=sha256(JSON.stringify(commercialSnapshot));
     await db.runTransaction(async tx=>{
