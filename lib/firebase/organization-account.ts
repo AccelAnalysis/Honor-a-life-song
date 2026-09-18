@@ -127,6 +127,9 @@ function experienceFrom(organizationId: string, data: ReturnType<typeof dataOf>)
     participantExpectedCount: data.participantExpectedCount,
     billingStatus: data.billingStatus,
     invoiceUrl: data.invoiceUrl,
+    requestedPaymentMethod: data.requestedPaymentMethod,
+    dateStatus: data.dateStatus,
+    createdByUserId: data.createdByUserId,
     createdAt: toIso(data.createdAt),
     updatedAt: toIso(data.updatedAt)
   };
