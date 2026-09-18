@@ -104,6 +104,7 @@ export interface PreparedBooking {
   participantEstimate?: number;
   organizationGoal?: string;
   paymentOptions: ExperienceRequestPaymentMethod[];
+  invoiceActivationPolicy: "payment_required" | "approved_receivable";
   agreementVersion: string;
   currentVersion: number;
   tokenExpiresAt: ISODateTime;
@@ -136,6 +137,7 @@ export interface PreparedBookingCreateInput {
   participantEstimate?: number;
   organizationGoal?: string;
   paymentOptions: ExperienceRequestPaymentMethod[];
+  invoiceActivationPolicy?: "payment_required" | "approved_receivable";
 }
 
 export interface PreparedBookingCustomerView {
@@ -158,6 +160,7 @@ export interface PreparedBookingCustomerView {
   participantEstimate?: number;
   organizationGoal?: string;
   paymentOptions: ExperienceRequestPaymentMethod[];
+  invoiceActivationPolicy: "payment_required" | "approved_receivable";
   agreementVersion: string;
   currentVersion: number;
   tokenExpiresAt: ISODateTime;
