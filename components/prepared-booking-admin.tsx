@@ -15,6 +15,7 @@ import {
 } from "@/lib/firebase/prepared-booking";
 import { customerMessage } from "@/lib/customer-messages";
 import { appPath } from "@/lib/app-path";
+import { isStaticPreview } from "@/lib/preview-mode";
 import styles from "./prepared-booking-admin.module.css";
 
 function formatDate(value: string) {
@@ -87,7 +88,7 @@ export function PreparedBookingAdmin() {
       {error?<div className={styles.alert} role="alert">{error}</div>:null}
       {notice?<div className={styles.notice} role="status">{notice}</div>:null}
 
-      <section className={styles.heading}><p className={styles.eyebrow}>Sales handoff</p><h1>Prepare the booking.</h1><p>Set what was agreed. The customer confirms, signs, and pays from one secure link.</p></section>
+      <section className={styles.heading}><p className={styles.eyebrow}>{isStaticPreview?"Preview · Sales handoff":"Sales handoff"}</p><h1>Prepare the booking.</h1><p>Set what was agreed. The customer confirms, signs, and pays from one secure link.</p>{isStaticPreview?<Link className={styles.previewLink} href="/complete?booking=preview-songkeep-booking">Open sample customer view →</Link>:null}</section>
 
       <div className={styles.layout}>
         <form className={styles.form} onSubmit={create}>
