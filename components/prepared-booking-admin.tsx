@@ -62,7 +62,8 @@ export function PreparedBookingAdmin() {
         venue:String(form.get("venue")??"")||undefined,
         participantEstimate:form.get("participantEstimate")?Number(form.get("participantEstimate")):undefined,
         organizationGoal:String(form.get("organizationGoal")??"")||undefined,
-        paymentOptions
+        paymentOptions,
+        invoiceActivationPolicy:String(form.get("invoiceActivationPolicy")??"payment_required") as "payment_required" | "approved_receivable"
       });
       const absolute=`${window.location.origin}${result.completionPath}`;
       setCreatedLink(absolute);setSelectedId(result.id);setNotice("Booking link created.");
@@ -104,6 +105,7 @@ export function PreparedBookingAdmin() {
 
           <section><h2>Payment</h2>
             <div className={styles.checks}><label><input type="checkbox" name="paymentOptions" value="card" defaultChecked/><span>Pay now</span></label><label><input type="checkbox" name="paymentOptions" value="invoice" defaultChecked/><span>Invoice organization</span></label></div>
+            <label><span>Invoice activation</span><select name="invoiceActivationPolicy" defaultValue="payment_required"><option value="payment_required">Begin after payment</option><option value="approved_receivable">Approved terms — begin when invoice is issued</option></select></label>
           </section>
 
           <button className={styles.primary} disabled={busy} type="submit">{busy?"Preparing…":"Create secure booking link"}</button>
