@@ -124,10 +124,10 @@ export interface OrganizationExperience {
   nextAction?: string;
   participantReadyCount?: number;
   participantExpectedCount?: number;
-  billingStatus?: "not_started" | "deposit_due" | "deposit_paid" | "balance_due" | "paid" | "refunded";
+  billingStatus?: "not_started" | "deposit_due" | "deposit_paid" | "balance_due" | "invoice_open" | "paid" | "refunded";
   invoiceUrl?: string;
   requestedPaymentMethod?: "card" | "invoice";
-  dateStatus?: "requested" | "confirmed";
+  dateStatus?: "requested" | "proposed" | "held" | "confirmed";
   createdByUserId?: EntityId;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
