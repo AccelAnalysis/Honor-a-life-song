@@ -9,6 +9,7 @@ import type { PreparedBookingCustomerView } from "@/domain/customer-lifecycle";
 import {
   createPreparedBooking,
   listPreparedBookings,
+  revisePreparedBooking,
   revokePreparedBooking,
   rotatePreparedBookingLink
 } from "@/lib/firebase/prepared-booking";
@@ -21,6 +22,8 @@ function formatDate(value: string) {
 }
 
 function titleize(value:string){return value.replaceAll("_"," ").replaceAll("-"," ").replace(/\b\w/g,letter=>letter.toUpperCase());}
+function dateInput(value:string){const d=new Date(value);return Number.isNaN(d.valueOf())?"":`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;}
+function timeInput(value:string){const d=new Date(value);return Number.isNaN(d.valueOf())?"":`${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;}
 
 export function PreparedBookingAdmin() {
   const [bookings,setBookings]=useState<PreparedBookingCustomerView[]>([]);
@@ -117,6 +120,16 @@ export function PreparedBookingAdmin() {
             {bookings.length?bookings.map(item=><button key={item.id} type="button" className={selectedId===item.id?styles.selected:""} onClick={()=>setSelectedId(item.id)}><span>{titleize(item.status)}</span><strong>{item.organizationName}</strong><small>{item.offeringName} · {formatDate(item.preferredStartsAt)}</small></button>):<p className={styles.empty}>No prepared bookings yet.</p>}
           </section>
           {selected?<section className={styles.detail}><span>{titleize(selected.status)}</span><h2>{selected.organizationName}</h2><p>{selected.recipientName} · {selected.recipientEmail}</p><dl><div><dt>Experience</dt><dd>{selected.offeringName}</dd></div><div><dt>Date</dt><dd>{formatDate(selected.preferredStartsAt)}</dd></div><div><dt>Total</dt><dd>{formatOfferingPrice(selected.amountCents)}</dd></div></dl>
+            {!["booked","revoked","accepted","payment_pending","invoice_open"].includes(selected.status)?<details className={styles.revise}><summary>Revise booking</summary><form onSubmit={event=>{event.preventDefault();const data=new FormData(event.currentTarget);void run(async()=>{const date=String(data.get("date")??""),time=String(data.get("time")??"");await revisePreparedBooking(selected.id,{offeringId:String(data.get("offeringId")) as Parameters<typeof revisePreparedBooking>[1]["offeringId"],preferredStartsAt:new Date(`${date}T${time}`).toISOString(),dateStatus:String(data.get("dateStatus")) as Parameters<typeof revisePreparedBooking>[1]["dateStatus"],holdExpiresAt:data.get("holdExpiresAt")?new Date(`${String(data.get("holdExpiresAt"))}T23:59:00`).toISOString():undefined,venue:String(data.get("venue")??""),participantEstimate:data.get("participantEstimate")?Number(data.get("participantEstimate")):undefined,organizationGoal:String(data.get("organizationGoal")??""),invoiceActivationPolicy:String(data.get("invoiceActivationPolicy")??"payment_required") as "payment_required"|"approved_receivable"});setNotice("Booking revised. The customer link now shows the new version.");await load();});}}>
+              <label><span>Experience</span><select name="offeringId" defaultValue={selected.offeringId}>{experienceOfferings.map(item=><option value={item.id} key={item.id}>{item.shortName}</option>)}</select></label>
+              <div className={styles.twoColumns}><label><span>Date</span><input required type="date" name="date" defaultValue={dateInput(selected.preferredStartsAt)}/></label><label><span>Time</span><input required type="time" name="time" defaultValue={timeInput(selected.preferredStartsAt)}/></label></div>
+              <div className={styles.twoColumns}><label><span>Date status</span><select name="dateStatus" defaultValue={selected.dateStatus}><option value="proposed">Proposed</option><option value="held">Held</option><option value="confirmed">Confirmed</option></select></label><label><span>Hold through</span><input type="date" name="holdExpiresAt" defaultValue={selected.holdExpiresAt?dateInput(selected.holdExpiresAt):""}/></label></div>
+              <label><span>Location</span><input name="venue" defaultValue={selected.venue??""}/></label>
+              <label><span>Approx. participants</span><input type="number" min="1" max="10000" name="participantEstimate" defaultValue={selected.participantEstimate??""}/></label>
+              <label><span>Purpose</span><textarea name="organizationGoal" rows={3} defaultValue={selected.organizationGoal??""}/></label>
+              <label><span>Invoice activation</span><select name="invoiceActivationPolicy" defaultValue={selected.invoiceActivationPolicy}><option value="payment_required">Begin after payment</option><option value="approved_receivable">Approved terms — begin when invoice is issued</option></select></label>
+              <button type="submit">Save revision</button>
+            </form></details>:null}
             {!["booked","revoked"].includes(selected.status)?<div className={styles.actions}><button type="button" onClick={()=>run(async()=>{const value=await rotatePreparedBookingLink(selected.id);const absolute=`${window.location.origin}${value.completionPath}`;setCreatedLink(absolute);await copy(absolute);await load();})}>New link</button><button type="button" className={styles.danger} onClick={()=>run(async()=>{await revokePreparedBooking(selected.id);await load();})}>Revoke</button></div>:null}
           </section>:null}
         </aside>
