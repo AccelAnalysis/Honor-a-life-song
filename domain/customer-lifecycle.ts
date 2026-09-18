@@ -66,6 +66,109 @@ export interface AcquisitionContext {
   referralCode?: string;
 }
 
+export type PreparedBookingStatus =
+  | "draft"
+  | "ready"
+  | "viewed"
+  | "claimed"
+  | "change_requested"
+  | "accepted"
+  | "payment_pending"
+  | "invoice_open"
+  | "booked"
+  | "expired"
+  | "revoked";
+
+export type PreparedBookingDateStatus = "proposed" | "held" | "confirmed";
+
+export interface PreparedBooking {
+  id: EntityId;
+  status: PreparedBookingStatus;
+  organizationId?: EntityId;
+  organizationName: string;
+  organizationKind: OrganizationKind;
+  recipientName: string;
+  recipientEmail: string;
+  recipientTitle?: string;
+  recipientPhone?: string;
+  salesOwnerUserId: EntityId;
+  offeringId: ExperienceOfferingId;
+  offeringName: string;
+  amountCents: number;
+  currency: "USD";
+  scope: string;
+  preferredStartsAt: ISODateTime;
+  dateStatus: PreparedBookingDateStatus;
+  holdExpiresAt?: ISODateTime;
+  venue?: string;
+  participantEstimate?: number;
+  organizationGoal?: string;
+  paymentOptions: ExperienceRequestPaymentMethod[];
+  agreementVersion: string;
+  currentVersion: number;
+  tokenExpiresAt: ISODateTime;
+  claimedByUserId?: EntityId;
+  agreementId?: EntityId;
+  experienceRequestId?: EntityId;
+  invoiceId?: EntityId;
+  experienceId?: EntityId;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+  viewedAt?: ISODateTime;
+  claimedAt?: ISODateTime;
+  acceptedAt?: ISODateTime;
+  bookedAt?: ISODateTime;
+}
+
+export interface PreparedBookingCreateInput {
+  organizationId?: EntityId;
+  organizationName: string;
+  organizationKind: OrganizationKind;
+  recipientName: string;
+  recipientEmail: string;
+  recipientTitle?: string;
+  recipientPhone?: string;
+  offeringId: ExperienceOfferingId;
+  preferredStartsAt: ISODateTime;
+  dateStatus: PreparedBookingDateStatus;
+  holdExpiresAt?: ISODateTime;
+  venue?: string;
+  participantEstimate?: number;
+  organizationGoal?: string;
+  paymentOptions: ExperienceRequestPaymentMethod[];
+}
+
+export interface PreparedBookingCustomerView {
+  id: EntityId;
+  status: PreparedBookingStatus;
+  organizationName: string;
+  organizationKind: OrganizationKind;
+  recipientName: string;
+  recipientEmail: string;
+  recipientTitle?: string;
+  recipientPhone?: string;
+  offeringId: ExperienceOfferingId;
+  offeringName: string;
+  amountCents: number;
+  scope: string;
+  preferredStartsAt: ISODateTime;
+  dateStatus: PreparedBookingDateStatus;
+  holdExpiresAt?: ISODateTime;
+  venue?: string;
+  participantEstimate?: number;
+  organizationGoal?: string;
+  paymentOptions: ExperienceRequestPaymentMethod[];
+  agreementVersion: string;
+  currentVersion: number;
+  tokenExpiresAt: ISODateTime;
+  organizationId?: EntityId;
+  claimedByUserId?: EntityId;
+  agreementId?: EntityId;
+  experienceRequestId?: EntityId;
+  invoiceId?: EntityId;
+  experienceId?: EntityId;
+}
+
 export interface OrganizationExperienceRequest {
   id: EntityId;
   organizationId: EntityId;
