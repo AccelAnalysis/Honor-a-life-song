@@ -115,7 +115,7 @@ export function PreparedBookingAdmin() {
         </form>
 
         <aside className={styles.side}>
-          {createdLink?<section className={styles.linkResult}><p className={styles.eyebrow}>Ready to send</p><strong>Secure booking link</strong><code>{createdLink}</code><button onClick={()=>copy(createdLink)} type="button">Copy link</button></section>:null}
+          {createdLink?<section className={styles.linkResult}><p className={styles.eyebrow}>Ready to send</p><strong>Secure booking link</strong><code>{createdLink}</code><div className={styles.linkActions}><button onClick={()=>copy(createdLink)} type="button">Copy link</button>{selected?<a href={`mailto:${selected.recipientEmail}?subject=${encodeURIComponent("Complete your SongKeep booking")}&body=${encodeURIComponent(`Your SongKeep experience is ready. Complete your booking here:\n\n${createdLink}`)}`}>Email link</a>:null}</div></section>:null}
           <section className={styles.list}><div className={styles.listHeading}><h2>Recent</h2><button type="button" onClick={()=>run(load)}>Refresh</button></div>
             {bookings.length?bookings.map(item=><button key={item.id} type="button" className={selectedId===item.id?styles.selected:""} onClick={()=>setSelectedId(item.id)}><span>{titleize(item.status)}</span><strong>{item.organizationName}</strong><small>{item.offeringName} · {formatDate(item.preferredStartsAt)}</small></button>):<p className={styles.empty}>No prepared bookings yet.</p>}
           </section>
