@@ -43,7 +43,7 @@ export function PreparedBookingRoute({ token: suppliedToken }: { token?: string 
   const router=useRouter();
   const params=useSearchParams();
   const token=suppliedToken??params.get("booking")??"";
-  const { user, status }=useAuth();
+  const { user, status, signOut }=useAuth();
   const [booking,setBooking]=useState<PreparedBookingCustomerView|null>(null);
   const [organizations,setOrganizations]=useState<OrganizationRelationshipProfile[]>([]);
   const [screen,setScreen]=useState<Screen>("offer");
@@ -167,7 +167,7 @@ export function PreparedBookingRoute({ token: suppliedToken }: { token?: string 
       {screen==="account"?<section className={styles.scene}>
         <p className={styles.eyebrow}>Your organization</p>
         <h1>Connect {booking.organizationName}.</h1>
-        {status==="signed_in"&&user&&organizations.length?<div className={styles.organizationChoices}>
+        {status==="signed_in"&&user?.email&&user.email.toLowerCase()!==booking.recipientEmail.toLowerCase()?<div className={styles.accountMismatch}><p>This booking was prepared for <strong>{booking.recipientEmail}</strong>.</p><small>You’re signed in as {user.email}.</small><button className={styles.primary} type="button" disabled={busy} onClick={()=>run(async()=>{await signOut();setOrganizations([]);setAccountMode("signin");})}>Use the prepared email</button></div>:status==="signed_in"&&user&&organizations.length?<div className={styles.organizationChoices}>
           {organizations.map(item=><label key={item.id}><input type="radio" name="organization" checked={selectedOrganizationId===item.id} onChange={()=>setSelectedOrganizationId(item.id)}/><span><strong>{item.name}</strong><small>{item.contact.displayName}</small></span></label>)}
           <button className={styles.primary} disabled={!selectedOrganizationId||busy} onClick={()=>run(()=>claim(selectedOrganizationId))}>{busy?"Connecting…":"Use this organization"}</button>
           <button className={styles.textButton} onClick={()=>setOrganizations([])}>Create another organization</button>
