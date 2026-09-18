@@ -29,7 +29,7 @@ const options={region:'us-central1',memory:'512MiB',timeoutSeconds:120,maxInstan
 async function safe(work) {try{return await work();}catch(error){if(error instanceof DomainError)throw new HttpsError(error.code,error.message);logger.error('SongKeep operation failed',{name:error.name,code:error.code});throw new HttpsError('internal','This action could not be completed. Please retry or contact SongKeep.');}}
 exports.songkeepPreparedBooking=onCall(options,request=>safe(async()=>{
   const {operation,...input}=request.data||{},service=getPreparedBookings(),actor=actorOf(request);
-  const methods={create:service.create,list:service.list,resolve:service.resolve,claim:service.claim,sign:service.sign,requestChange:service.requestChange,rotate:service.rotate,revoke:service.revoke,complete:service.complete};
+  const methods={create:service.create,list:service.list,resolve:service.resolve,claim:service.claim,sign:service.sign,requestChange:service.requestChange,revise:service.revise,rotate:service.rotate,revoke:service.revoke,complete:service.complete};
   requireValue(Object.hasOwn(methods,operation),'Choose a supported prepared booking action.','invalid-argument');
   return methods[operation](actor,input);
 }));
