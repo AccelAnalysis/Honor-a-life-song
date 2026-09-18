@@ -15,16 +15,25 @@ const {makeLifecycleService}=require('./lifecycle');
 const {makePaymentService}=require('./payments');
 const {makeIndividualPaymentService}=require('./individual-payments');
 const {makeMailService}=require('./mail');
+const {makePreparedBookingService}=require('./prepared-booking');
 const {renderInvoice}=require('./pdf');
 const {DomainError,id,requireValue}=require('./domain');
 initializeApp();
 const db=getFirestore();
 const getBilling=()=>makeBillingService(db,{renderPdf:renderInvoice,bucket:getStorage().bucket()});
+const getPreparedBookings=()=>makePreparedBookingService(db,{getBilling});
 const lifecycle=makeLifecycleService(db,{getIdentity:uid=>getAuth().getUser(uid)});
 const stripeKey=defineSecret('SONGKEEP_STRIPE_SECRET_KEY'),webhookKey=defineSecret('SONGKEEP_STRIPE_WEBHOOK_SECRET'),emailKey=defineSecret('SONGKEEP_EMAIL_API_KEY');
 const actorOf=request=>({uid:request.auth?.uid,email:request.auth?.token.email,emailVerified:request.auth?.token.email_verified===true});
 const options={region:'us-central1',memory:'512MiB',timeoutSeconds:120,maxInstances:10,cors:true};
 async function safe(work) {try{return await work();}catch(error){if(error instanceof DomainError)throw new HttpsError(error.code,error.message);logger.error('SongKeep operation failed',{name:error.name,code:error.code});throw new HttpsError('internal','This action could not be completed. Please retry or contact SongKeep.');}}
+exports.songkeepPreparedBooking=onCall(options,request=>safe(async()=>{
+  const {operation,...input}=request.data||{},service=getPreparedBookings(),actor=actorOf(request);
+  const methods={create:service.create,list:service.list,resolve:service.resolve,claim:service.claim,sign:service.sign,requestChange:service.requestChange,rotate:service.rotate,revoke:service.revoke,complete:service.complete};
+  requireValue(Object.hasOwn(methods,operation),'Choose a supported prepared booking action.','invalid-argument');
+  return methods[operation](actor,input);
+}));
+
 exports.songkeepBilling=onCall(options,request=>safe(async()=>{
   requireValue(request.auth,'Sign in to continue.','unauthenticated');const {operation:action,...input}=request.data||{},billing=getBilling(),actor=actorOf(request);
   const methods={configure:billing.configure,getSettings:billing.getSettings,saveBilling:billing.saveBilling,createRequest:billing.createRequest,prepare:billing.prepare,read:billing.read,issue:billing.issue,download:billing.download,viewed:billing.viewed,send:billing.send,recordPayment:billing.recordPayment,close:billing.close,recordRefund:billing.recordRefund,saveConsent:lifecycle.saveConsent,approvePermission:lifecycle.approvePermission,submitPermission:lifecycle.submitPermission,purchase:lifecycle.purchase,updatePurchase:lifecycle.updatePurchase,release:lifecycle.release,reviewDeliverable:lifecycle.reviewDeliverable,materials:lifecycle.materials,verifyMaterial:makeStorageIntegrity(db,getStorage().bucket()).verifyMaterial};
