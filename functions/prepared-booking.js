@@ -146,7 +146,7 @@ function makePreparedBookingService(db, {getBilling, now = () => new Date()} = {
   }
 
   async function claim(actor,input) {
-    requireValue(actor?.uid&&actor.emailVerified===true&&actor.email,'Verify your email to continue.','unauthenticated');
+    requireValue(actor?.uid&&actor.email,'Sign in with the email address this booking was prepared for.','unauthenticated');
     const doc=await requireBookingByToken(input.token), ref=doc.ref, data=doc.data();
     requireValue(email(actor.email)===data.recipientEmail,'Sign in with the email address this booking was prepared for.','permission-denied');
     const organizationId=id(input.organizationId);
