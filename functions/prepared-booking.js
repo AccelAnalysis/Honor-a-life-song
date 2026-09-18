@@ -47,6 +47,7 @@ function makePreparedBookingService(db, {getBilling, now = () => new Date()} = {
       participantEstimate:data.participantEstimate||null,
       organizationGoal:data.organizationGoal||null,
       paymentOptions:data.paymentOptions,
+      invoiceActivationPolicy:data.invoiceActivationPolicy||'payment_required',
       agreementVersion:data.agreementVersion,
       version:data.currentVersion
     };
@@ -63,7 +64,7 @@ function makePreparedBookingService(db, {getBilling, now = () => new Date()} = {
       scope:data.scope,preferredStartsAt:data.preferredStartsAt,dateStatus:data.dateStatus,
       holdExpiresAt:data.holdExpiresAt||undefined,venue:data.venue||undefined,
       participantEstimate:data.participantEstimate||undefined,organizationGoal:data.organizationGoal||undefined,
-      paymentOptions:data.paymentOptions,agreementVersion:data.agreementVersion,currentVersion:data.currentVersion,
+      paymentOptions:data.paymentOptions,invoiceActivationPolicy:data.invoiceActivationPolicy||'payment_required',agreementVersion:data.agreementVersion,currentVersion:data.currentVersion,
       tokenExpiresAt:data.tokenExpiresAt,claimedByUserId:data.claimedByUserId||undefined,
       agreementId:data.agreementId||undefined,experienceRequestId:data.experienceRequestId||undefined,
       invoiceId:data.invoiceId||undefined,experienceId:data.experienceId||undefined
@@ -109,6 +110,7 @@ function makePreparedBookingService(db, {getBilling, now = () => new Date()} = {
       preferredStartsAt:startsAt,dateStatus,holdExpiresAt,venue:text(input.venue,'location',500,true)||null,
       participantEstimate,organizationGoal:text(input.organizationGoal,'experience goal',2000,true)||null,
       paymentOptions:validatePaymentOptions(input.paymentOptions),
+      invoiceActivationPolicy:input.invoiceActivationPolicy==='approved_receivable'?'approved_receivable':'payment_required',
       agreementVersion:'organization-service-v1',currentVersion:1,
       tokenHash:sha256(rawToken),tokenExpiresAt:new Date(now().valueOf()+14*86400000),
       claimedByUserId:null,agreementId:null,experienceRequestId:null,invoiceId:null,experienceId:null,
@@ -240,10 +242,13 @@ function makePreparedBookingService(db, {getBilling, now = () => new Date()} = {
       acquisition:{source:'prepared_booking',content:doc.id}
     });
     const invoice=await billing.issue(actor,{organizationId:data.organizationId,invoiceId:request.id,discountCents:0},true);
+    const approvedReceivable=paymentMethod==='invoice'&&data.invoiceActivationPolicy==='approved_receivable'
+      ? await billing.activateApprovedReceivable({organizationId:data.organizationId,invoiceId:invoice.id,preparedBookingId:doc.id})
+      : null;
     await db.runTransaction(async tx=>{
       const current=await tx.get(ref);
       requireValue(current.exists&&current.data().currentVersion===data.currentVersion,'This booking changed while it was being completed.');
-      tx.update(ref,{experienceRequestId:request.id,invoiceId:invoice.id,status:paymentMethod==='invoice'?'invoice_open':'payment_pending',updatedAt:nowField()});
+      tx.update(ref,{experienceRequestId:request.id,invoiceId:invoice.id,...(approvedReceivable?{status:'booked',experienceId:approvedReceivable.experienceId,bookedAt:nowField()}:{status:paymentMethod==='invoice'?'invoice_open':'payment_pending'}),updatedAt:nowField()});
       tx.update(db.doc(`organizations/${data.organizationId}/experienceRequests/${request.id}`),{
         preparedBookingId:doc.id,preparedBookingVersion:data.currentVersion,agreementId:data.agreementId,
         salesOwnerUserId:data.salesOwnerUserId,dateStatus:data.dateStatus,holdExpiresAt:data.holdExpiresAt||null,updatedAt:nowField()
