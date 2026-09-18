@@ -61,7 +61,14 @@ export function PreparedBookingRoute({ token: suppliedToken }: { token?: string 
     if(!token){setError("This booking link is incomplete. Contact SongKeep for a new link.");return;}
     setBusy(true);
     resolvePreparedBooking(token)
-      .then(value=>{if(!cancelled){setBooking(value);setPaymentMethod(value.paymentOptions.includes("card")&&nativeCheckoutEnabled?"card":"invoice");}})
+      .then(value=>{if(!cancelled){
+        setBooking(value);
+        setPaymentMethod(value.paymentOptions.includes("card")&&nativeCheckoutEnabled?"card":"invoice");
+        if(value.status==="change_requested"){setChangeSent(true);setScreen("change");}
+        else if(value.status==="claimed")setScreen("confirm");
+        else if(value.status==="accepted")setScreen("payment");
+        else if(["payment_pending","invoice_open","booked"].includes(value.status))setScreen("done");
+      }})
       .catch(cause=>{if(!cancelled)setError(customerMessage(cause,"This booking link is unavailable. Contact SongKeep for help."));})
       .finally(()=>{if(!cancelled)setBusy(false);});
     return()=>{cancelled=true;};
