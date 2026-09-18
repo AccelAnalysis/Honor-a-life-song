@@ -20,6 +20,7 @@ import {
 import { listOrganizationRelationshipProfiles } from "@/lib/firebase/customer-lifecycle";
 import { nativeCheckoutEnabled, openInvoiceCheckout } from "@/lib/firebase/native-services";
 import { customerMessage } from "@/lib/customer-messages";
+import { isStaticPreview } from "@/lib/preview-mode";
 import styles from "./prepared-booking-route.module.css";
 
 type Screen = "offer" | "account" | "confirm" | "agreement" | "payment" | "done" | "change";
@@ -55,6 +56,7 @@ export function PreparedBookingRoute({ token: suppliedToken }: { token?: string 
   const [busy,setBusy]=useState(false);
   const [error,setError]=useState<string|null>(null);
   const offering=useMemo(()=>booking?getExperienceOffering(booking.offeringId):undefined,[booking]);
+  const previewMode=isStaticPreview;
 
   useEffect(()=>{
     let cancelled=false;
@@ -130,7 +132,7 @@ export function PreparedBookingRoute({ token: suppliedToken }: { token?: string 
         }
       });
       setBooking(result.booking);setInvoiceNumber(result.invoice.invoiceNumber);
-      if(paymentMethod==="card"&&nativeCheckoutEnabled){
+      if(paymentMethod==="card"&&nativeCheckoutEnabled&&!previewMode){
         const checkout=await openInvoiceCheckout(booking.organizationId!,result.invoice.id);
         if(checkout.url){window.location.assign(checkout.url);return;}
       }
@@ -146,7 +148,7 @@ export function PreparedBookingRoute({ token: suppliedToken }: { token?: string 
   const stepIndex=screen==="offer"?0:screen==="account"?1:screen==="confirm"||screen==="change"?2:screen==="agreement"?3:screen==="payment"?4:5;
 
   return <main className={styles.shell}>
-    <header className={styles.header}><Link href="/" aria-label="SongKeep home"><SongKeepLockup variant="app"/></Link><span>Complete booking</span></header>
+    <header className={styles.header}><Link href="/" aria-label="SongKeep home"><SongKeepLockup variant="app"/></Link><span>{previewMode?"Preview · Complete booking":"Complete booking"}</span></header>
     <div className={styles.progress} aria-label="Booking progress">{[0,1,2,3,4].map(item=><span key={item} className={item<=stepIndex?styles.progressActive:""} />)}</div>
     <div className={styles.stage}>
       {error?<div className={styles.alert} role="alert">{error}</div>:null}
@@ -167,7 +169,7 @@ export function PreparedBookingRoute({ token: suppliedToken }: { token?: string 
       {screen==="account"?<section className={styles.scene}>
         <p className={styles.eyebrow}>Your organization</p>
         <h1>Connect {booking.organizationName}.</h1>
-        {status==="signed_in"&&user?.email&&user.email.toLowerCase()!==booking.recipientEmail.toLowerCase()?<div className={styles.accountMismatch}><p>This booking was prepared for <strong>{booking.recipientEmail}</strong>.</p><small>You’re signed in as {user.email}.</small><button className={styles.primary} type="button" disabled={busy} onClick={()=>run(async()=>{await signOut();setOrganizations([]);setAccountMode("signin");})}>Use the prepared email</button></div>:status==="signed_in"&&user&&organizations.length?<div className={styles.organizationChoices}>
+        {previewMode?<div className={styles.previewAccount}><div><strong>{booking.recipientName}</strong><span>{booking.recipientEmail}</span></div><div><strong>{booking.organizationName}</strong><span>{booking.recipientTitle??"Organization contact"}</span></div><p>Preview mode uses sample account data and does not create a real account.</p><button className={styles.primary} type="button" disabled={busy} onClick={()=>run(()=>claim("preview-organization"))}>{busy?"Connecting…":"Continue with preview account"}</button></div>:status==="signed_in"&&user?.email&&user.email.toLowerCase()!==booking.recipientEmail.toLowerCase()?<div className={styles.accountMismatch}><p>This booking was prepared for <strong>{booking.recipientEmail}</strong>.</p><small>You’re signed in as {user.email}.</small><button className={styles.primary} type="button" disabled={busy} onClick={()=>run(async()=>{await signOut();setOrganizations([]);setAccountMode("signin");})}>Use the prepared email</button></div>:status==="signed_in"&&user&&organizations.length?<div className={styles.organizationChoices}>
           {organizations.map(item=><label key={item.id}><input type="radio" name="organization" checked={selectedOrganizationId===item.id} onChange={()=>setSelectedOrganizationId(item.id)}/><span><strong>{item.name}</strong><small>{item.contact.displayName}</small></span></label>)}
           <button className={styles.primary} disabled={!selectedOrganizationId||busy} onClick={()=>run(()=>claim(selectedOrganizationId))}>{busy?"Connecting…":"Use this organization"}</button>
           <button className={styles.textButton} onClick={()=>setOrganizations([])}>Create another organization</button>
@@ -223,7 +225,7 @@ export function PreparedBookingRoute({ token: suppliedToken }: { token?: string 
       {screen==="payment"?<section className={styles.scene}>
         <p className={styles.eyebrow}>Billing</p><h1>How would you like to complete the booking?</h1>
         <div className={styles.paymentChoices}>
-          {booking.paymentOptions.includes("card")&&nativeCheckoutEnabled?<button className={paymentMethod==="card"?styles.paymentSelected:""} onClick={()=>setPaymentMethod("card")} type="button"><strong>Pay now</strong><span>Secure online checkout</span></button>:null}
+          {booking.paymentOptions.includes("card")&&(nativeCheckoutEnabled||previewMode)?<button className={paymentMethod==="card"?styles.paymentSelected:""} onClick={()=>setPaymentMethod("card")} type="button"><strong>Pay now</strong><span>{previewMode?"Preview secure checkout":"Secure online checkout"}</span></button>:null}
           {booking.paymentOptions.includes("invoice")?<button className={paymentMethod==="invoice"?styles.paymentSelected:""} onClick={()=>setPaymentMethod("invoice")} type="button"><strong>Invoice my organization</strong><span>Keep the invoice in your SongKeep account</span></button>:null}
         </div>
         <form className={styles.form} onSubmit={complete}>
@@ -238,8 +240,10 @@ export function PreparedBookingRoute({ token: suppliedToken }: { token?: string 
       {screen==="done"?<section className={styles.scene}>
         <div className={styles.successMark}>✓</div><p className={styles.eyebrow}>Ready</p><h1>Your booking is in motion.</h1>
         <p className={styles.lede}>{paymentMethod==="invoice"?`${invoiceNumber??"Your invoice"} is ready in your organization account.`:"Your payment step is ready in billing."}</p>
-        {booking.organizationId&&booking.invoiceId?<Link className={styles.primaryLink} href={`/organization/invoices?organization=${booking.organizationId}&invoice=${booking.invoiceId}`}>View invoice</Link>:null}
-        {booking.organizationId?<Link className={styles.secondaryLink} href={`/organization?org=${booking.organizationId}`}>Open organization account</Link>:null}
+        {previewMode?<><Link className={styles.primaryLink} href="/admin/prepared-bookings">Back to prepared bookings</Link><button className={styles.textButton} type="button" onClick={()=>setScreen("offer")}>Review booking again</button></>:<>
+          {booking.organizationId&&booking.invoiceId?<Link className={styles.primaryLink} href={`/organization/invoices?organization=${booking.organizationId}&invoice=${booking.invoiceId}`}>View invoice</Link>:null}
+          {booking.organizationId?<Link className={styles.secondaryLink} href={`/organization?org=${booking.organizationId}`}>Open organization account</Link>:null}
+        </>}
       </section>:null}
     </div>
     <footer className={styles.footer}><span>Prepared for {booking.recipientName}</span><span>SongKeep</span></footer>
