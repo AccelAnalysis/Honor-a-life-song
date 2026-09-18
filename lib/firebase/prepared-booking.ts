@@ -1,6 +1,5 @@
 import { httpsCallable } from "firebase/functions";
 import type {
-  PreparedBooking,
   PreparedBookingCreateInput,
   PreparedBookingCustomerView
 } from "@/domain/customer-lifecycle";
@@ -32,8 +31,8 @@ export async function createPreparedBooking(input: PreparedBookingCreateInput): 
   return callPrepared<PreparedBookingCreated>("create", input);
 }
 
-export async function listPreparedBookings(): Promise<PreparedBooking[]> {
-  return callPrepared<PreparedBooking[]>("list");
+export async function listPreparedBookings(): Promise<PreparedBookingCustomerView[]> {
+  return callPrepared<PreparedBookingCustomerView[]>("list");
 }
 
 export async function resolvePreparedBooking(token: string): Promise<PreparedBookingCustomerView> {
