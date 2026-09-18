@@ -99,6 +99,9 @@ export interface OrganizationAgreement {
   status: OrganizationAgreementStatus;
   relatedExperienceId?: EntityId;
   documentUrl?: string;
+  preparedBookingId?: EntityId;
+  preparedBookingVersion?: number;
+  commercialSnapshotHash?: string;
   requestedAt: ISODateTime;
   signedAt?: ISODateTime;
   signedByUserId?: EntityId;
