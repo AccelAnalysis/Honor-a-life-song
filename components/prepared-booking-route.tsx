@@ -196,7 +196,7 @@ export function PreparedBookingRoute({ token: suppliedToken }: { token?: string 
       </section>:null}
 
       {screen==="change"?<section className={styles.scene}>
-        {changeSent?<><div className={styles.successMark}>✓</div><p className={styles.eyebrow}>Sent</p><h1>We’ve got it.</h1><p className={styles.lede}>SongKeep will update the booking before you sign. This link will show the revised version.</p><button className={styles.secondaryLink} type="button" onClick={()=>{setChangeSent(false);setScreen("offer");}}>Back to booking</button></>:<>
+        {changeSent?<><div className={styles.successMark}>✓</div><p className={styles.eyebrow}>Sent</p><h1>We’ve got it.</h1><p className={styles.lede}>SongKeep will update the booking before you sign. This link will show the revised version.</p><Link className={styles.secondaryLink} href="/">SongKeep home</Link></>:<>
           <p className={styles.eyebrow}>Make a change</p><h1>Tell us what needs attention.</h1>
           <form className={styles.form} onSubmit={event=>{event.preventDefault();const data=new FormData(event.currentTarget);void run(async()=>{await requestPreparedBookingChange(token,String(data.get("category")??"other"),String(data.get("message")??""));setBooking(current=>current?{...current,status:"change_requested"}:current);setChangeSent(true);});}}>
             <label><span>What changed?</span><select name="category"><option value="date">Date or time</option><option value="scope">Experience details</option><option value="billing">Billing</option><option value="other">Something else</option></select></label>
