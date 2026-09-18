@@ -201,6 +201,43 @@ function makePreparedBookingService(db, {getBilling, now = () => new Date()} = {
     return {id:change.id};
   }
 
+  async function revise(actor,input) {
+    const ref=refFor(input.bookingId);
+    await db.runTransaction(async tx=>{
+      await assertAdmin(tx,db,actor);
+      const current=await tx.get(ref);requireValue(current.exists,'Booking not found.','not-found');
+      const prior=current.data();
+      requireValue(['ready','viewed','claimed','change_requested'].includes(prior.status),'Only an open prepared booking can be revised.');
+      const offering=catalog[input.offeringId||prior.offeringId];requireValue(offering,'Choose an available SongKeep experience.');
+      const startsAt=asDate(input.preferredStartsAt||serializable(prior.preferredStartsAt),'date and time');
+      const dateStatus=String(input.dateStatus||prior.dateStatus);requireValue(DATE_STATES.includes(dateStatus),'Choose whether the date is proposed, held, or confirmed.');
+      const holdExpiresAt=input.holdExpiresAt===null?null:asDate(input.holdExpiresAt||serializable(prior.holdExpiresAt),'hold expiration',true);
+      requireValue(dateStatus!=='held'||holdExpiresAt,'A held date needs an expiration date.');
+      const participantEstimate=input.participantEstimate===null?null:input.participantEstimate===undefined?(prior.participantEstimate||null):Number(input.participantEstimate);
+      requireValue(participantEstimate===null||(Number.isInteger(participantEstimate)&&participantEstimate>=1&&participantEstimate<=10000),'Enter a valid participant estimate.');
+      const version=Number(prior.currentVersion||1)+1;
+      const next={
+        ...prior,offeringId:input.offeringId||prior.offeringId,offeringName:offering.name,amountCents:offering.priceCents,scope:offering.scope,
+        preferredStartsAt:startsAt,dateStatus,holdExpiresAt,
+        venue:input.venue===undefined?prior.venue:(text(input.venue,'location',500,true)||null),
+        participantEstimate,
+        organizationGoal:input.organizationGoal===undefined?prior.organizationGoal:(text(input.organizationGoal,'experience goal',2000,true)||null),
+        paymentOptions:input.paymentOptions?validatePaymentOptions(input.paymentOptions):prior.paymentOptions,
+        invoiceActivationPolicy:input.invoiceActivationPolicy==='approved_receivable'?'approved_receivable':input.invoiceActivationPolicy==='payment_required'?'payment_required':prior.invoiceActivationPolicy,
+        currentVersion:version,agreementId:null,acceptedAt:null,status:prior.claimedByUserId?'claimed':'ready'
+      };
+      tx.update(ref,{
+        offeringId:next.offeringId,offeringName:next.offeringName,amountCents:next.amountCents,scope:next.scope,
+        preferredStartsAt:startsAt,dateStatus,holdExpiresAt,venue:next.venue,participantEstimate,
+        organizationGoal:next.organizationGoal,paymentOptions:next.paymentOptions,invoiceActivationPolicy:next.invoiceActivationPolicy,
+        currentVersion:version,agreementId:null,acceptedAt:null,status:next.status,updatedAt:nowField()
+      });
+      tx.create(ref.collection('versions').doc(`v${version}`),{...snapshot(next),createdByUserId:actor.uid,createdAt:nowField()});
+      activity(tx,ref,'revised',actor.uid,{version});
+    });
+    return customerView(await ref.get());
+  }
+
   async function rotate(actor,input) {
     const ref=refFor(input.bookingId), rawToken=token();
     await db.runTransaction(async tx=>{
@@ -267,7 +304,7 @@ function makePreparedBookingService(db, {getBilling, now = () => new Date()} = {
     await db.runTransaction(async tx=>{const current=await tx.get(ref);if(!current.exists||current.data().status==='booked')return;tx.update(ref,{status:'booked',experienceId,bookedAt:nowField(),updatedAt:nowField()});activity(tx,ref,'booked',null,{experienceId});});
   }
 
-  return {create,list,resolve,claim,sign,requestChange,rotate,revoke,complete,markBookedFromExperience};
+  return {create,list,resolve,claim,sign,requestChange,revise,rotate,revoke,complete,markBookedFromExperience};
 }
 
 module.exports={makePreparedBookingService,STATUSES,DATE_STATES};
