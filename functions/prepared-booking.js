@@ -126,7 +126,7 @@ function makePreparedBookingService(db, {getBilling, now = () => new Date()} = {
       tx.create(versionRef,{...snapshot(data),createdByUserId:actor.uid,createdAt:nowField()});
       activity(tx,bookingRef,'created',actor.uid,{version:1});
     });
-    return {...customerView(await bookingRef.get()),token:rawToken,completionPath:`/complete/${rawToken}`};
+    return {...customerView(await bookingRef.get()),token:rawToken,completionPath:`/complete?booking=${encodeURIComponent(rawToken)}`};
   }
 
   async function list(actor) {
@@ -247,7 +247,7 @@ function makePreparedBookingService(db, {getBilling, now = () => new Date()} = {
       tx.update(ref,{tokenHash:sha256(rawToken),tokenExpiresAt:new Date(now().valueOf()+14*86400000),status:current.data().status==='revoked'?'ready':current.data().status,updatedAt:nowField()});
       activity(tx,ref,'link_rotated',actor.uid);
     });
-    return {token:rawToken,completionPath:`/complete/${rawToken}`};
+    return {token:rawToken,completionPath:`/complete?booking=${encodeURIComponent(rawToken)}`};
   }
 
   async function revoke(actor,input) {
