@@ -241,6 +241,14 @@ function makePreparedBookingService(db, {getBilling, now = () => new Date()} = {
       venue:data.venue||'',participantEstimate:data.participantEstimate||undefined,organizationGoal:data.organizationGoal||'',
       acquisition:{source:'prepared_booking',content:doc.id}
     });
+    await db.runTransaction(async tx=>{
+      const current=await tx.get(ref);
+      requireValue(current.exists&&current.data().currentVersion===data.currentVersion,'This booking changed while it was being completed.');
+      tx.update(db.doc(`organizations/${data.organizationId}/experienceRequests/${request.id}`),{
+        preparedBookingId:doc.id,preparedBookingVersion:data.currentVersion,agreementId:data.agreementId,
+        salesOwnerUserId:data.salesOwnerUserId,dateStatus:data.dateStatus,holdExpiresAt:data.holdExpiresAt||null,updatedAt:nowField()
+      });
+    });
     const invoice=await billing.issue(actor,{organizationId:data.organizationId,invoiceId:request.id,discountCents:0},true);
     const approvedReceivable=paymentMethod==='invoice'&&data.invoiceActivationPolicy==='approved_receivable'
       ? await billing.activateApprovedReceivable({organizationId:data.organizationId,invoiceId:invoice.id,preparedBookingId:doc.id})
@@ -249,10 +257,6 @@ function makePreparedBookingService(db, {getBilling, now = () => new Date()} = {
       const current=await tx.get(ref);
       requireValue(current.exists&&current.data().currentVersion===data.currentVersion,'This booking changed while it was being completed.');
       tx.update(ref,{experienceRequestId:request.id,invoiceId:invoice.id,...(approvedReceivable?{status:'booked',experienceId:approvedReceivable.experienceId,bookedAt:nowField()}:{status:paymentMethod==='invoice'?'invoice_open':'payment_pending'}),updatedAt:nowField()});
-      tx.update(db.doc(`organizations/${data.organizationId}/experienceRequests/${request.id}`),{
-        preparedBookingId:doc.id,preparedBookingVersion:data.currentVersion,agreementId:data.agreementId,
-        salesOwnerUserId:data.salesOwnerUserId,dateStatus:data.dateStatus,holdExpiresAt:data.holdExpiresAt||null,updatedAt:nowField()
-      });
       activity(tx,ref,'commercial_request_created',actor.uid,{requestId:request.id,invoiceId:invoice.id,paymentMethod});
     });
     return {booking:customerView(await ref.get()),request,invoice:{id:invoice.id,invoiceNumber:invoice.invoiceNumber,status:invoice.status}};
