@@ -169,7 +169,7 @@ export function AdminLifecycleSurface({ area }: AdminLifecycleSurfaceProps) {
       <Link href="/admin">← Operations</Link>
       <div><p>SongKeep</p><strong>Customers & experiences</strong></div>
     </header>
-    <nav className={styles.areaNav} aria-label="Lifecycle operations"><Link href="/admin/invoices">Invoices & payments</Link><Link href="/admin/deliverables">Creator delivery</Link>{areas.map((item) => <Link key={item.id} aria-current={area === item.id ? "page" : undefined} href={`/admin/${item.id}`}>{item.label}</Link>)}</nav>
+    <nav className={styles.areaNav} aria-label="Lifecycle operations"><Link href="/admin/prepared-bookings">Prepare booking</Link><Link href="/admin/invoices">Invoices & payments</Link><Link href="/admin/deliverables">Creator delivery</Link>{areas.map((item) => <Link key={item.id} aria-current={area === item.id ? "page" : undefined} href={`/admin/${item.id}`}>{item.label}</Link>)}</nav>
     <div className={styles.content}>
       {error ? <div className={styles.alert} role="alert"><strong>Action required</strong><span>{error}</span></div> : null}
       {notice ? <div className={styles.notice} role="status"><strong>Saved</strong><span>{notice}</span></div> : null}

@@ -93,7 +93,7 @@ function makeBillingService(db, {renderPdf, bucket, now = () => new Date()} = {}
       const [request,organization,configDoc]=await Promise.all([tx.get(db.doc(`organizations/${org}/experienceRequests/${invoice.data().requestId}`)),tx.get(db.doc(`organizations/${org}`)),tx.get(db.doc('platformSettings/invoicing'))]);
       requireValue(configDoc.exists,'SongKeep must complete its legal business, remittance, and reviewed tax settings before issuing this invoice.');
       const config=settings(configDoc.data());
-      requireValue(access.admin || config.autoIssue,'Your request is saved. SongKeep will review and issue your invoice.');
+      requireValue(access.admin || config.autoIssue || automatic,'Your request is saved. SongKeep will review and issue your invoice.');
       requireValue(request.exists && !['cancelled','converted'].includes(request.data().status),'This request is no longer awaiting payment.');
       const r=request.data(), offering=catalog[r.offeringId];requireValue(offering && r.amountCents===offering.priceCents,'The catalog and request amount need staff review.');
       const creator=await tx.get(db.doc(`organizations/${org}/members/${r.createdByUserId}`));
@@ -156,9 +156,9 @@ function makeBillingService(db, {renderPdf, bucket, now = () => new Date()} = {}
       tx.update(ref,{...changes,checkout:null,...(fullyPaid?{paidAt:nowField(),experienceId}:{}),updatedAt:nowField()});
       tx.update(db.doc(`organizations/${org}/orders/${invoice.orderId}`),{amountPaidCents:changes.amountPaidCents,status:fullyPaid?'paid':'partially_paid',updatedAt:nowField()});
       if(fullyPaid){
-        if(!existingExperience.exists)tx.create(expRef,{organizationId:org,title:offering.name,offeringId:invoice.offeringId,templateKind:offering.templateKind,participantMode:offering.participantMode,status:'preparing',startsAt:requests.preferredStartsAt,venue:requests.venue||null,participantExpectedCount:requests.participantEstimate||null,billingStatus:'paid',sourceExperienceRequestId:invoice.requestId,invoiceId:ref.id,dateStatus:'requested',nextAction:offering.participantMode==='group'?'Confirm your event and prepare the shared story.':offering.participantMode==='album_subject'?'Plan the album story sessions and permissions.':'Add participants and send individual permission links.',createdAt:nowField(),updatedAt:nowField()});
-        else requireValue(existingExperience.data().sourceExperienceRequestId===invoice.requestId,'An experience with this identifier already belongs to another request.');
-        tx.update(requestRef,{status:'converted',financialStatus:'paid',experienceId,nurtureTrack:'customer_onboarding',nextAction:'Your payment is confirmed. Open your experience to prepare.',paidAt:nowField(),updatedAt:nowField()});cancelQueued(tx,pending);
+        if(!existingExperience.exists)tx.create(expRef,{organizationId:org,title:offering.name,offeringId:invoice.offeringId,templateKind:offering.templateKind,participantMode:offering.participantMode,status:'preparing',startsAt:requests.preferredStartsAt,venue:requests.venue||null,participantExpectedCount:requests.participantEstimate||null,billingStatus:'paid',sourceExperienceRequestId:invoice.requestId,preparedBookingId:requests.preparedBookingId||null,invoiceId:ref.id,dateStatus:requests.dateStatus||'proposed',nextAction:offering.participantMode==='group'?'Confirm your event and prepare the shared story.':offering.participantMode==='album_subject'?'Plan the album story sessions and permissions.':'Add participants and send individual permission links.',createdAt:nowField(),updatedAt:nowField()});
+        else {requireValue(existingExperience.data().sourceExperienceRequestId===invoice.requestId,'An experience with this identifier already belongs to another request.');tx.update(expRef,{billingStatus:'paid',updatedAt:nowField()});}
+        tx.update(requestRef,{status:'converted',financialStatus:'paid',experienceId,nurtureTrack:'customer_onboarding',nextAction:'Your payment is confirmed. Open your experience to prepare.',paidAt:nowField(),updatedAt:nowField()});if(requests.preparedBookingId)tx.update(db.doc(`preparedBookings/${requests.preparedBookingId}`),{status:'booked',experienceId,bookedAt:nowField(),updatedAt:nowField()});cancelQueued(tx,pending);
         tx.set(db.doc(`organizations/${org}/onboarding/${experienceId}`),{experienceId,invoiceId:ref.id,status:'ready',createdAt:nowField()});
         message(tx,ref,'onboarding','onboarding',invoice.commercial.buyer.email,{experienceId});
       }else tx.update(requestRef,{nextAction:'Your partial payment is recorded. Review the remaining balance in billing.',updatedAt:nowField()});
@@ -168,6 +168,28 @@ function makeBillingService(db, {renderPdf, bucket, now = () => new Date()} = {}
       return {duplicate:false,experienceId:fullyPaid?experienceId:null,...changes};
     });
   }
+  async function activateApprovedReceivable(input) {
+    const org=id(input.organizationId), invoiceRef=db.doc(invoicePath(org,input.invoiceId)), preparedBookingId=id(input.preparedBookingId);
+    return db.runTransaction(async tx=>{
+      const invoice=await tx.get(invoiceRef);requireValue(invoice.exists&&invoice.data().commercial,'Issue the invoice before activating approved terms.');
+      const i=invoice.data(), requestRef=db.doc(`organizations/${org}/experienceRequests/${i.requestId}`), request=await tx.get(requestRef);
+      requireValue(request.exists,'The source request could not be found.');
+      const r=request.data();
+      requireValue(r.requestedPaymentMethod==='invoice'&&r.preparedBookingId===preparedBookingId,'Approved invoice terms do not match this prepared booking.');
+      requireValue(r.financialStatus==='invoice_open','This invoice is not open for approved terms.');
+      const offering=catalog[i.offeringId];requireValue(offering,'Offering not found.');
+      const experienceId=r.experienceId||`request-${i.requestId}`, expRef=db.doc(`organizations/${org}/experiences/${experienceId}`), existing=await tx.get(expRef);
+      if(!existing.exists)tx.create(expRef,{organizationId:org,title:offering.name,offeringId:i.offeringId,templateKind:offering.templateKind,participantMode:offering.participantMode,status:'preparing',startsAt:r.preferredStartsAt,venue:r.venue||null,participantExpectedCount:r.participantEstimate||null,billingStatus:'invoice_open',sourceExperienceRequestId:i.requestId,preparedBookingId,invoiceId:invoiceRef.id,dateStatus:r.dateStatus||'proposed',nextAction:offering.participantMode==='group'?'Confirm your event and prepare the shared story.':offering.participantMode==='album_subject'?'Plan the album story sessions and permissions.':'Add participants and send individual permission links.',createdAt:nowField(),updatedAt:nowField()});
+      else requireValue(existing.data().sourceExperienceRequestId===i.requestId,'An experience with this identifier already belongs to another request.');
+      tx.update(requestRef,{status:'converted',experienceId,nurtureTrack:'customer_onboarding',nextAction:'Your organization is booked. The invoice remains open until payment is received.',updatedAt:nowField()});
+      tx.update(db.doc(`organizations/${org}/orders/${i.orderId}`),{status:'invoiced',updatedAt:nowField()});
+      tx.set(db.doc(`organizations/${org}/onboarding/${experienceId}`),{experienceId,invoiceId:invoiceRef.id,status:'ready',createdAt:nowField()},{merge:true});
+      tx.update(db.doc(`preparedBookings/${preparedBookingId}`),{status:'booked',experienceId,bookedAt:nowField(),updatedAt:nowField()});
+      audit(tx,{uid:'system'},'invoice.approved_receivable',invoiceRef.id,{preparedBookingId,experienceId});
+      return {experienceId};
+    });
+  }
+
   async function close(actor,input) {
     const org=id(input.organizationId),ref=db.doc(invoicePath(org,input.invoiceId)),action=input.action;
     requireValue(['void','uncollectible'].includes(action),'Choose a supported invoice action.');const reason=text(input.reason,'reason',1000);
@@ -186,6 +208,6 @@ function makeBillingService(db, {renderPdf, bucket, now = () => new Date()} = {}
     let after=null,count=0;
     do {let query=db.collectionGroup('invoices').where('status','in',['issued','sent','viewed','partially_paid','overdue']).orderBy('__name__').limit(100);if(after)query=query.startAfter(after);const page=await query.get();if(page.empty)break;for(const snap of page.docs){await db.runTransaction(async tx=>{const current=await tx.get(snap.ref),i=serializable(current.data()),kind=reminderKind(i,now());if(!kind)return;const key=`${kind}-${now().toISOString().slice(0,10)}`,existing=await tx.get(snap.ref.collection('invoiceMessages').doc(key));if(existing.exists)return;message(tx,snap.ref,key,kind,i.commercial.buyer.email);tx.update(snap.ref,{status:invoiceStatus(i,now()),updatedAt:nowField()});if(kind==='overdue')tx.set(db.doc(`billingFollowUp/${i.organizationId}-${snap.id}`),{organizationId:i.organizationId,invoiceId:snap.id,status:'open',dueAt:nowField(),ownerUserId:null},{merge:true});count++;});}after=page.docs.at(-1);if(page.size<100)break;}while(after);return {queued:count};
   }
-  return {configure,getSettings,saveBilling,createRequest,prepare,read,issue,ensurePdf,download,viewed,send,recordPayment,close,recordRefund,reminders};
+  return {configure,getSettings,saveBilling,createRequest,prepare,read,issue,ensurePdf,download,viewed,send,recordPayment,activateApprovedReceivable,close,recordRefund,reminders};
 }
 module.exports={makeBillingService,invoicePath};
