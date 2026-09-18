@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AccountRegistrationForm, type AccountRegistrationResult } from "./account-registration-form";
 import { SignInForm } from "./sign-in-form";
 import { SongKeepLockup } from "./brand";
@@ -39,8 +39,10 @@ function dateStatusLabel(value: PreparedBookingCustomerView["dateStatus"]) {
   return value === "confirmed" ? "Confirmed" : value === "held" ? "Held for you" : "Proposed";
 }
 
-export function PreparedBookingRoute({ token }: { token: string }) {
+export function PreparedBookingRoute({ token: suppliedToken }: { token?: string } = {}) {
   const router=useRouter();
+  const params=useSearchParams();
+  const token=suppliedToken??params.get("booking")??"";
   const { user, status }=useAuth();
   const [booking,setBooking]=useState<PreparedBookingCustomerView|null>(null);
   const [organizations,setOrganizations]=useState<OrganizationRelationshipProfile[]>([]);
@@ -55,6 +57,7 @@ export function PreparedBookingRoute({ token }: { token: string }) {
 
   useEffect(()=>{
     let cancelled=false;
+    if(!token){setError("This booking link is incomplete. Contact SongKeep for a new link.");return;}
     setBusy(true);
     resolvePreparedBooking(token)
       .then(value=>{if(!cancelled){setBooking(value);setPaymentMethod(value.paymentOptions.includes("card")&&nativeCheckoutEnabled?"card":"invoice");}})
