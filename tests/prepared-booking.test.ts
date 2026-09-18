@@ -6,6 +6,8 @@ const customer = readFileSync(resolve(process.cwd(), "components/prepared-bookin
 const customerCss = readFileSync(resolve(process.cwd(), "components/prepared-booking-route.module.css"), "utf8");
 const admin = readFileSync(resolve(process.cwd(), "components/prepared-booking-admin.tsx"), "utf8");
 const backend = readFileSync(resolve(process.cwd(), "functions/prepared-booking.js"), "utf8");
+const adapter = readFileSync(resolve(process.cwd(), "lib/firebase/prepared-booking.ts"), "utf8");
+const adminGate = readFileSync(resolve(process.cwd(), "components/admin-access-gate.tsx"), "utf8");
 
 describe("prepared booking sales handoff", () => {
   it("starts from the prepared experience instead of making the customer shop again", () => {
@@ -37,6 +39,16 @@ describe("prepared booking sales handoff", () => {
     expect(backend).toContain("amountCents:offering.priceCents");
     expect(backend).toContain("currentVersion:version");
     expect(backend).toContain("tokenHash:sha256(rawToken)");
+  });
+
+
+  it("provides a browser-local bypass for the static PR preview without weakening production auth", () => {
+    expect(adapter).toContain("isStaticPreview");
+    expect(adapter).toContain("localStorage");
+    expect(adapter).toContain("preview-songkeep-booking");
+    expect(adminGate).toContain("previewAllowed && isStaticPreview");
+    expect(customer).toContain("Continue with preview account");
+    expect(customer).toContain("Preview · Complete booking");
   });
 
   it("binds acceptance to the prepared version before using native billing", () => {
