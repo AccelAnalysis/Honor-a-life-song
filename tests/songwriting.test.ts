@@ -44,8 +44,24 @@ describe("songwriting flow", () => {
     expect(guest).toContain("Suggest verses");
     expect(guest).toContain("Hear a preview");
     expect(guest).toContain('href="/create-account?next=%2Ftry"');
-    expect(guest).not.toContain("/begin");
     expect(guest).not.toContain("CreatorAccessGate");
+    const valueMoment = guest.indexOf("{keepable ?");
+    const beforeValue = guest.slice(0, valueMoment);
+    const afterValue = guest.slice(valueMoment, guest.indexOf(": null}", valueMoment));
+    expect(beforeValue).not.toContain("<SongPlanCards />");
+    expect(beforeValue).not.toContain("/begin");
+    expect(beforeValue).not.toMatch(/\$\d/);
+    expect(afterValue).toContain("Keep this song");
+    expect(afterValue.indexOf("<SongPlanCards />")).toBeGreaterThan(afterValue.indexOf("Keep this song"));
+    const plans = readFileSync("components/song-plan-cards.tsx", "utf8");
+    expect(plans).toContain("experienceOfferings");
+    expect(plans).toContain("formatOfferingPrice");
+    expect(plans).toContain("/begin?offering=");
+    expect(plans).toContain("offering.creativeOutput");
+    expect(plans).toContain("offering.storyCapture");
+    expect(plans).toContain("offering.presentation");
+    expect(plans).toContain("offering.postEvent");
+    expect(plans).not.toMatch(/Accel Analysis/i);
     expect(readFileSync("app/try/page.tsx", "utf8")).not.toContain("CreatorAccessGate");
     const client = [
       "components/songwriting-studio.tsx",

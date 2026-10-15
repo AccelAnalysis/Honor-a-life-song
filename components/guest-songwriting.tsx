@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PreviewLibrary } from "@/components/preview-library";
+import { SongPlanCards } from "@/components/song-plan-cards";
 import { notesAreReadyForSuggestions, sketchVersesFromNotes, versesToLyricBody } from "@/domain/songwriting";
 import { guestDraftIsReady } from "@/lib/preview-library";
 import styles from "./guest-songwriting.module.css";
@@ -94,11 +95,14 @@ export function GuestSongwriting() {
       </label>
     </section>
 
-    {keepable ? <section className={styles.keep} aria-labelledby="guest-keep-heading">
-      <h2 id="guest-keep-heading">Keep this song</h2>
-      <p>You have a draft you can hear against the previews. Create an account when you want SongKeep to hold it.</p>
-      <Link className={styles.primary} href="/create-account?next=%2Ftry">Create an account</Link>
-    </section> : null}
+    {keepable ? <>
+      <section className={styles.keep} aria-labelledby="guest-keep-heading">
+        <h2 id="guest-keep-heading">Keep this song</h2>
+        <p>You have a draft you can hear against the previews. Create an account when you want SongKeep to hold it.</p>
+        <Link className={styles.primary} href="/create-account?next=%2Ftry">Create an account</Link>
+      </section>
+      <SongPlanCards />
+    </> : null}
 
     <p className={styles.quiet}><Link href="/creator/song">Already a songwriter? Open Creator Studio</Link></p>
   </div>;
