@@ -81,7 +81,7 @@ export default function HomePage() {
         <div className="visualIntro"><div><p className="eyebrow">Three ways to begin</p><h2 id="program-title">Choose your experience.</h2></div><Link className="textLink" href="/services">Compare all three →</Link></div>
         <div className={styles.offerRail}>
           <Link href="/begin?offering=single-song-group-event"><div><span>$200</span><h3>Group Event</h3><p>One shared story. One original song. One memorable presentation.</p></div></Link>
-          <Link href="/begin?offering=honor-a-life-song-experience"><div><span>$2,500</span><h3>Honor a Life Song</h3><p>Participant stories, up to 6 songs, and a follow-up concert.</p></div></Link>
+          <Link href="/begin?offering=honor-a-life-song-experience"><div><span>$2,500</span><h3>Honor a Life Song Experience</h3><p>Participant stories, up to 6 songs, and a follow-up concert.</p></div></Link>
           <Link href="/begin?offering=songkeep-legacy-album"><div><span>$6,000</span><h3>Legacy Album</h3><p>Up to 10 songs in a complete album, with a private reveal and release preparation.</p></div></Link>
         </div>
       </section>

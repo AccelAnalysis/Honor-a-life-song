@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { ExperienceAccessClaim } from "@/components/experience-access-claim";
 
 export const metadata: Metadata = {
-  title: "Private Experience Access | Honor a Life Song",
+  title: "Private experience access | SongKeep",
   robots: { index: false, follow: false, nocache: true }
 };
 

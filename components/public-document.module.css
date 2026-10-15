@@ -12,3 +12,4 @@
 .body p, .body li { color: #2c2e42; line-height: 1.6; }
 .body ul { margin: 0.3rem 0 0.6rem; padding-left: 1.2rem; }
 .body a { color: #1572c6; font-weight: 720; }
+.quiet { margin: 0.4rem 0 0; color: #62657a; font-size: 0.92rem; }

@@ -20,6 +20,7 @@ export default function ProjectAgelessPage() {
         <p className="eyebrow">$2,500 full experience</p>
         <h1>Honor a Life Song Experience</h1>
         <p className="lede">Resident stories become original songs, then return to the community in a follow-up concert.</p>
+        <p>Project Ageless is a SongKeep program.</p>
         <div className="callout"><strong>Flexible by design.</strong> Each person joins in the way that feels right.</div>
 
         <section className="hierarchySection" aria-labelledby="project-ageless-explore">

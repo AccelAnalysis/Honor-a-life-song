@@ -4,8 +4,8 @@ import { referenceDeliveryTokens } from "@/fixtures/secure-delivery-reference";
 import { resolveDeliveryRoute } from "@/lib/secure-delivery-route";
 
 export const metadata: Metadata = {
-  title: "Secure Song Delivery | Honor a Life Song",
-  description: "Private Honor a Life Song delivery access.",
+  title: "Secure song delivery | SongKeep",
+  description: "Private SongKeep delivery access.",
   robots: { index: false, follow: false, nocache: true }
 };
 
