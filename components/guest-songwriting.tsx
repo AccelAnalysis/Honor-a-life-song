@@ -58,6 +58,7 @@ export function GuestSongwriting() {
       <p className={styles.kicker}>Try a song</p>
       <h1>Hear a song, then shape one from the notes.</h1>
       <p>No account yet. Play a preview, paste interview notes, and keep the lines you like.</p>
+      <p className={styles.quiet}>Want a guided song instead? <Link href="/create">Create a song</Link></p>
     </section>
 
     <section className={styles.panel} aria-labelledby="guest-listen-heading">

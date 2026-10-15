@@ -15,7 +15,7 @@ export default function HomePage() {
           <h1 id="consumer-hero-title">Every life has a story and every story has a song.</h1>
           <p className="consumerHeroLead">Turn the stories of your family, community, or team into original songs to share and keep.</p>
           <div className="consumerHeroActions">
-            <Link className="button primary" href="/try">Try a song</Link>
+            <Link className="button primary" href="/create">Create a song</Link>
             <Link className="button secondary" href="/services">Choose an experience</Link>
             <Link className="button secondary" href="/how-it-works">How it works</Link>
           </div>
