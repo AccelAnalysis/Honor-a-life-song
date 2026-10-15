@@ -328,7 +328,7 @@ export function OrganizationWorkspace({ sectionId }: OrganizationWorkspaceProps)
       <Link className={styles.backLink} href={`/organization/experiences${orgQuery}`}>← Experiences</Link>
       <p className={styles.kicker}>{formatOfferingPrice(offering.priceCents)} · {titleize(selectedExperience.status)}</p>
       <h2>{selectedExperience.title}</h2>
-      <p className={styles.detailDate}>{offering.name} · {formatDate(selectedExperience.startsAt)}{selectedExperience.venue ? ` · ${selectedExperience.venue}` : ""}</p>
+      <p className={styles.detailDate}>{offering.name} · {formatDate(selectedExperience.startsAt)}{selectedExperience.dateStatus && selectedExperience.dateStatus !== "requested" ? ` · ${titleize(selectedExperience.dateStatus)}` : ""}{selectedExperience.venue ? ` · ${selectedExperience.venue}` : ""}</p>
       <nav className={styles.experienceNav} aria-label={`${selectedExperience.title} sections`}>{experienceSections.map((view) => <Link aria-current={selectedView === view ? "page" : undefined} className={selectedView === view ? styles.activeView : ""} key={view} href={`/organization/experiences?org=${selectedOrganization.id}&experience=${selectedExperience.id}&view=${view}`}>{experienceSectionLabels[view]}</Link>)}</nav>
       {experienceLoading ? <p className={styles.quiet}>Opening…</p> : null}
       {selectedView === "overview" ? <>

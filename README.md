@@ -4,7 +4,7 @@ Human-led story-to-song service and program-delivery platform.
 
 ## Current state
 
-This repository contains the governed operating chassis plus the organization customer model. Organizations own accounts and purchases; each purchase produces an organization experience; participants belong to that experience; and participant/family delivery is consent- and entitlement-gated.
+This repository contains the governed operating chassis plus the organization customer model. Organizations own accounts and purchases; each purchase produces an organization experience; participants belong to that experience; and participant/family delivery is consent- and entitlement-gated. Sales-assisted customers can enter through a staff-prepared, versioned booking link that converges on the same native order, invoice, payment, and experience records as self-service booking.
 
 The repository is now associated with the existing Firebase project `songify-cc2c5`, and a Firebase Web SDK integration boundary is available for Authentication, Cloud Firestore and Cloud Storage. Environment-specific Firebase Web SDK values remain outside source control and must be supplied locally or by the deployment environment before those services are used.
 
@@ -37,4 +37,4 @@ npm test
 npm run build
 ```
 
-See [`docs/architecture/CUSTOMER_MODEL.md`](docs/architecture/CUSTOMER_MODEL.md) for the governing customer contract, [`docs/architecture/OPERATING_CHASSIS.md`](docs/architecture/OPERATING_CHASSIS.md) for the shared frame, and [`docs/firebase-organization-account-setup.md`](docs/firebase-organization-account-setup.md) for Firebase setup and security boundaries.
+See [`docs/architecture/CUSTOMER_MODEL.md`](docs/architecture/CUSTOMER_MODEL.md) for the governing customer contract, [`docs/PREPARED_BOOKING_HANDOFF.md`](docs/PREPARED_BOOKING_HANDOFF.md) for the sales-to-booking handoff, [`docs/architecture/OPERATING_CHASSIS.md`](docs/architecture/OPERATING_CHASSIS.md) for the shared frame, and [`docs/firebase-organization-account-setup.md`](docs/firebase-organization-account-setup.md) for Firebase setup and security boundaries.

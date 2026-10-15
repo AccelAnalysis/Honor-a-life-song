@@ -96,6 +96,9 @@ function agreementFrom(organizationId: string, data: ReturnType<typeof dataOf>):
     status: data.status ?? "requested",
     relatedExperienceId: data.relatedExperienceId,
     documentUrl: data.documentUrl,
+    preparedBookingId: data.preparedBookingId,
+    preparedBookingVersion: typeof data.preparedBookingVersion === "number" ? data.preparedBookingVersion : undefined,
+    commercialSnapshotHash: data.commercialSnapshotHash,
     requestedAt: toIso(data.requestedAt),
     signedAt: data.signedAt ? toIso(data.signedAt) : undefined,
     signedByUserId: data.signedByUserId,
@@ -124,6 +127,9 @@ function experienceFrom(organizationId: string, data: ReturnType<typeof dataOf>)
     participantExpectedCount: data.participantExpectedCount,
     billingStatus: data.billingStatus,
     invoiceUrl: data.invoiceUrl,
+    requestedPaymentMethod: data.requestedPaymentMethod,
+    dateStatus: data.dateStatus,
+    createdByUserId: data.createdByUserId,
     createdAt: toIso(data.createdAt),
     updatedAt: toIso(data.updatedAt)
   };

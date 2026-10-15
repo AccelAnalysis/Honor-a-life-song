@@ -55,7 +55,7 @@ export function getWorkspaceStaticParams() {
   // Explicit pages own these URLs. Generating them here overwrites their prerendered output.
   const explicitRoutes = new Set([
     "organization", "organization/account", "organization/experiences", "organization/growth",
-    "organization/invoices", "organization/relationship", "admin/catalog", "admin/communications",
+    "organization/invoices", "organization/relationship", "admin/prepared-bookings", "admin/catalog", "admin/communications",
     "admin/consent", "admin/deliverables", "admin/invoices", "admin/reports", "admin/requests",
     "creator/deliverables", "memories/store", "participate"
   ]);

@@ -11,6 +11,7 @@ const {makeBillingService}=require('../billing');
 const {makeLifecycleService}=require('../lifecycle');
 const {makeMailService}=require('../mail');
 const {makePaymentService}=require('../payments');
+const {makePreparedBookingService}=require('../prepared-booking');
 const {renderInvoice}=require('../pdf');
 const {sha256}=require('../domain');
 assert.match(process.env.FIRESTORE_EMULATOR_HOST||'',/^(127\.0\.0\.1|localhost):\d+$/,'Start the local emulator first.');
@@ -19,7 +20,7 @@ const app=initializeApp({projectId},'integration');const db=getFirestore(app);
 const staff={uid:'staff',email:'staff@example.com',emailVerified:true};const buyer={uid:'buyer',email:'buyer@example.com',emailVerified:true};const guest={uid:'outsider',email:'outsider@example.com',emailVerified:true};const recipient={uid:'person',email:'person@example.com',emailVerified:true};
 let environment,clock=new Date('2026-01-01T12:00:00.000Z');
 const objects=new Map();const bucket={file:path=>({exists:async()=>[objects.has(path)],download:async()=>[objects.get(path)],save:async(bytes)=>{if(objects.has(path))throw Object.assign(new Error('exists'),{code:412});objects.set(path,bytes);}})};
-const billing=makeBillingService(db,{now:()=>clock,renderPdf:renderInvoice,bucket});const lifecycle=makeLifecycleService(db);
+const billing=makeBillingService(db,{now:()=>clock,renderPdf:renderInvoice,bucket});const lifecycle=makeLifecycleService(db);const prepared=makePreparedBookingService(db,{getBilling:()=>billing,now:()=>clock});
 const config={legalName:'Example SongKeep Company — TEST ONLY',dba:'SongKeep demonstration',address:'123 Example Avenue\nExample City, VA 00000',email:'billing@example.com',phone:'555-0100',paymentInstructions:'Demonstration only. Do not pay this sample invoice.',terms:'Test service and cancellation terms; no real charge.',dueDays:14,taxBasisPoints:0,taxNote:'Sample tax treatment, not a tax determination.',taxReviewed:true,appUrl:'https://example.com',autoIssue:true};
 let counter=0;const requestInput=(extra={})=>({organizationId:'org',offeringId:'honor-a-life-song-experience',preferredStartsAt:'2026-10-10T12:00:00.000Z',requestedPaymentMethod:'invoice',agreementAcknowledged:true,idempotencyKey:`request-${++counter}`,venue:'Example Community Hall',participantEstimate:10,...extra});
 async function draft(extra={}){return billing.createRequest(buyer,requestInput(extra));}const args=r=>({organizationId:'org',invoiceId:r.id});async function issued(extra={}){const r=await draft(extra);return billing.issue(staff,args(r));}
@@ -65,6 +66,50 @@ test('concurrent permission approvals create one consent version and revoke stal
 test('post-experience purchases require matching current permissions and actual required material kinds',async()=>{await seedRecipient();const result=await lifecycle.purchase(recipient,{accessId:'access',productId:'digital'});assert.equal(result.request.organizationId,'org');assert.equal(result.request.priceCents,2000);assert.equal(result.request.status,'invoice_requested');assert.equal((await lifecycle.purchase(recipient,{accessId:'access',productId:'digital'})).request.id,result.request.id);await assert.rejects(()=>lifecycle.purchase(recipient,{accessId:'access',productId:'video'}),/requires a permitted/);await assert.rejects(()=>lifecycle.purchase(recipient,{accessId:'access',productId:'photos'}),/requires a permitted/);await db.doc(`${path}/entitlements/song-entitlement`).update({status:'revoked'});await assert.rejects(()=>lifecycle.purchase(recipient,{accessId:'access',productId:'digital'}),/permission|entitlement|released/i);});
 test('creator media URLs cannot cross organization storage boundaries',async()=>{await seedRecipient();await db.doc('organizations/org/assets/song').update({storagePath:'organizations/other/private.mp3'});await assert.rejects(()=>lifecycle.media(staff,{organizationId:'org',assetId:'song'}),/file location/);});
 test('Firestore rules deny browser financial writes and cross-tenant invoice reads',async()=>{const i=await issued();const own=environment.authenticatedContext('buyer',{email:'buyer@example.com',email_verified:true}).firestore(),other=environment.authenticatedContext('outsider').firestore(),admin=environment.authenticatedContext('staff').firestore();await assertSucceeds(getDoc(doc(own,`organizations/org/invoices/${i.id}`)));await assertFails(getDoc(doc(other,`organizations/org/invoices/${i.id}`)));await assertFails(updateDoc(doc(own,`organizations/org/invoices/${i.id}`),{status:'paid'}));await assertFails(updateDoc(doc(admin,`organizations/org/invoices/${i.id}`),{status:'paid'}));await assertFails(setDoc(doc(own,'organizations/org/experienceRequests/forged'),{organizationId:'org',amountCents:1,status:'converted'}));await assertFails(setDoc(doc(own,'users/buyer/purchaseRequests/forged'),{status:'paid'}));});
+
+test('prepared booking links preserve staff scope and can activate an approved receivable exactly once',async()=>{
+  await billing.configure(staff,config);
+  const created=await prepared.create(staff,{
+    organizationId:'org',organizationName:'Example Community',organizationKind:'facility',
+    recipientName:'Alex Rivera',recipientEmail:'buyer@example.com',recipientTitle:'Executive Director',
+    offeringId:'honor-a-life-song-experience',preferredStartsAt:'2026-10-10T12:00:00.000Z',
+    dateStatus:'held',holdExpiresAt:'2026-09-25T23:59:00.000Z',venue:'Example Community Hall',
+    participantEstimate:10,organizationGoal:'Celebrate residents and families.',
+    paymentOptions:['invoice'],invoiceActivationPolicy:'approved_receivable'
+  });
+  assert.equal(created.amountCents,250000);assert.ok(created.token);
+  const viewed=await prepared.resolve({}, {token:created.token});assert.equal(viewed.status,'viewed');
+  await assert.rejects(()=>prepared.claim({uid:'outsider',email:'outsider@example.com'},{token:created.token,organizationId:'org'}),/email address/);
+  const claimed=await prepared.claim(buyer,{token:created.token,organizationId:'org'});assert.equal(claimed.status,'claimed');
+  await prepared.sign(buyer,{token:created.token,signedByName:'Alex Rivera',signedByTitle:'Executive Director',electronicRecordsAccepted:true});
+  const completed=await prepared.complete(buyer,{token:created.token,paymentMethod:'invoice',billing:{name:'Example Community',contactName:'Alex Rivera',email:'buyer@example.com',address:'456 Sample Street',purchaseOrder:'PO-PREPARED'}});
+  assert.equal(completed.booking.status,'booked');assert.ok(completed.booking.experienceId);
+  const experienceId=completed.booking.experienceId;
+  const experience=(await db.doc(`organizations/org/experiences/${experienceId}`).get()).data();
+  assert.equal(experience.billingStatus,'invoice_open');assert.equal(experience.dateStatus,'held');
+  assert.equal((await db.collection('organizations/org/experiences').where('preparedBookingId','==',created.id).get()).size,1);
+  const invoice=await billing.read(buyer,{organizationId:'org',invoiceId:completed.invoice.id});
+  await pay(invoice,invoice.amountDueCents,'PREPARED-PAID');
+  assert.equal((await db.collection('organizations/org/experiences').where('preparedBookingId','==',created.id).get()).size,1);
+  assert.equal((await db.doc(`organizations/org/experiences/${experienceId}`).get()).data().billingStatus,'paid');
+});
+
+test('a requested prepared-booking change blocks signature until staff creates a new version',async()=>{
+  const created=await prepared.create(staff,{
+    organizationId:'org',organizationName:'Example Community',organizationKind:'facility',
+    recipientName:'Alex Rivera',recipientEmail:'buyer@example.com',
+    offeringId:'single-song-group-event',preferredStartsAt:'2026-11-01T17:00:00.000Z',
+    dateStatus:'proposed',paymentOptions:['invoice'],invoiceActivationPolicy:'payment_required'
+  });
+  await prepared.claim(buyer,{token:created.token,organizationId:'org'});
+  await prepared.requestChange(buyer,{token:created.token,category:'date',message:'Please move this to November 8.'});
+  await assert.rejects(()=>prepared.sign(buyer,{token:created.token,signedByName:'Alex Rivera',signedByTitle:'Director',electronicRecordsAccepted:true}),/reviewing/);
+  const revised=await prepared.revise(staff,{bookingId:created.id,preferredStartsAt:'2026-11-08T17:00:00.000Z',dateStatus:'confirmed'});
+  assert.equal(revised.currentVersion,2);assert.equal(revised.status,'claimed');
+  const signed=await prepared.sign(buyer,{token:created.token,signedByName:'Alex Rivera',signedByTitle:'Director',electronicRecordsAccepted:true});
+  assert.equal(signed.status,'accepted');
+  const versions=await db.collection(`preparedBookings/${created.id}/versions`).get();assert.equal(versions.size,2);
+});
 
 test('individual card payment is source-attributed, replay-safe and holds fulfillment after consent withdrawal',async()=>{
   const {makeIndividualPaymentService}=require('../individual-payments');await seedRecipient();
