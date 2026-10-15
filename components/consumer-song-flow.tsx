@@ -18,17 +18,16 @@ import {
   genreChoices,
   groupExperienceLinks,
   helpWriteLine,
-  isIndividualRecipient,
   lyricText,
   memoryOptions,
   occasionChoices,
+  occasionIsReady,
   qrCardIncluded,
   readConsumerSession,
   recipientChoices,
   retreatConsumerFlow,
   setLineText,
-  songwriterTouchChoices,
-  songwriterTouchNote,
+  signatureFanfare,
   surpriseLines,
   surpriseReplacements,
   suggestLine,
@@ -41,8 +40,7 @@ import {
   type FeelingId,
   type GenreId,
   type OccasionId,
-  type RecipientId,
-  type SongwriterTouchId
+  type RecipientId
 } from "@/domain/consumer-song-flow";
 import { getIndividualSongPlan, type IndividualSongPlanId } from "@/domain/individual-song-plans";
 import { builtInPreviews, publicPreviewEntitlement } from "@/lib/preview-library";
@@ -69,7 +67,7 @@ function speechRecognition(): SpeechRecognitionLike | null {
   return Ctor ? new Ctor() : null;
 }
 
-function StoryVoice({ value, onChange }: { value: string; onChange: (text: string) => void }) {
+function StoryVoice({ value, onChange, prompt }: { value: string; onChange: (text: string) => void; prompt: string }) {
   const [listening, setListening] = useState(false);
   const [hint, setHint] = useState("");
   const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
@@ -80,7 +78,7 @@ function StoryVoice({ value, onChange }: { value: string; onChange: (text: strin
   function tellStory() {
     const recognition = speechRecognition();
     if (!recognition) {
-      setHint("Type the story in the box. This browser cannot take dictation yet.");
+      setHint("Type it in the box. This browser cannot take dictation yet.");
       storyRef.current?.focus();
       return;
     }
@@ -93,26 +91,26 @@ function StoryVoice({ value, onChange }: { value: string; onChange: (text: strin
     };
     recognition.onerror = () => {
       setListening(false);
-      setHint("We could not hear that. You can type the story instead.");
+      setHint("We could not hear that. You can type it instead.");
     };
     recognition.onend = () => setListening(false);
     recognitionRef.current = recognition;
     setListening(true);
-    setHint("Listening. Tell us the story in your own words.");
+    setHint("Listening. Say what you want this song to hold.");
     try {
       recognition.start();
     } catch {
       setListening(false);
-      setHint("Dictation is busy. You can type the story instead.");
+      setHint("Dictation is busy. You can type it instead.");
     }
   }
 
   return <div className={styles.voice}>
-    <p>Don&apos;t want to type? Tell us your story.</p>
+    <p>{prompt}</p>
     {listening
       ? <button type="button" onClick={() => { recognitionRef.current?.stop(); setListening(false); }}>Stop listening</button>
-      : <button type="button" onClick={tellStory}>Tell us your story</button>}
-    <label>Your story
+      : <button type="button" onClick={tellStory}>Say it out loud</button>}
+    <label>Spoken notes
       <textarea ref={storyRef} value={value} rows={4} onChange={(event) => onChange(event.target.value)} placeholder="A porch light, a nickname, the way they laugh." />
     </label>
     {hint ? <p className={styles.notice} role="status">{hint}</p> : null}
@@ -135,7 +133,10 @@ export function ConsumerSongFlow() {
   const selectedPlan = getIndividualSongPlan(draft.planId);
 
   useEffect(() => {
-    setSession(readConsumerSession(window.localStorage.getItem(consumerDraftStorageKey)));
+    const stored = readConsumerSession(window.localStorage.getItem(consumerDraftStorageKey));
+    const plan = getIndividualSongPlan(new URLSearchParams(window.location.search).get("plan"));
+    const beforePackage = stored.step !== "addons" && stored.step !== "delivery";
+    setSession(plan && beforePackage ? { ...stored, draft: { ...stored.draft, planId: plan.id } } : stored);
     setReady(true);
   }, []);
 
@@ -234,14 +235,6 @@ export function ConsumerSongFlow() {
     });
   }
 
-  function toggleTouch(id: SongwriterTouchId) {
-    patch({
-      songwriterTouches: draft.songwriterTouches.includes(id)
-        ? draft.songwriterTouches.filter((item) => item !== id)
-        : [...draft.songwriterTouches, id]
-    });
-  }
-
   function downloadLyrics() {
     const blob = new Blob([lyricText(draft.lines)], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
@@ -308,25 +301,37 @@ export function ConsumerSongFlow() {
           >{choice.label}</button>)}
         </div>
       </fieldset>
+      {draft.recipient === "occasion" ? <div className={styles.choices} role="group" aria-label="Occasion">
+        {occasionChoices.map((choice) => <button
+          aria-pressed={draft.occasion === choice.id}
+          key={choice.id}
+          type="button"
+          onClick={() => patch({ occasion: choice.id as OccasionId })}
+        >{choice.label}</button>)}
+      </div> : null}
+      {draft.recipient === "occasion" && draft.occasion === "other" ? <label>What is the occasion?
+        <input value={draft.occasionOther} onChange={(event) => patch({ occasionOther: event.target.value })} placeholder="A house concert, a reunion, a Tuesday" />
+      </label> : null}
       {draft.recipient === "group" ? <div className={styles.handoff}>
-        <p>A group uses the experiences already on SongKeep, including Honor a Life Song Experience.</p>
+        <p>A group starts with an account. You will plan the experience next, including Honor a Life Song Experience.</p>
         <div className={styles.actions}>
-          {groupExperienceLinks.map((link) => <Link className={styles.primary} key={link.href} href={link.href}>{link.label}</Link>)}
+          {groupExperienceLinks.map((link) => <Link className={link.href.startsWith("/create-account") ? styles.primary : styles.quietLink} key={link.href} href={link.href}>{link.label}</Link>)}
         </div>
+        <p className={styles.help}><Link href="/begin">Already have a group account? Plan the experience.</Link></p>
       </div> : <div className={styles.actions}>
-        <button className={styles.primary} type="button" onClick={goNext} disabled={!isIndividualRecipient(draft.recipient)}>Continue</button>
+        <button className={styles.primary} type="button" onClick={goNext} disabled={advanceConsumerFlow("welcome", draft) === "welcome"}>Continue</button>
       </div>}
       <p className={styles.help}>No songwriting experience needed.</p>
       <p className={styles.help}><Link href="/try">Already have interview notes? Open the song sandbox.</Link></p>
     </section> : null}
 
     {step === "story" ? <section className={styles.panel} aria-labelledby="create-heading">
-      <h1 id="create-heading" ref={headingRef} tabIndex={-1}>Tell us one memory</h1>
+      <h1 id="create-heading" ref={headingRef} tabIndex={-1}>{draft.recipient === "occasion" && draft.occasion ? questions.memory : "Tell us one memory"}</h1>
       <p>A sentence is enough. This is a taste of the song, not the finished lyric.</p>
       <label>A favorite memory
         <textarea value={draft.favoriteMemory} rows={4} onChange={(event) => patch({ favoriteMemory: event.target.value })} />
       </label>
-      <StoryVoice value={draft.voiceStory} onChange={(voiceStory) => patch({ voiceStory })} />
+      <StoryVoice prompt="Don't want to type? Say this memory out loud." value={draft.voiceStory} onChange={(voiceStory) => patch({ voiceStory })} />
       {draft.favoriteMemory.trim() || draft.voiceStory.trim() ? <div className={styles.taste} aria-label="Draft taste">
         <h2>A taste of the song</h2>
         {chorusChoices(draft, 0).map((line) => <p key={line}>{line}</p>)}
@@ -345,7 +350,10 @@ export function ConsumerSongFlow() {
           onClick={() => patch({ occasion: choice.id as OccasionId })}
         >{choice.label}</button>)}
       </div>
-      <div className={styles.actions}><button className={styles.primary} type="button" onClick={goNext} disabled={!draft.occasion}>Continue</button></div>
+      {draft.occasion === "other" ? <label>What is the occasion?
+        <input value={draft.occasionOther} onChange={(event) => patch({ occasionOther: event.target.value })} placeholder="A house concert, a reunion, a Tuesday" />
+      </label> : null}
+      <div className={styles.actions}><button className={styles.primary} type="button" onClick={goNext} disabled={!occasionIsReady(draft)}>Continue</button></div>
     </section> : null}
 
     {step === "about" ? <section className={styles.panel} aria-labelledby="create-heading">
@@ -360,16 +368,25 @@ export function ConsumerSongFlow() {
       <label>{questions.words}
         <input value={draft.threeWords} onChange={(event) => patch({ threeWords: event.target.value })} placeholder="Kind, steady, funny" />
       </label>
-      <label>{questions.memory}
+      {draft.favoriteMemory.trim() ? null : <label>{questions.memory}
         <textarea value={draft.favoriteMemory} rows={4} onChange={(event) => patch({ favoriteMemory: event.target.value })} />
-      </label>
+      </label>}
       <label>{questions.phrase}
-        <input value={draft.alwaysSay} onChange={(event) => patch({ alwaysSay: event.target.value })} />
+        <input value={draft.alwaysSay} onChange={(event) => patch({ alwaysSay: event.target.value })} placeholder="Phrases, nicknames, catchphrases" />
+      </label>
+      <label>{questions.appearance}
+        <input value={draft.appearance} onChange={(event) => patch({ appearance: event.target.value })} placeholder="The red scarf, the work boots, the smile" />
+      </label>
+      <label>{questions.favoriteThing}
+        <input value={draft.favoriteThing} onChange={(event) => patch({ favoriteThing: event.target.value })} placeholder="Fishing, Sunday lunch, the garden" />
+      </label>
+      <label>{questions.standout}
+        <input value={draft.standout} onChange={(event) => patch({ standout: event.target.value })} placeholder="Her laugh, his hands, the way they listen" />
       </label>
       <label>{questions.extra}
         <textarea value={draft.somethingElse} rows={3} onChange={(event) => patch({ somethingElse: event.target.value })} />
       </label>
-      <StoryVoice value={draft.voiceStory} onChange={(voiceStory) => patch({ voiceStory })} />
+      <StoryVoice prompt="Don't want to type the rest? Say it out loud." value={draft.voiceStory} onChange={(voiceStory) => patch({ voiceStory })} />
       <div className={styles.actions}><button className={styles.primary} type="button" onClick={goNext} disabled={advanceConsumerFlow("about", draft) === "about"}>Continue</button></div>
     </section> : null}
 
@@ -404,7 +421,7 @@ export function ConsumerSongFlow() {
       <div className={styles.modes}>
         {creationModes.map((mode) => <button
           aria-pressed={draft.mode === mode.id}
-          className={"emphasized" in mode && mode.emphasized ? styles.modeEmphasis : styles.mode}
+          className={styles.mode}
           key={mode.id}
           type="button"
           onClick={() => patch({ mode: mode.id as CreationModeId })}
@@ -456,23 +473,6 @@ export function ConsumerSongFlow() {
       <div className={styles.actions}><button className={styles.primary} type="button" onClick={goNext} disabled={!draft.chorusLine.trim()}>Continue</button></div>
     </section> : null}
 
-    {step === "songwriter" ? <section className={styles.panel} aria-labelledby="create-heading">
-      <h1 id="create-heading" ref={headingRef} tabIndex={-1}>Songwriter&apos;s Touch</h1>
-      <p>Tell a songwriter where to lean in. You can choose more than one.</p>
-      <div className={styles.stack}>
-        {songwriterTouchChoices.map((choice) => <label className={styles.check} key={choice.id}>
-          <input
-            type="checkbox"
-            checked={draft.songwriterTouches.includes(choice.id)}
-            onChange={() => toggleTouch(choice.id)}
-          />
-          {choice.label}
-        </label>)}
-      </div>
-      <p className={styles.note}>{songwriterTouchNote()}</p>
-      <div className={styles.actions}><button className={styles.primary} type="button" onClick={goNext} disabled={!draft.songwriterTouches.length}>Continue</button></div>
-    </section> : null}
-
     {step === "preview" ? <section className={styles.panel} aria-labelledby="create-heading">
       <h1 id="create-heading" ref={headingRef} tabIndex={-1}>Your draft</h1>
       <p>Edit any open line. Keep this line locks it so a new pass will not overwrite it.</p>
@@ -510,17 +510,21 @@ export function ConsumerSongFlow() {
 
     {step === "pricing" ? <section className={styles.panel} aria-labelledby="create-heading">
       <h1 id="create-heading" ref={headingRef} tabIndex={-1}>Choose a plan</h1>
-      <p>A personal song, with the plans SongKeep already offers.</p>
+      <p>The draft is ready. Choose what you want to keep.</p>
       <div className={styles.plans}>
-        {plans.map((plan) => <article className={plan.featured ? styles.planFeatured : styles.plan} key={plan.id}>
-          {plan.badge ? <p className={styles.badge}>{plan.badge}</p> : null}
-          <h2>{plan.name}</h2>
-          <p className={styles.price}>{plan.priceLabel}</p>
-          <ul>
-            {plan.benefits.map((benefit) => <li key={benefit}>{benefit}</li>)}
-          </ul>
-          <button className={styles.primary} type="button" onClick={() => choosePlan(plan.id)}>Choose {plan.name}</button>
-        </article>)}
+        {plans.map((plan) => {
+          const signature = plan.id === "song-keep-signature";
+          return <article className={signature ? styles.planSignature : plan.featured ? styles.planFeatured : styles.plan} key={plan.id}>
+            {plan.badge ? <p className={styles.badge}>{plan.badge}</p> : null}
+            {signature ? <p className={styles.fanfare}>Songwriter&apos;s Touch™</p> : null}
+            <h2>{plan.name}</h2>
+            <p className={styles.price}>{plan.priceLabel}</p>
+            <ul>
+              {plan.benefits.map((benefit) => <li key={benefit}>{benefit}</li>)}
+            </ul>
+            <button className={styles.primary} type="button" onClick={() => choosePlan(plan.id)}>{draft.planId === plan.id ? `Continue with ${plan.name}` : `Choose ${plan.name}`}</button>
+          </article>;
+        })}
       </div>
     </section> : null}
 
@@ -528,7 +532,7 @@ export function ConsumerSongFlow() {
       <h1 id="create-heading" ref={headingRef} tabIndex={-1}>Want to add anything?</h1>
       <p>These are optional. You already have a song you like.</p>
       <div className={styles.stack}>
-        {addOns.map((addOn) => <label className={styles.addOn} key={addOn.id}>
+        {addOns.filter((addOn) => addOn.id !== "lyric-pdf" || draft.planId !== "song-keep-signature").map((addOn) => <label className={styles.addOn} key={addOn.id}>
           <input type="checkbox" checked={draft.addOnIds.includes(addOn.id)} onChange={() => toggleAddOn(addOn.id)} />
           <span>{addOn.name}</span>
           <b>{addOn.priceLabel}</b>
@@ -542,10 +546,14 @@ export function ConsumerSongFlow() {
     {step === "delivery" ? <section className={styles.panel} aria-labelledby="create-heading">
       <h1 id="create-heading" ref={headingRef} tabIndex={-1}>Your SongKeep is ready</h1>
       <p>{draft.subjectName ? `${draft.subjectName}'s draft is here to keep.` : "Your draft is here to keep."} {selectedPlan ? `${selectedPlan.name} is the plan on this song.` : null}</p>
+      {draft.planId === "song-keep-signature" ? <div className={styles.fanfareBox}>
+        <p className={styles.fanfare}>Songwriter&apos;s Touch™</p>
+        <p>{signatureFanfare()} Your lyric sheet is ready to view, download, or print.</p>
+      </div> : null}
       <div className={styles.actions}>
         <button className={styles.primary} type="button" onClick={() => setShowPlayer(true)}>Play</button>
         <button type="button" onClick={downloadLyrics}>Download lyrics</button>
-        <button type="button" onClick={() => setShowKeepsake(true)}>View keepsake</button>
+        <button type="button" onClick={() => setShowKeepsake(true)}>{draft.planId === "song-keep-signature" ? "View lyric sheet" : "View keepsake"}</button>
         <button type="button" onClick={() => void shareLyric()}>Share</button>
         <button type="button" onClick={() => { setShowKeepsake(true); setPrintKeepsake(true); }}>Print</button>
       </div>
@@ -561,12 +569,13 @@ export function ConsumerSongFlow() {
       </div> : null}
       {showKeepsake ? <article className={styles.keepsake}>
         <p>SongKeep</p>
-        <h2>{draft.subjectName ? `For ${draft.subjectName}` : "For someone you love"}</h2>
+        <h2>{draft.planId === "song-keep-signature" ? "Lyric sheet" : "Keepsake"}</h2>
+        <p>{draft.subjectName ? `For ${draft.subjectName}` : draft.recipient === "myself" ? "For you" : "For this occasion"}</p>
         {draft.lines.map((line) => <p key={line.id}><strong>{line.role === "chorus" ? "Chorus" : "Verse"}</strong><br />{line.text}</p>)}
-        {qrCardIncluded(draft) ? <div className={styles.qr} aria-label="QR song card">
-          <span>QR song card</span>
-          <small>The live page arrives with your plan.</small>
-        </div> : <p>A QR song card is part of Encore, and of the lyric PDF and QR keepsake add-on.</p>}
+        {qrCardIncluded(draft) ? <div className={styles.qr} aria-label="QR code to the song">
+          <span>QR code</span>
+          <small>The song page arrives with this plan.</small>
+        </div> : <p>A QR code to the song is part of Song Keep Signature, and of the lyric PDF add-on.</p>}
       </article> : null}
       {notice ? <p className={styles.notice} role="status">{notice}</p> : null}
       {selectedPlan ? <p className={styles.help}><Link href={`/create-account?next=%2Fcreate&plan=${selectedPlan.id}`}>Create an account to keep this draft with {selectedPlan.name}.</Link></p> : null}

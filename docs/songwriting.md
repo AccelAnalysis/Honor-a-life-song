@@ -11,7 +11,9 @@ Signed-in platform admins and assigned creators still use Creator Studio at `/cr
 3. Paste interview notes and ask for verse ideas. On this public page the lines are arranged from the notes in the browser. No model key is involved.
 4. Edit the draft and refine it.
 5. When a draft is long enough to keep, create an account if you want SongKeep to hold it.
-6. The same moment shows plan cards. The switch opens on **Individual**: Cheers ($9.95), Spotlight ($19.95), and Encore ($29.95), with optional add-ons listed under the cards. **Group** keeps Single-Song Group Event ($200), Honor a Life Song Experience ($2,500), and SongKeep Legacy Album ($6,000). Prices stay off the page until this draft exists.
+6. The same moment shows plan cards. The switch opens on **Individual**: Song Keep ($19), Song Keep + Music ($39, most popular), and Song Keep Signature ($59, with Songwriter's Touch™). Optional add-ons stay listed under the cards. **Group** keeps Single-Song Group Event ($200), Honor a Life Song Experience ($2,500), and SongKeep Legacy Album ($6,000), and the group button creates an account before `/begin`. Prices stay off the page until this draft exists.
+
+Stripe checkout still uses the `priceCents` and product name stored on the Firestore product for that request. This repo does not contain Stripe price IDs. Display ids are `song-keep`, `song-keep-music`, and `song-keep-signature`. Older Cheers, Spotlight, and Encore ids no longer resolve.
 
 ## What a creator does
 

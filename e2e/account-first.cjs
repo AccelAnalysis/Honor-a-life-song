@@ -45,7 +45,7 @@ async function requestInvoice(page) {
  let orgId, owner;
  try {
   await check('Focused package page and correct song limits', async () => {
-   await page.goto(`${origin}/services`); await expect(heading(page,'Choose your experience.')).toBeVisible();
+   await page.goto(`${origin}/services`); await expect(heading(page,'A song for one person, or a song for a group.')).toBeVisible();
    for (const count of [6,10]) await expect(page.getByText(`Up to ${count} songs`,{exact:true})).toBeVisible();
    await cleanCopy(page); await shot(page,'packages-desktop');
   });

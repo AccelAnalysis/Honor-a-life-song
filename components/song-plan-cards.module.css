@@ -44,6 +44,14 @@
   border: 2px solid #1572c6;
   box-shadow: 0 12px 28px rgba(21, 114, 198, 0.12);
 }
+.badge {
+  margin: 0;
+  color: #1572c6;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.fanfare { margin: 0; color: #7c4aa5; font-weight: 800; }
 .card h3 {
   margin: 0;
   min-height: 2.6em;

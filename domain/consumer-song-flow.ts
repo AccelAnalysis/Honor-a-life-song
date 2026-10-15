@@ -1,6 +1,6 @@
 /**
- * Individual consumer path. Group experiences stay on /begin and /services.
- * Prices and names come from the live individual plans. Do not invent another ladder.
+ * Individual consumer path. Group experiences stay on the account-first begin path.
+ * Prices and names come from the individual Song Keep packages.
  */
 
 import {
@@ -23,7 +23,6 @@ export const consumerFlowSteps = [
   "sound",
   "mode",
   "with-me",
-  "songwriter",
   "preview",
   "pricing",
   "addons",
@@ -33,9 +32,9 @@ export const consumerFlowSteps = [
 export type ConsumerFlowStep = (typeof consumerFlowSteps)[number];
 
 export const recipientChoices = [
-  { id: "someone-i-love", label: "Someone I love" },
+  { id: "occasion", label: "Occasion" },
   { id: "myself", label: "Myself" },
-  { id: "group", label: "A group" }
+  { id: "group", label: "Group" }
 ] as const;
 
 export type RecipientId = (typeof recipientChoices)[number]["id"];
@@ -89,12 +88,6 @@ export const creationModes = [
     id: "with-me",
     title: "Create it with me",
     detail: "Pick the chorus and the memories that belong."
-  },
-  {
-    id: "songwriter",
-    title: "Songwriter's Touch",
-    detail: "A songwriter reviews the song and strengthens what matters most.",
-    emphasized: true
   }
 ] as const;
 
@@ -109,9 +102,15 @@ export const songwriterTouchChoices = [
 
 export type SongwriterTouchId = (typeof songwriterTouchChoices)[number]["id"];
 
-/** Existing group entry points. This flow does not redefine them. */
+/** Account-first door for a group. The experience is chosen after the account exists. */
+export function groupAccountHref(offeringId?: string) {
+  const next = offeringId ? `/begin?offering=${offeringId}` : "/begin";
+  return `/create-account?next=${encodeURIComponent(next)}`;
+}
+
+/** Shown when someone marks the song as a group. Does not continue the individual draft. */
 export const groupExperienceLinks = [
-  { href: "/begin", label: "Plan a group experience" },
+  { href: groupAccountHref(), label: "Create a group account" },
   { href: "/services", label: "See group services" }
 ] as const;
 
@@ -144,11 +143,15 @@ export type PreviewLine = {
 export type ConsumerDraft = {
   recipient: RecipientId | null;
   occasion: OccasionId | null;
+  occasionOther: string;
   subjectName: string;
   relationship: string;
   threeWords: string;
   favoriteMemory: string;
   alwaysSay: string;
+  appearance: string;
+  favoriteThing: string;
+  standout: string;
   somethingElse: string;
   voiceStory: string;
   feeling: FeelingId | null;
@@ -180,6 +183,9 @@ export type AboutQuestions = {
   words: string;
   memory: string;
   phrase: string;
+  appearance: string;
+  favoriteThing: string;
+  standout: string;
   extra: string;
 };
 
@@ -199,17 +205,21 @@ export type ConsumerPlanCard = {
   badge: string | null;
 };
 
-const individualRecipients: readonly RecipientId[] = ["someone-i-love", "myself"];
+const individualRecipients: readonly RecipientId[] = ["occasion", "myself"];
 
 export function emptyConsumerDraft(): ConsumerDraft {
   return {
     recipient: null,
     occasion: null,
+    occasionOther: "",
     subjectName: "",
     relationship: "",
     threeWords: "",
     favoriteMemory: "",
     alwaysSay: "",
+    appearance: "",
+    favoriteThing: "",
+    standout: "",
     somethingElse: "",
     voiceStory: "",
     feeling: null,
@@ -242,8 +252,20 @@ function labelFor<T extends string>(choices: readonly { id: T; label: string }[]
   return choices.find((choice) => choice.id === id)?.label ?? "";
 }
 
-export function occasionLabel(id: OccasionId | null) {
+export function occasionLabel(id: OccasionId | null, other = "") {
+  if (id === "other" && clean(other)) return clean(other);
   return labelFor(occasionChoices, id);
+}
+
+export function occasionIsReady(draft: Pick<ConsumerDraft, "occasion" | "occasionOther">) {
+  if (!draft.occasion) return false;
+  if (draft.occasion === "other") return clean(draft.occasionOther).length > 0;
+  return true;
+}
+
+/** Occasion was already chosen beside who the song is for, so the later screen would repeat it. */
+export function occasionAlreadyChosen(draft: Pick<ConsumerDraft, "recipient" | "occasion" | "occasionOther">) {
+  return draft.recipient === "occasion" && occasionIsReady(draft);
 }
 
 export function feelingLabel(id: FeelingId | null) {
@@ -288,13 +310,16 @@ export function aboutQuestions(draft: Pick<ConsumerDraft, "occasion" | "recipien
     relationship: self ? "How should the song speak about you?" : "How are they connected to you?",
     words: self ? "Three words for you" : `Three words for ${them}`,
     memory: occasion ? memoryByOccasion[occasion] : self ? "What is a favorite memory?" : "What is a favorite memory of them?",
-    phrase: occasion ? phraseByOccasion[occasion] : self ? "Something you always say" : "Something they always say",
-    extra: "Anything else the song should hold"
+    phrase: occasion ? phraseByOccasion[occasion] : self ? "What do you usually say?" : "What do they usually say?",
+    appearance: self ? "How do you usually look or dress?" : "How do they usually look or dress?",
+    favoriteThing: self ? "What is a favorite thing you do?" : "What is a favorite thing they do?",
+    standout: self ? "What feature stands out?" : "What feature stands out about them?",
+    extra: "Anything else you would like to tell us for this song?"
   };
 }
 
-export function hasStory(draft: Pick<ConsumerDraft, "subjectName" | "favoriteMemory" | "voiceStory" | "somethingElse" | "alwaysSay">) {
-  return [draft.subjectName, draft.favoriteMemory, draft.voiceStory, draft.somethingElse, draft.alwaysSay].some((value) => clean(value).length > 0);
+export function hasStory(draft: Pick<ConsumerDraft, "subjectName" | "favoriteMemory" | "voiceStory" | "somethingElse" | "alwaysSay" | "appearance" | "favoriteThing" | "standout">) {
+  return [draft.subjectName, draft.favoriteMemory, draft.voiceStory, draft.somethingElse, draft.alwaysSay, draft.appearance, draft.favoriteThing, draft.standout].some((value) => clean(value).length > 0);
 }
 
 export function storyNotes(draft: ConsumerDraft) {
@@ -304,9 +329,13 @@ export function storyNotes(draft: ConsumerDraft) {
     draft.threeWords ? `Three words come first: ${clean(draft.threeWords)}.` : "",
     draft.favoriteMemory ? `A favorite memory: ${clean(draft.favoriteMemory)}.` : "",
     draft.alwaysSay ? `A line they always say: ${clean(draft.alwaysSay)}.` : "",
+    draft.appearance ? `How they look: ${clean(draft.appearance)}.` : "",
+    draft.favoriteThing ? `A favorite thing to do: ${clean(draft.favoriteThing)}.` : "",
+    draft.standout ? `A standout feature: ${clean(draft.standout)}.` : "",
+    draft.occasion === "other" && clean(draft.occasionOther) ? `The occasion is ${clean(draft.occasionOther)}.` : "",
     draft.somethingElse ? clean(draft.somethingElse) : "",
     draft.voiceStory ? clean(draft.voiceStory) : "",
-    draft.occasion ? `The occasion is ${occasionLabel(draft.occasion).toLowerCase()}.` : "",
+    draft.occasion && draft.occasion !== "other" ? `The occasion is ${occasionLabel(draft.occasion).toLowerCase()}.` : "",
     draft.feeling ? `The feeling is ${feelingLabel(draft.feeling).toLowerCase()}.` : ""
   ];
   return parts.filter((part) => part.length > 0).join(" ");
@@ -315,7 +344,10 @@ export function storyNotes(draft: ConsumerDraft) {
 export function memoryOptions(draft: ConsumerDraft): MemoryOption[] {
   const fields: MemoryOption[] = [
     { id: "memory", label: "Favorite memory", text: clean(draft.favoriteMemory) },
-    { id: "phrase", label: draft.recipient === "myself" ? "Something you always say" : "Something they always say", text: clean(draft.alwaysSay) },
+    { id: "phrase", label: draft.recipient === "myself" ? "Something you usually say" : "Something they usually say", text: clean(draft.alwaysSay) },
+    { id: "appearance", label: draft.recipient === "myself" ? "How you look" : "How they look", text: clean(draft.appearance) },
+    { id: "favorite", label: "Favorite thing to do", text: clean(draft.favoriteThing) },
+    { id: "standout", label: "Standout feature", text: clean(draft.standout) },
     { id: "words", label: "Three words", text: clean(draft.threeWords) },
     { id: "extra", label: "Something else", text: clean(draft.somethingElse) },
     { id: "voice", label: "Spoken story", text: clean(draft.voiceStory) }
@@ -338,7 +370,7 @@ export function chorusPool(draft: ConsumerDraft) {
   const phrase = clip(draft.alwaysSay);
   const memory = clip(draft.favoriteMemory);
   const extra = clip(draft.somethingElse || draft.voiceStory);
-  const occasion = draft.occasion ? occasionLabel(draft.occasion).toLowerCase() : "this day";
+  const occasion = draft.occasion ? occasionLabel(draft.occasion, draft.occasionOther).toLowerCase() : "this day";
   const feeling = draft.feeling ? feelingLabel(draft.feeling).toLowerCase() : "close";
   const lines = [
     phrase,
@@ -462,11 +494,13 @@ export function canContinue(step: ConsumerFlowStep, draft: ConsumerDraft) {
     case "listen":
       return true;
     case "welcome":
-      return isIndividualRecipient(draft.recipient);
+      if (!isIndividualRecipient(draft.recipient)) return false;
+      if (draft.recipient === "occasion") return occasionIsReady(draft);
+      return true;
     case "story":
       return hasStory(draft);
     case "occasion":
-      return draft.occasion !== null;
+      return occasionIsReady(draft);
     case "about":
       return hasStory(draft);
     case "sound":
@@ -475,8 +509,6 @@ export function canContinue(step: ConsumerFlowStep, draft: ConsumerDraft) {
       return draft.mode !== null;
     case "with-me":
       return clean(draft.chorusLine).length > 0;
-    case "songwriter":
-      return draft.songwriterTouches.length > 0;
     case "preview":
       return draft.loved && previewHasLyric(draft);
     case "pricing":
@@ -497,7 +529,7 @@ export function advanceConsumerFlow(step: ConsumerFlowStep, draft: ConsumerDraft
     case "welcome":
       return "story";
     case "story":
-      return "occasion";
+      return occasionAlreadyChosen(draft) ? "about" : "occasion";
     case "occasion":
       return "about";
     case "about":
@@ -506,10 +538,8 @@ export function advanceConsumerFlow(step: ConsumerFlowStep, draft: ConsumerDraft
       return "mode";
     case "mode":
       if (draft.mode === "with-me") return "with-me";
-      if (draft.mode === "songwriter") return "songwriter";
       return "preview";
     case "with-me":
-    case "songwriter":
       return "preview";
     case "preview":
       return "pricing";
@@ -533,17 +563,15 @@ export function retreatConsumerFlow(step: ConsumerFlowStep, draft: ConsumerDraft
     case "occasion":
       return "story";
     case "about":
-      return "occasion";
+      return occasionAlreadyChosen(draft) ? "story" : "occasion";
     case "sound":
       return "about";
     case "mode":
       return "sound";
     case "with-me":
-    case "songwriter":
       return "mode";
     case "preview":
       if (draft.mode === "with-me") return "with-me";
-      if (draft.mode === "songwriter") return "songwriter";
       return "mode";
     case "pricing":
       return "preview";
@@ -575,9 +603,10 @@ export function withPreviewLines(draft: ConsumerDraft): ConsumerDraft {
   return { ...draft, lines, activeLineId: lines.find((line) => !line.locked)?.id ?? null };
 }
 
-/** Songwriter's Touch maps onto Spotlight, which already includes a songwriter personalization touch. */
+/** Popular package, not a mode. The guest still chooses on the package screen. */
 export function suggestedPlanId(mode: CreationModeId | null): IndividualSongPlanId {
-  return mode === "songwriter" ? "spotlight" : "cheers";
+  void mode;
+  return individualSongPlans.find((plan) => plan.featured)?.id ?? "song-keep";
 }
 
 export function consumerPlanCards(): ConsumerPlanCard[] {
@@ -587,8 +616,8 @@ export function consumerPlanCards(): ConsumerPlanCard[] {
     priceCents: plan.priceCents,
     priceLabel: formatPlanPrice(plan.priceCents),
     benefits: plan.benefits,
-    featured: plan.id === "spotlight",
-    badge: plan.id === "spotlight" ? "Most popular" : null
+    featured: plan.featured === true,
+    badge: plan.badge ?? null
   }));
 }
 
@@ -601,16 +630,14 @@ export function consumerAddOnCards() {
   }));
 }
 
-export function songwriterTouchNote() {
-  const cheers = getIndividualSongPlan("cheers");
-  const spotlight = getIndividualSongPlan("spotlight");
-  const encore = getIndividualSongPlan("encore");
-  if (!cheers || !spotlight || !encore) return "";
-  return `A songwriter reviews what you choose. ${spotlight.name} includes a songwriter personalization touch (${formatPlanPrice(spotlight.priceCents)}). ${encore.name} includes that touch, a revision, and a QR song card (${formatPlanPrice(encore.priceCents)}). ${cheers.name} includes a songwriter quality check (${formatPlanPrice(cheers.priceCents)}).`;
+export function signatureFanfare() {
+  const signature = getIndividualSongPlan("song-keep-signature");
+  if (!signature) return "Songwriter's Touch™";
+  return `Songwriter's Touch™ comes with ${signature.name} (${formatPlanPrice(signature.priceCents)}). Tina personally reviews and personalizes the chorus or a key section. The song arrives with a lyric sheet.`;
 }
 
 export function qrCardIncluded(draft: Pick<ConsumerDraft, "planId" | "addOnIds">) {
-  return draft.planId === "encore" || draft.addOnIds.includes("lyric-pdf");
+  return draft.planId === "song-keep-signature" || draft.addOnIds.includes("lyric-pdf");
 }
 
 export function addOnsAreOffered(step: ConsumerFlowStep, loved: boolean) {
@@ -650,20 +677,27 @@ export function readConsumerSession(raw: string | null): ConsumerSession {
   if (!raw) return emptyConsumerSession();
   try {
     const parsed = JSON.parse(raw) as { step?: unknown; draft?: Partial<ConsumerDraft> };
-    const step = asEnum(parsed.step, consumerFlowSteps) ?? "welcome";
+    const storedStep = parsed.step === "songwriter" ? "preview" : parsed.step;
+    const step = asEnum(storedStep, consumerFlowSteps) ?? "welcome";
     const incoming = parsed.draft ?? {};
     const base = emptyConsumerDraft();
+    const legacyRecipient = (incoming as { recipient?: unknown }).recipient;
+    const storedRecipient = legacyRecipient === "someone-i-love" ? "occasion" : incoming.recipient;
     const planId = asEnum(incoming.planId, individualSongPlans.map((plan) => plan.id));
     const addOnIds = asStringList(incoming.addOnIds).filter((id) => individualSongAddOns.some((addOn) => addOn.id === id));
     const draft: ConsumerDraft = {
       ...base,
-      recipient: asEnum(incoming.recipient, recipientChoices.map((choice) => choice.id)),
+      recipient: asEnum(storedRecipient, recipientChoices.map((choice) => choice.id)),
       occasion: asEnum(incoming.occasion, occasionChoices.map((choice) => choice.id)),
+      occasionOther: asString(incoming.occasionOther, 160),
       subjectName: asString(incoming.subjectName, 120),
       relationship: asString(incoming.relationship, 160),
       threeWords: asString(incoming.threeWords, 160),
       favoriteMemory: asString(incoming.favoriteMemory),
       alwaysSay: asString(incoming.alwaysSay, 400),
+      appearance: asString(incoming.appearance, 400),
+      favoriteThing: asString(incoming.favoriteThing, 400),
+      standout: asString(incoming.standout, 400),
       somethingElse: asString(incoming.somethingElse),
       voiceStory: asString(incoming.voiceStory),
       feeling: asEnum(incoming.feeling, feelingChoices.map((choice) => choice.id)),
