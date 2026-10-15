@@ -3,6 +3,22 @@
 .eyebrow { margin: 0 0 .7rem; color: #7c4aa5; text-transform: uppercase; letter-spacing: .14em; font-size: .67rem; font-weight: 850; }
 .hero h1 { max-width: 14ch; margin: 0 0 1.2rem; font-family: var(--font-brand-sans, "Avenir Next", Avenir, Inter, sans-serif); font-size: clamp(3.4rem, 7.5vw, 7.3rem); font-weight: 650; line-height: .92; letter-spacing: -.065em; text-wrap: balance; }
 .hero > p:not(.eyebrow) { max-width: 65ch; color: #62667a; font-size: 1.04rem; line-height: 1.72; }
+.paths { display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.4rem; }
+.secondary { min-height: 50px; display: inline-flex; align-items: center; justify-content: center; padding: .75rem 1.15rem; border-radius: 12px; border: 1px solid #c9ceda; background: #fff; color: #141648; font-weight: 820; text-decoration: none; }
+.secondary:focus-visible { outline: 3px solid rgba(21,114,198,.28); outline-offset: 3px; }
+.sectionIntro { width: min(74rem, calc(100% - 2rem)); margin: 0 auto; padding: clamp(2.2rem, 5vw, 3.4rem) 0 0; }
+.sectionIntro h2 { max-width: 16ch; margin: 0 0 .6rem; font-family: var(--font-brand-sans, "Avenir Next", Avenir, Inter, sans-serif); font-size: clamp(2rem, 4vw, 3.4rem); font-weight: 650; line-height: 1; letter-spacing: -.05em; }
+.sectionIntro p:not(.eyebrow) { max-width: 62ch; color: #62667a; line-height: 1.65; }
+.packages { width: min(74rem, calc(100% - 2rem)); margin: 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; padding: 1.2rem 0 clamp(2.2rem, 5vw, 3.5rem); align-items: stretch; }
+.package { display: flex; flex-direction: column; gap: .75rem; min-width: 0; padding: 1.15rem 1.1rem 1.2rem; border: 1px solid #dde1e9; border-radius: 16px; background: #fff; }
+.packageFeatured { border: 2px solid #1572c6; box-shadow: 0 12px 28px rgba(21, 114, 198, 0.12); }
+.packageSignature { border: 2px solid #7c4aa5; background: linear-gradient(180deg, #fbf7fd, #fff 42%); }
+.package h3 { margin: 0; font-size: 1.35rem; letter-spacing: -.03em; }
+.packagePrice { margin: 0; color: #1572c6; font-size: 2rem; font-weight: 760; letter-spacing: -.04em; }
+.package ul { margin: 0; padding: 0 0 0 1.1rem; color: #3c4054; line-height: 1.45; }
+.package .primary { margin-top: auto; }
+.badge { margin: 0; color: #1572c6; font-size: .78rem; font-weight: 800; letter-spacing: .04em; }
+.fanfare { margin: 0; color: #7c4aa5; font-weight: 800; }
 .comparison { border-top: 1px solid #dde1e9; }
 .offer { width: min(74rem, calc(100% - 2rem)); margin: 0 auto; display: grid; grid-template-columns: minmax(4rem,.2fr) minmax(0,1.8fr); gap: clamp(1rem, 4vw, 3.5rem); padding: clamp(2.7rem, 7vw, 6rem) 0; border-bottom: 1px solid #dde1e9; }
 .offerNumber { color: #c2c6d2; font-size: clamp(2.5rem, 5vw, 5.5rem); font-weight: 300; letter-spacing: -.06em; }
@@ -26,6 +42,7 @@
 .primary:focus-visible { outline: 3px solid rgba(21,114,198,.28); outline-offset: 3px; }
 
 @media (max-width: 740px) {
+  .packages { grid-template-columns: 1fr; }
   .offer { grid-template-columns: 1fr; }
   .offerNumber { font-size: 2.4rem; }
   .offerHeading { flex-direction: column; gap: .8rem; }

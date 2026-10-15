@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { formatOfferingPrice } from "@/domain/booking";
 import { experienceOfferings, type ExperienceOffering } from "@/domain/experience";
+import { groupAccountHref } from "@/domain/consumer-song-flow";
 import { formatPlanPrice, individualSongAddOns, individualSongPlans } from "@/domain/individual-song-plans";
 import styles from "./song-plan-cards.module.css";
 
@@ -31,11 +32,14 @@ export function SongPlanCards({ source = "draft" }: { source?: "draft" | "pricin
     {individual ? <>
       <div className={styles.row}>
         {individualSongPlans.map((plan) => {
-          const featured = plan.id === "spotlight";
+          const featured = plan.featured === true;
+          const href = source === "pricing" ? `/create?plan=${plan.id}` : `/create-account?next=%2Ftry&plan=${plan.id}`;
           return <article className={featured ? `${styles.card} ${styles.featured}` : styles.card} key={plan.id}>
+            {plan.badge ? <p className={styles.badge}>{plan.badge}</p> : null}
+            {plan.id === "song-keep-signature" ? <p className={styles.fanfare}>Songwriter&apos;s Touch™</p> : null}
             <h3>{plan.name}</h3>
             <p className={styles.price}>{formatPlanPrice(plan.priceCents)}</p>
-            <Link className={styles.cta} href={`/create-account?next=%2Ftry&plan=${plan.id}`}>Choose {plan.name}</Link>
+            <Link className={styles.cta} href={href}>{source === "pricing" ? `Start ${plan.name}` : `Choose ${plan.name}`}</Link>
             <ul>
               {plan.benefits.map((benefit) => <li key={benefit}>{benefit}</li>)}
             </ul>
@@ -54,7 +58,7 @@ export function SongPlanCards({ source = "draft" }: { source?: "draft" | "pricin
         return <article className={featured ? `${styles.card} ${styles.featured}` : styles.card} key={offering.id}>
           <h3>{offering.name}</h3>
           <p className={styles.price}>{formatOfferingPrice(offering.priceCents)}</p>
-          <Link className={styles.cta} href={`/begin?offering=${offering.id}`}>Choose {offering.shortName}</Link>
+          <Link className={styles.cta} href={groupAccountHref(offering.id)}>Create a group account</Link>
           <ul>
             {planBenefits(offering).map((benefit) => <li key={benefit}>{benefit}</li>)}
           </ul>

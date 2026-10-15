@@ -1,9 +1,11 @@
 /**
- * Direct-to-consumer packages from the January 2026 song specs.
- * Shown for review on the guest plan row. Not an approved billing catalog.
+ * Individual SongKeep packages shown in the create flow, on Services, and on Pricing.
+ * Stripe checkout reads priceCents and productName from the Firestore product
+ * for that request. This repo does not store Stripe price IDs. The display ids
+ * are song-keep, song-keep-music, and song-keep-signature.
  */
 
-export const individualSongPlanIds = ["cheers", "spotlight", "encore"] as const;
+export const individualSongPlanIds = ["song-keep", "song-keep-music", "song-keep-signature"] as const;
 
 export type IndividualSongPlanId = (typeof individualSongPlanIds)[number];
 
@@ -12,40 +14,47 @@ export type IndividualSongPlan = {
   name: string;
   priceCents: number;
   benefits: readonly string[];
+  featured?: boolean;
+  badge?: string | null;
 };
 
 export const individualSongPlans: readonly IndividualSongPlan[] = [
   {
-    id: "cheers",
-    name: "Cheers",
-    priceCents: 995,
+    id: "song-keep",
+    name: "Song Keep",
+    priceCents: 1_900,
     benefits: [
-      "Personalized song from simple guided prompts",
-      "Songwriter quality check",
-      "MP3 and Song Card",
-      "No revisions"
+      "Personalized lyrics",
+      "A beautiful keepsake lyric PDF",
+      "Editable before you finalize",
+      "Save and share"
     ]
   },
   {
-    id: "spotlight",
-    name: "Spotlight",
-    priceCents: 1_995,
+    id: "song-keep-music",
+    name: "Song Keep + Music",
+    priceCents: 3_900,
+    featured: true,
+    badge: "Most popular",
     benefits: [
-      "Everything in Cheers",
-      "A songwriter personalization touch",
-      "Optional personal note",
-      "Lyric image"
+      "Everything in Song Keep",
+      "A complete personalized song",
+      "An MP3",
+      "A keepsake lyric PDF",
+      "A private shareable song page"
     ]
   },
   {
-    id: "encore",
-    name: "Encore",
-    priceCents: 2_995,
+    id: "song-keep-signature",
+    name: "Song Keep Signature",
+    priceCents: 5_900,
     benefits: [
-      "Everything in Spotlight",
-      "A 3–5-minute voice message or written Q&A",
-      "One revision",
-      "QR-enabled Song Card page"
+      "Everything in Song Keep + Music",
+      "Songwriter's Touch™",
+      "Tina personally reviews and personalizes the chorus or a key section",
+      "A personalized dedication",
+      "A premium keepsake PDF",
+      "A QR code to the song"
     ]
   }
 ];

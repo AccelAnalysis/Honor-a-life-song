@@ -107,7 +107,7 @@
   background: #f3f8fd;
   box-shadow: inset 0 0 0 1px var(--azure);
 }
-.modes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.modes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .mode,
 .modeEmphasis {
   display: grid;
@@ -212,7 +212,8 @@
 }
 .plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: stretch; }
 .plan,
-.planFeatured {
+.planFeatured,
+.planSignature {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -222,8 +223,32 @@
   background: white;
 }
 .planFeatured { border: 2px solid var(--azure); box-shadow: 0 12px 28px rgba(21, 114, 198, 0.12); }
+.planSignature {
+  border: 2px solid var(--violet);
+  background:
+    radial-gradient(circle at 100% 0%, rgba(213, 63, 163, 0.16), transparent 46%),
+    white;
+}
 .plan h2,
-.planFeatured h2 { margin: 0; font-size: 1.35rem; }
+.planFeatured h2,
+.planSignature h2 { margin: 0; font-size: 1.35rem; }
+.fanfare {
+  margin: 0;
+  color: var(--violet);
+  font-size: 0.92rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.fanfareNote { margin: 0; color: var(--ink); line-height: 1.5; }
+.fanfareBox {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(213, 63, 163, 0.16), transparent 42%),
+    var(--soft);
+}
 .badge {
   margin: 0;
   color: var(--azure);
@@ -238,7 +263,8 @@
   line-height: 1;
 }
 .plan ul,
-.planFeatured ul {
+.planFeatured ul,
+.planSignature ul {
   margin: 0;
   padding: 0;
   list-style: none;
@@ -248,7 +274,20 @@
   font-size: 0.95rem;
 }
 .plan .primary,
-.planFeatured .primary { margin-top: auto; }
+.planFeatured .primary,
+.planSignature .primary { margin-top: auto; }
+.quietLink {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  color: var(--ink);
+  font-weight: 740;
+  text-decoration: none;
+}
 .keepsake {
   background: white;
   border: 1px solid var(--line);

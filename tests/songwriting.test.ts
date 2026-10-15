@@ -57,7 +57,7 @@ describe("songwriting flow", () => {
     const plans = readFileSync("components/song-plan-cards.tsx", "utf8");
     expect(plans).toContain("experienceOfferings");
     expect(plans).toContain("formatOfferingPrice");
-    expect(plans).toContain("/begin?offering=");
+    expect(plans).toContain("groupAccountHref");
     expect(plans).toContain("offering.creativeOutput");
     expect(plans).toContain("offering.storyCapture");
     expect(plans).toContain("offering.presentation");
@@ -66,25 +66,27 @@ describe("songwriting flow", () => {
     expect(plans).toContain('useState<PlanAudience>("individual")');
     expect(plans).toContain("individualSongPlans");
     expect(plans).toContain("individualSongAddOns");
-    expect(plans).toContain("Choose {plan.name}");
+    expect(plans).toContain("Choose ${plan.name}");
     expect(plans).toContain('aria-label="Plan type"');
     expect(plans).not.toMatch(/Song Vault|Standard Tribute|\$59|\$89|\$149/);
-    expect(formatPlanPrice(995)).toBe("$9.95");
-    expect(formatPlanPrice(1_995)).toBe("$19.95");
-    expect(formatPlanPrice(2_995)).toBe("$29.95");
+    expect(formatPlanPrice(1_900)).toBe("$19");
+    expect(formatPlanPrice(3_900)).toBe("$39");
+    expect(formatPlanPrice(5_900)).toBe("$59");
     expect(formatPlanPrice(500)).toBe("$5");
     expect(formatPlanPrice(1_000)).toBe("$10");
-    expect(individualSongPlans.map((plan) => [plan.name, plan.priceCents])).toEqual([
-      ["Cheers", 995],
-      ["Spotlight", 1_995],
-      ["Encore", 2_995]
+    expect(individualSongPlans.map((plan) => [plan.name, plan.priceCents, plan.featured ?? false])).toEqual([
+      ["Song Keep", 1_900, false],
+      ["Song Keep + Music", 3_900, true],
+      ["Song Keep Signature", 5_900, false]
     ]);
     expect(individualSongPlans.flatMap((plan) => plan.benefits)).toEqual(expect.arrayContaining([
-      "Personalized song from simple guided prompts",
-      "Everything in Cheers",
-      "A 3–5-minute voice message or written Q&A",
-      "QR-enabled Song Card page"
+      "Personalized lyrics",
+      "Everything in Song Keep",
+      "A complete personalized song",
+      "Songwriter's Touch™",
+      "A QR code to the song"
     ]));
+    expect(individualSongPlans.flatMap((plan) => plan.benefits).join(" ")).not.toMatch(/Song Card|Lyric image|3–5-minute/);
     expect(individualSongAddOns.map((addOn) => [addOn.name, addOn.priceCents])).toEqual([
       ["Additional revision", 500],
       ["Spoken dedication introduction", 500],
