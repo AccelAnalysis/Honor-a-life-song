@@ -2,7 +2,8 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const {totals,money,id,invoiceStatus,reminderKind,paymentUpdate,invoiceNumber,checkoutActive}=require('../domain');
-const {shouldDeliver,emailText}=require('../mail');
+const {shouldDeliver,emailText,decidePurchaseDelivery,purchaseEmailText}=require('../mail');
+const {planConsentChanges,planEmailWithdrawal,purchaseMessagePlans,followUpDelayDays,EMAIL_CONSENT,SMS_CONSENT}=require('../communication');
 const invoice={status:'issued',invoiceNumber:'SK-2026-000001',amountPaidCents:0,amountDueCents:250000,commercial:{totalCents:250000,issuedAt:'2026-01-01T12:00:00.000Z',dueAt:'2026-01-15T12:00:00.000Z',buyer:{contactName:'Sample buyer'},seller:{email:'billing@example.com',phone:'555-0100'},lineItems:[{description:'Sample experience'}],accountUrl:'https://example.com/account',paymentInstructions:'Sample instructions'}};
 test('money is integer cents, with discount and reviewed tax calculated once',()=>{assert.deepEqual(totals(250000,10000,600),{subtotalCents:250000,discountCents:10000,taxCents:14400,totalCents:254400});for(const n of [-1,0.1,NaN,Infinity,1e12])assert.throws(()=>money(n));assert.throws(()=>totals(100,101,0));});
 test('record IDs cannot traverse tenant paths',()=>{for(const value of ['../org','org/other','',null,'x.y'])assert.throws(()=>id(value));assert.equal(id('org-1_2'),'org-1_2');});
@@ -14,3 +15,53 @@ test('reminder schedule comes from authoritative invoice state',()=>{assert.equa
 test('every payment reminder stops after payment, refund or cancellation',()=>{for(const status of ['paid','void','uncollectible','refunded']){const i={...invoice,status,amountPaidCents:status==='paid'?250000:0};assert.equal(reminderKind(i),null);assert.equal(shouldDeliver({kind:'overdue'},i),false);}assert.equal(reminderKind({...invoice,remindersPaused:true}),null);assert.equal(shouldDeliver({kind:'receipt'},{...invoice,status:'paid',amountPaidCents:250000}),true);});
 test('an expired-looking local checkout clock cannot authorize a second payment',()=>{assert.equal(checkoutActive({...invoice,checkout:{status:'open',expiresAt:'2000-01-01'}}),true);assert.equal(checkoutActive({...invoice,checkout:null}),false);});
 test('email links point to the authenticated account, not a public PDF',()=>{const rendered=emailText({kind:'issued'},invoice);assert.match(rendered.text,/https:\/\/example.com\/account/);assert.match(rendered.text,/Sample instructions/);assert.doesNotMatch(rendered.text,/token=|storage.googleapis/);});
+const consented={email:{consented:true,languageVersion:EMAIL_CONSENT.version},sms:{consented:true,languageVersion:SMS_CONSENT.version,phone:'+15555550100'}};
+test('email and SMS consent stay separate, versioned, and checkout only fills a gap',()=>{
+  const created=planConsentChanges({}, {source:'account_creation',email:true,sms:false,now:'2026-10-15T00:00:00.000Z',token:'11111111-1111-4111-8111-111111111111'});
+  assert.equal(created.email.consented,true);assert.equal(created.sms.consented,false);
+  assert.equal(created.email.source,'account_creation');assert.equal(created.sms.source,'account_creation');
+  assert.equal(created.email.languageVersion,EMAIL_CONSENT.version);assert.equal(created.sms.languageVersion,SMS_CONSENT.version);
+  assert.notEqual(created.email.language,created.sms.language);
+  assert.match(created.email.language,/unsubscribe/i);assert.match(created.sms.language,/STOP/);assert.match(created.sms.language,/Message and data rates/);
+  assert.equal(planConsentChanges(created,{source:'account_creation',email:false,sms:false,now:'2026-10-16T00:00:00.000Z'}).email.consented,true);
+  assert.equal(planConsentChanges(created,{source:'checkout',email:false,sms:false,now:'2026-10-16T00:00:00.000Z'}).changed,false);
+  const gap=planConsentChanges(created,{source:'checkout',sms:true,phone:'(555) 555-0199',now:'2026-10-16T00:00:00.000Z'});
+  assert.equal(gap.sms.consented,true);assert.equal(gap.sms.source,'checkout');assert.equal(gap.email.source,'account_creation');assert.equal(gap.phone,'+15555550199');
+  assert.throws(()=>planConsentChanges({}, {source:'account_creation',sms:true,now:'2026-10-15T00:00:00.000Z'}));
+});
+test('unsubscribe withdraws email consent once',()=>{
+  const granted=planConsentChanges({}, {source:'account_creation',email:true,sms:false,now:'2026-10-15T00:00:00.000Z',token:'11111111-1111-4111-8111-111111111111'});
+  const withdrawn=planEmailWithdrawal(granted,'2026-10-20T00:00:00.000Z');
+  assert.equal(withdrawn.changed,true);assert.equal(withdrawn.email.consented,false);assert.equal(withdrawn.email.withdrawnAt,'2026-10-20T00:00:00.000Z');
+  assert.equal(planEmailWithdrawal({email:withdrawn.email}).changed,false);
+});
+test('post-purchase queue ids are deterministic and the follow-up delay defaults to five days',()=>{
+  const input={userId:'person',requestId:'request1',receiptId:'receipt',buyerEmail:'Buyer@Example.com',deliveryEmail:'buyer@example.com',productName:'Sample song',destinationUrl:'https://example.com/memories?purchase=request1',now:'2026-01-01T00:00:00.000Z'};
+  const once=purchaseMessagePlans(input),twice=purchaseMessagePlans(input);
+  assert.deepEqual(once.song.map(item=>item.id),twice.song.map(item=>item.id));
+  assert.equal(once.song.length,1);assert.equal(once.followUp.id,'next-offer-request1');assert.equal(once.sms.id,'sms-follow-up-request1');
+  assert.equal(once.followUp.data.sendAfter,'2026-01-06T00:00:00.000Z');
+  const prior=process.env.SONGKEEP_FOLLOWUP_DELAY_DAYS;process.env.SONGKEEP_FOLLOWUP_DELAY_DAYS='2';
+  assert.equal(followUpDelayDays(),2);assert.equal(purchaseMessagePlans(input).followUp.data.delayDays,2);
+  process.env.SONGKEEP_FOLLOWUP_DELAY_DAYS='0';assert.equal(followUpDelayDays(),5);
+  if(prior==null)delete process.env.SONGKEEP_FOLLOWUP_DELAY_DAYS;else process.env.SONGKEEP_FOLLOWUP_DELAY_DAYS=prior;
+  const split=purchaseMessagePlans({...input,deliveryEmail:'family@example.com'});
+  assert.equal(split.song.length,2);assert.notEqual(split.song[0].id,split.song[1].id);
+});
+test('purchase email sends only with channel consent, skips a later purchase, and does not send SMS',()=>{
+  const song={kind:'song_link',channel:'email',requestId:'request1',recipient:'buyer@example.com',destinationUrl:'https://example.com/memories?purchase=request1',productName:'Sample song'};
+  const offer={...song,kind:'next_offer',status:'scheduled',sendAfter:'2026-01-06T00:00:00.000Z'};
+  const context={preferences:consented,purchases:[{id:'request1',status:'paid',paidAt:'2026-01-01T00:00:00.000Z'}],postalAddress:'123 Example Avenue',unsubscribeUrl:'https://example.com/unsubscribe?token=abc',groupUrl:'https://example.com/begin',from:'hello@example.com',now:new Date('2026-01-10T00:00:00.000Z')};
+  assert.deepEqual(decidePurchaseDelivery(song,{...context,preferences:{}}),{action:'skip',reason:'email_consent_required'});
+  assert.equal(decidePurchaseDelivery(song,context).action,'send');
+  assert.deepEqual(decidePurchaseDelivery({...offer,channel:'sms',kind:'sms_follow_up'},context),{action:'skip',reason:'sms_provider_not_configured'});
+  assert.deepEqual(decidePurchaseDelivery({...offer,channel:'sms',kind:'sms_follow_up'},{...context,preferences:{sms:{consented:false}}}),{action:'skip',reason:'sms_consent_required'});
+  assert.deepEqual(decidePurchaseDelivery(offer,{...context,now:new Date('2026-01-02T00:00:00.000Z')}),{action:'wait',reason:'scheduled'});
+  assert.deepEqual(decidePurchaseDelivery(offer,{...context,purchases:[...context.purchases,{id:'later',status:'paid',paidAt:'2026-01-08T00:00:00.000Z'}]}),{action:'skip',reason:'repurchased'});
+  assert.deepEqual(decidePurchaseDelivery(offer,{...context,postalAddress:'  '}),{action:'wait',reason:'postal_address_required'});
+  assert.deepEqual(decidePurchaseDelivery(offer,{...context,preferences:{email:{consented:true,withdrawnAt:'2026-01-09T00:00:00.000Z'}}}),{action:'skip',reason:'email_consent_required'});
+  const transactional=purchaseEmailText(song,context);
+  assert.doesNotMatch(`${transactional.subject}\n${transactional.text}`,/another song|group booking|unsubscribe|offer/i);
+  const commercial=purchaseEmailText(offer,context);
+  assert.match(commercial.text,/Unsubscribe: https:\/\/example.com\/unsubscribe/);assert.match(commercial.text,/123 Example Avenue/);assert.match(commercial.text,/group booking/i);
+});

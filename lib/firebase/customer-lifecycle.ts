@@ -179,6 +179,8 @@ function purchaseRequestFrom(userId: string, data: ReturnType<typeof dataOf>): I
     currency: "USD",
     requestedPaymentMethod: data.requestedPaymentMethod ?? "invoice",
     status: data.status ?? "invoice_requested",
+    fulfillmentHold: data.fulfillmentHold === true,
+    paidAt: data.paidAt ? toIso(data.paidAt) : undefined,
     createdAt: toIso(data.createdAt),
     updatedAt: toIso(data.updatedAt)
   };

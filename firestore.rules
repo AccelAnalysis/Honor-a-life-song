@@ -278,7 +278,11 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if signedIn() && (request.auth.uid == userId || platformAdmin());
-      allow create, update: if signedIn() && request.auth.uid == userId;
+      // Account-level email and SMS consent is written by SongKeep, not the browser.
+      allow create: if signedIn() && request.auth.uid == userId
+        && !request.resource.data.keys().hasAny(['communicationPreferences']);
+      allow update: if signedIn() && request.auth.uid == userId
+        && request.resource.data.get('communicationPreferences', null) == resource.data.get('communicationPreferences', null);
       allow delete: if platformAdmin();
 
       match /organizationSetups/{setupId} {

@@ -64,7 +64,12 @@ test('family recipient validation fails before the permission response becomes s
 test('concurrent permission approvals create one consent version and revoke stale invitations and entitlements',async()=>{const input={organizationId:'org',experienceId:'event',invitationId:'permission'};const ids=await Promise.all([lifecycle.approvePermission(staff,input),lifecycle.approvePermission(staff,input)]);assert.equal(ids[0],ids[1]);assert.equal((await db.doc(`${path}/participants/person`).get()).data().permissionVersion,2);assert.equal((await db.doc(`${path}/entitlements/song-entitlement`).get()).data().status,'revoked');assert.equal((await db.doc(`${path}/accessInvitations/access`).get()).data().status,'revoked');await assert.rejects(()=>lifecycle.purchase(recipient,{accessId:'access',productId:'digital'}),/no longer active/);});
 test('post-experience purchases require matching current permissions and actual required material kinds',async()=>{await seedRecipient();const result=await lifecycle.purchase(recipient,{accessId:'access',productId:'digital'});assert.equal(result.request.organizationId,'org');assert.equal(result.request.priceCents,2000);assert.equal(result.request.status,'invoice_requested');assert.equal((await lifecycle.purchase(recipient,{accessId:'access',productId:'digital'})).request.id,result.request.id);await assert.rejects(()=>lifecycle.purchase(recipient,{accessId:'access',productId:'video'}),/requires a permitted/);await assert.rejects(()=>lifecycle.purchase(recipient,{accessId:'access',productId:'photos'}),/requires a permitted/);await db.doc(`${path}/entitlements/song-entitlement`).update({status:'revoked'});await assert.rejects(()=>lifecycle.purchase(recipient,{accessId:'access',productId:'digital'}),/permission|entitlement|released/i);});
 test('creator media URLs cannot cross organization storage boundaries',async()=>{await seedRecipient();await db.doc('organizations/org/assets/song').update({storagePath:'organizations/other/private.mp3'});await assert.rejects(()=>lifecycle.media(staff,{organizationId:'org',assetId:'song'}),/file location/);});
-test('Firestore rules deny browser financial writes and cross-tenant invoice reads',async()=>{const i=await issued();const own=environment.authenticatedContext('buyer',{email:'buyer@example.com',email_verified:true}).firestore(),other=environment.authenticatedContext('outsider').firestore(),admin=environment.authenticatedContext('staff').firestore();await assertSucceeds(getDoc(doc(own,`organizations/org/invoices/${i.id}`)));await assertFails(getDoc(doc(other,`organizations/org/invoices/${i.id}`)));await assertFails(updateDoc(doc(own,`organizations/org/invoices/${i.id}`),{status:'paid'}));await assertFails(updateDoc(doc(admin,`organizations/org/invoices/${i.id}`),{status:'paid'}));await assertFails(setDoc(doc(own,'organizations/org/experienceRequests/forged'),{organizationId:'org',amountCents:1,status:'converted'}));await assertFails(setDoc(doc(own,'users/buyer/purchaseRequests/forged'),{status:'paid'}));});
+test('Firestore rules deny browser financial writes and cross-tenant invoice reads',async()=>{const i=await issued();const own=environment.authenticatedContext('buyer',{email:'buyer@example.com',email_verified:true}).firestore(),other=environment.authenticatedContext('outsider').firestore(),admin=environment.authenticatedContext('staff').firestore();await assertSucceeds(getDoc(doc(own,`organizations/org/invoices/${i.id}`)));await assertFails(getDoc(doc(other,`organizations/org/invoices/${i.id}`)));await assertFails(updateDoc(doc(own,`organizations/org/invoices/${i.id}`),{status:'paid'}));await assertFails(updateDoc(doc(admin,`organizations/org/invoices/${i.id}`),{status:'paid'}));await assertFails(setDoc(doc(own,'organizations/org/experienceRequests/forged'),{organizationId:'org',amountCents:1,status:'converted'}));await assertFails(setDoc(doc(own,'users/buyer/purchaseRequests/forged'),{status:'paid'}));
+  await assertSucceeds(setDoc(doc(own,'users/buyer'),{email:'buyer@example.com',firstName:'Alex'},{merge:true}));
+  await assertFails(setDoc(doc(own,'users/buyer'),{communicationPreferences:{email:{consented:true}}},{merge:true}));
+  await assertFails(setDoc(doc(own,'users/buyer/purchaseMessages/forged'),{status:'queued'}));
+  await assertFails(setDoc(doc(own,'communicationUnsubscribeTokens/forged'),{userId:'buyer'}));
+});
 
 test('individual card payment is source-attributed, replay-safe and holds fulfillment after consent withdrawal',async()=>{
   const {makeIndividualPaymentService}=require('../individual-payments');await seedRecipient();
@@ -80,6 +85,7 @@ test('individual card payment is source-attributed, replay-safe and holds fulfil
   await service.webhook({id:'evt_individual',type:'checkout.session.completed',data:{object:session}});
   const paid=(await db.doc(`users/person/purchaseRequests/${request.id}`).get()).data();assert.equal(paid.status,'paid');assert.equal(paid.fulfillmentHold,true);assert.equal(paid.organizationId,'org');assert.equal(paid.experienceId,'event');
   assert.equal((await db.collection('users/person/purchaseReceipts').get()).size,1);
+  assert.equal((await db.collection('users/person/purchaseMessages').get()).size,3);
   assert.equal((await db.doc(`billingExceptions/purchase-${request.id}`).get()).data().status,'needs_review');
 });
 test('individual checkout revalidates the required asset kind after the request was created',async()=>{
@@ -88,6 +94,67 @@ test('individual checkout revalidates the required asset kind after the request 
   const {request}=await lifecycle.purchase(recipient,{accessId:'access',productId:'changed-product'});
   await db.doc('postExperienceProducts/changed-product').update({kind:'event_video'});
   const service=makeIndividualPaymentService(db,{},lifecycle);await assert.rejects(()=>service.checkout(recipient,{requestId:request.id}),/materials required/);
+});
+test('account consent is stored per channel and checkout cannot revoke it',async()=>{
+  const {makeCommunicationService}=require('../communication');
+  const service=makeCommunicationService(db);
+  await service.save({uid:'consent-user'},{source:'account_creation',email:true,sms:false});
+  const created=(await db.doc('users/consent-user').get()).data().communicationPreferences;
+  assert.equal(created.email.consented,true);assert.equal(created.sms.consented,false);
+  assert.equal(created.email.source,'account_creation');assert.match(created.sms.language,/STOP/);
+  assert.equal((await db.collection('users/consent-user/communicationConsentEvents').get()).size,2);
+  await service.save({uid:'consent-user'},{source:'account_creation',email:false,sms:false});
+  assert.equal((await db.doc('users/consent-user').get()).data().communicationPreferences.email.consented,true);
+  await service.save({uid:'consent-user'},{source:'checkout',sms:true,phone:'555-555-0199'});
+  const gap=(await db.doc('users/consent-user').get()).data().communicationPreferences;
+  assert.equal(gap.sms.consented,true);assert.equal(gap.sms.source,'checkout');assert.equal(gap.email.source,'account_creation');
+  await service.save({uid:'consent-user'},{source:'checkout',email:false,sms:false});
+  assert.equal((await db.doc('users/consent-user').get()).data().communicationPreferences.email.consented,true);
+  const token=gap.email.unsubscribeToken;
+  await service.unsubscribe({token});
+  const withdrawn=(await db.doc('users/consent-user').get()).data().communicationPreferences.email;
+  assert.equal(withdrawn.consented,false);assert.ok(withdrawn.withdrawnAt);
+  await service.unsubscribe({token});
+  assert.equal((await db.doc('users/consent-user').get()).data().communicationPreferences.email.consented,false);
+});
+test('song link is queued once, sent once, and the later offer is skipped after another purchase or unsubscribe',async()=>{
+  const {makeIndividualPaymentService}=require('../individual-payments');
+  const {makeCommunicationService}=require('../communication');
+  const {makePurchaseMailService}=require('../mail');
+  await seedRecipient();
+  const previous=await db.collection('users/person/purchaseMessages').get();
+  for(const message of previous.docs)await message.ref.delete();
+  await db.doc('platformSettings/invoicing').set({appUrl:'https://example.com',address:'123 Example Avenue\nExample City, VA 00000',email:'billing@example.com'},{merge:true});
+  await makeCommunicationService(db).save({uid:'person'},{source:'account_creation',email:true,sms:true,phone:'555-555-0100'});
+  await db.doc('postExperienceProducts/mail-product').set({status:'active',audiences:['participant'],kind:'digital_song',name:'Mail keepsake',priceCents:2200});
+  const {request}=await lifecycle.purchase(recipient,{accessId:'access',productId:'mail-product'});
+  let session;
+  const stripe={checkout:{sessions:{create:async input=>(session={id:'cs_mail',url:'https://checkout.stripe.com/test',mode:'payment',status:'open',payment_status:'unpaid',currency:'usd',amount_total:2200,payment_intent:'pi_mail',metadata:input.metadata}),retrieve:async()=>session}}};
+  const service=makeIndividualPaymentService(db,stripe,lifecycle);
+  await service.checkout(recipient,{requestId:request.id});
+  session.status='complete';session.payment_status='paid';
+  await service.webhook({id:'evt_mail',type:'checkout.session.completed',data:{object:session}});
+  await service.webhook({id:'evt_mail',type:'checkout.session.completed',data:{object:session}});
+  const messages=db.collection('users/person/purchaseMessages');
+  assert.equal((await messages.where('requestId','==',request.id).get()).size,3);
+  let calls=0;
+  const mail=makePurchaseMailService(db,async input=>{calls+=1;assert.equal(input.to,'person@example.com');assert.match(input.idempotencyKey,/songkeep-/);assert.doesNotMatch(input.text,/another song|group booking|unsubscribe/i);return {id:'mail_song'};});
+  await mail.run();await mail.run();
+  assert.equal(calls,1);
+  assert.equal((await messages.doc(`song-link-${request.id}`).get()).data().status,'sent');
+  assert.equal((await messages.doc(`sms-follow-up-${request.id}`).get()).data().skipReason,'sms_provider_not_configured');
+  assert.equal((await messages.doc(`next-offer-${request.id}`).get()).data().status,'scheduled');
+  await db.doc('users/person/purchaseRequests/later-purchase').set({status:'paid',paidAt:new Date('2099-01-01T00:00:00.000Z'),createdAt:new Date('2099-01-01T00:00:00.000Z')});
+  await messages.doc(`next-offer-${request.id}`).update({status:'scheduled',sendAfter:'2000-01-01T00:00:00.000Z'});
+  await mail.run();
+  assert.equal((await messages.doc(`next-offer-${request.id}`).get()).data().skipReason,'repurchased');
+  assert.equal(calls,1);
+  const token=(await db.doc('users/person').get()).data().communicationPreferences.email.unsubscribeToken;
+  await makeCommunicationService(db).unsubscribe({token});
+  await messages.doc('song-link-after-unsubscribe').set({kind:'song_link',channel:'email',purpose:'transactional',status:'queued',userId:'person',requestId:'after-unsubscribe',recipient:'person@example.com',productName:'Later song',destinationUrl:'https://example.com/memories?purchase=after-unsubscribe',attempts:0,createdAt:new Date()});
+  await mail.run();
+  assert.equal((await messages.doc('song-link-after-unsubscribe').get()).data().skipReason,'email_consent_required');
+  assert.equal(calls,1);
 });
 test('manual fulfillment cannot trust a self-edited user email or bypass payment order',async()=>{
   await seedRecipient();const {request}=await lifecycle.purchase(recipient,{accessId:'access',productId:'digital'});

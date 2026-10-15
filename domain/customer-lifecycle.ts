@@ -239,6 +239,8 @@ export interface IndividualPurchaseRequest {
   currency: "USD";
   requestedPaymentMethod: "card" | "invoice";
   status: IndividualPurchaseRequestStatus;
+  fulfillmentHold?: boolean;
+  paidAt?: ISODateTime;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
 }
