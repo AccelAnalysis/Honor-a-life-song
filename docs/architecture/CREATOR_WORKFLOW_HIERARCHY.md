@@ -62,17 +62,17 @@ This slice reuses the existing canonical concepts:
 
 No `CreatorSong`, `CreatorLyrics`, `CreatorStory`, `CreatorMedia`, or Creator-specific approval model is introduced.
 
-The only new creative-domain behavior is a pure helper for appending and ordering canonical `LyricVersion` records without overwriting earlier versions.
+Lyric versions are still appended. A saved draft does not overwrite an earlier version. Review, comparison, and refine are lyrics grandchildren so a creator can move from notes to a finished song without leaving the workspace.
 
 ## Shared service boundaries
 
 Creator workflow nodes declare the shared boundaries they depend on, including assignments, stories, creative work, approvals, media, consent, workflow state, scheduling, communications, secure delivery, and audit.
 
-All production service connection flags remain false in the reference chassis. As a result, actions such as persisting lyric versions, recording approval, changing production state, uploading working assets, scheduling commitments, sending messages, and preparing delivery assets remain visibly gated and cannot simulate success.
+The chassis service-connection flags remain false, so production, media, scheduling, and message actions stay visibly unavailable. Interview notes, lyric drafts, review, comparison, refine, and marking a song finished are the connected songwriting path. Those writes go to `creativeWorks` for a platform admin or the assigned creator.
 
 ## Human-led creative process
 
-The hierarchy supports human story interpretation, lyric development, review, production, and quality control. It does not introduce autonomous interviews, AI songwriting, generated lyric rewriting, a creator marketplace, or generic digital-asset-management behavior.
+The creator writes the song. Interview notes can suggest starting verses, and the creator decides what stays. Suggestions are not autonomous songwriting, not a rewrite of a saved version, and not a finished song. The model key, when one is configured, stays in Cloud Functions. See `docs/songwriting.md`.
 
 ## Consent and information boundaries
 

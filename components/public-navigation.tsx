@@ -40,6 +40,7 @@ export function PublicNavigation() {
     <nav className="publicNav" aria-label="Public navigation">
       <div className="publicNavDesktop">
         <TopLevelLinks pathname={pathname} />
+        <Link aria-current={pathname.startsWith("/creator") ? "page" : undefined} className={pathname.startsWith("/creator") ? "active" : undefined} href="/creator/song">Finish a song</Link>
         <Link className="button small secondary" href="/login">{user ? "My account" : "Sign in"}</Link>
       </div>
 
@@ -47,6 +48,7 @@ export function PublicNavigation() {
         <summary>Menu</summary>
         <div className="publicMobilePanel">
           <TopLevelLinks pathname={pathname} />
+          <Link aria-current={pathname.startsWith("/creator") ? "page" : undefined} href="/creator/song">Finish a song</Link>
           <Link className="button small secondary" href="/login">{user ? "My account" : "Sign in"}</Link>
         </div>
       </details>

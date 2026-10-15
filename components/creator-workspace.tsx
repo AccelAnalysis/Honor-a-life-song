@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SongwritingEntry, SongwritingStudio } from "@/components/songwriting-studio";
 import { referenceCreatorContext } from "@/fixtures/reference-data";
 import {
   buildCreatorHref,
@@ -18,7 +19,13 @@ type CreatorWorkspaceProps = {
 
 function creatorDescription(node: CreatorWorkflowNode) {
   const descriptions: Record<string, string> = {
-    "song-lyrics": "Draft, review, compare, and refine the lyrics for the selected song.",
+    "song-lyrics": "Move from interview notes to a draft, then review, compare, and refine until the song is finished.",
+    "lyrics-draft": "Write the working lyric and save the next version.",
+    "lyrics-review": "Read the current version and decide what happens next.",
+    "lyrics-comparison": "Read two versions side by side.",
+    "lyrics-refine": "Shape the latest version into the next one.",
+    "lyrics-version-history": "Read every saved version, oldest first.",
+    "story-interview-notes": "Keep the interview notes this song is drawn from.",
     "production-composition": "Develop the composition after the song is approved for production.",
     "production-arrangement": "Shape the arrangement and musical structure for the approved song.",
     "production-recording": "Track the recording work for the approved song.",
@@ -148,33 +155,21 @@ function ModuleLanding({ route }: { route: CreatorRouteResolution }) {
   </section>;
 }
 
-function LyricsLanding({ route }: { route: CreatorRouteResolution }) {
-  if (route.child?.id !== "song-lyrics" || route.grandchild) return null;
-  if (!route.creativeWorkId) return <WorkSelectionRequired node={route.child} route={route} />;
-
-  return <section>
-    <div className={styles.moduleIntro}>
-      <div><p className={styles.kicker}>Song Workspace</p><h2>Lyrics</h2><p>Draft, review, compare, and refine the lyrics for this song.</p></div>
-      <div className={styles.contextPill}><span>Selected song</span><strong>In progress</strong></div>
-    </div>
-    <div className={styles.workflowGrid}>
-      {route.child.grandchildren?.map((grandchild) => <article key={grandchild.id}>
-        <h3>{grandchild.label}</h3>
-        <p>{creatorDescription(grandchild)}</p>
-        <Link href={buildCreatorHref({ parentId: "song", childId: "song-lyrics", grandchildId: grandchild.id, creativeWorkId: route.creativeWorkId })}>Open {grandchild.label.toLowerCase()}</Link>
-      </article>)}
-    </div>
-  </section>;
+function showsSongwriting(route: CreatorRouteResolution) {
+  if (route.child?.id === "story-interview-notes" || route.child?.id === "song-lyrics") return true;
+  return route.parent.id === "song" && !route.child;
 }
 
 export function CreatorWorkspace({ route }: CreatorWorkspaceProps) {
   const activeWorkflow = route.grandchild ?? route.child;
+  const songwriting = showsSongwriting(route);
 
   return <div className={styles.creatorModule}>
+    {route.parent.id === "creator-home" && !route.child ? <SongwritingEntry /> : null}
     <ChildNavigation route={route} />
     <LyricsGrandchildNavigation route={route} />
-    {route.child?.id === "song-lyrics" && !route.grandchild
-      ? <LyricsLanding route={route} />
+    {songwriting
+      ? <SongwritingStudio route={route} />
       : activeWorkflow
         ? <WorkflowSurface node={activeWorkflow} route={route} />
         : <ModuleLanding route={route} />}

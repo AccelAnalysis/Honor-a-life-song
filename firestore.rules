@@ -532,6 +532,114 @@ service cloud.firestore {
     match /{path=**}/permissionInvitations/{invitationId} { allow read: if platformAdmin(); }
     match /{path=**}/feedback/{feedbackId} { allow read: if platformAdmin(); }
     match /{path=**}/referrals/{referralId} { allow read: if platformAdmin(); }
+    function creativeWorkData(workId) {
+      return get(/databases/$(database)/documents/creativeWorks/$(workId)).data;
+    }
+
+    function creativeWorkCreateShape() {
+      return request.resource.data.keys().hasOnly(['title', 'assignmentId', 'organizationId', 'experienceId', 'participantName', 'assignedUserId', 'createdByUserId', 'status', 'interviewNotes', 'finishedVersionId', 'createdAt', 'updatedAt'])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 160
+        && request.resource.data.assignmentId is string
+        && request.resource.data.assignmentId.size() <= 128
+        && request.resource.data.organizationId is string
+        && request.resource.data.organizationId.size() <= 128
+        && request.resource.data.experienceId is string
+        && request.resource.data.experienceId.size() <= 128
+        && request.resource.data.participantName is string
+        && request.resource.data.participantName.size() <= 160
+        && request.resource.data.assignedUserId is string
+        && request.resource.data.assignedUserId.size() > 0
+        && request.resource.data.createdByUserId == request.auth.uid
+        && request.resource.data.status == 'notes'
+        && request.resource.data.interviewNotes is string
+        && request.resource.data.interviewNotes.size() <= 20000
+        && request.resource.data.finishedVersionId == null
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    function creativeWorkOwnerCreate() {
+      return assignedCreator(request.resource.data.assignmentId)
+        && request.resource.data.assignedUserId == request.auth.uid
+        && get(/databases/$(database)/documents/creatorAssignments/$(request.resource.data.assignmentId)).data.organizationId == request.resource.data.organizationId
+        && get(/databases/$(database)/documents/creatorAssignments/$(request.resource.data.assignmentId)).data.experienceId == request.resource.data.experienceId;
+    }
+
+    function creativeWorkUpdateShape() {
+      return request.resource.data.assignedUserId == resource.data.assignedUserId
+        && request.resource.data.createdByUserId == resource.data.createdByUserId
+        && request.resource.data.assignmentId == resource.data.assignmentId
+        && request.resource.data.organizationId == resource.data.organizationId
+        && request.resource.data.experienceId == resource.data.experienceId
+        && request.resource.data.participantName == resource.data.participantName
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 160
+        && request.resource.data.status in ['notes', 'drafting', 'in_review', 'refining', 'finished']
+        && request.resource.data.interviewNotes is string
+        && request.resource.data.interviewNotes.size() <= 20000
+        && (request.resource.data.finishedVersionId == null || (request.resource.data.finishedVersionId is string && request.resource.data.finishedVersionId.size() <= 128))
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'status', 'interviewNotes', 'finishedVersionId', 'updatedAt']);
+    }
+
+    function lyricVersionCreateShape(workId) {
+      return request.resource.data.keys().hasOnly(['creativeWorkId', 'assignedUserId', 'authorUserId', 'version', 'body', 'status', 'source', 'createdAt', 'updatedAt'])
+        && request.resource.data.creativeWorkId == workId
+        && request.resource.data.assignedUserId == creativeWorkData(workId).assignedUserId
+        && request.resource.data.authorUserId == request.auth.uid
+        && request.resource.data.version is int
+        && request.resource.data.version >= 1
+        && request.resource.data.version <= 100
+        && request.resource.data.body is string
+        && request.resource.data.body.size() > 0
+        && request.resource.data.body.size() <= 12000
+        && request.resource.data.status in ['draft', 'in_review', 'refined']
+        && request.resource.data.source in ['creator', 'suggestion']
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    match /creativeWorks/{workId} {
+      allow read: if platformAdmin() || (signedIn() && resource.data.assignedUserId == request.auth.uid);
+      allow create: if signedIn() && creativeWorkCreateShape() && (platformAdmin() || creativeWorkOwnerCreate());
+      allow update: if (platformAdmin() || (signedIn() && resource.data.assignedUserId == request.auth.uid))
+        && resource.data.status != 'finished'
+        && creativeWorkUpdateShape();
+      allow delete: if platformAdmin();
+
+      match /lyricVersions/{versionId} {
+        allow read: if platformAdmin() || (signedIn() && resource.data.assignedUserId == request.auth.uid);
+        allow create: if signedIn()
+          && exists(/databases/$(database)/documents/creativeWorks/$(workId))
+          && creativeWorkData(workId).status != 'finished'
+          && (platformAdmin() || creativeWorkData(workId).assignedUserId == request.auth.uid)
+          && lyricVersionCreateShape(workId);
+        allow update: if signedIn()
+          && (platformAdmin() || resource.data.assignedUserId == request.auth.uid)
+          && creativeWorkData(workId).status != 'finished'
+          && request.resource.data.creativeWorkId == resource.data.creativeWorkId
+          && request.resource.data.assignedUserId == resource.data.assignedUserId
+          && request.resource.data.authorUserId == resource.data.authorUserId
+          && request.resource.data.version == resource.data.version
+          && request.resource.data.body == resource.data.body
+          && request.resource.data.source == resource.data.source
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.status in ['draft', 'in_review', 'refined', 'finished']
+          && request.resource.data.updatedAt == request.time
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
+        allow delete: if false;
+      }
+
+      match /suggestions/{suggestionId} {
+        allow read: if platformAdmin() || (signedIn() && resource.data.assignedUserId == request.auth.uid);
+        allow create, update, delete: if false;
+      }
+    }
+
     match /billingExceptions/{exceptionId} { allow read: if platformAdmin(); }
     match /billingFollowUp/{taskId} { allow read: if platformAdmin(); }
     match /billingAudit/{auditId} { allow read: if platformAdmin(); }

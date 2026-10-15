@@ -6,7 +6,7 @@
     "node": "22"
   },
   "scripts": {
-    "test": "node --test test/domain.test.js",
+    "test": "node --test test/domain.test.js test/songwriting.test.js",
     "test:integration": "node --test test/integration.test.js"
   },
   "dependencies": {

@@ -17,11 +17,12 @@ const {makeIndividualPaymentService}=require('./individual-payments');
 const {makeMailService}=require('./mail');
 const {renderInvoice}=require('./pdf');
 const {DomainError,id,requireValue}=require('./domain');
+const {suggestVerses}=require('./songwriting');
 initializeApp();
 const db=getFirestore();
 const getBilling=()=>makeBillingService(db,{renderPdf:renderInvoice,bucket:getStorage().bucket()});
 const lifecycle=makeLifecycleService(db,{getIdentity:uid=>getAuth().getUser(uid)});
-const stripeKey=defineSecret('SONGKEEP_STRIPE_SECRET_KEY'),webhookKey=defineSecret('SONGKEEP_STRIPE_WEBHOOK_SECRET'),emailKey=defineSecret('SONGKEEP_EMAIL_API_KEY');
+const stripeKey=defineSecret('SONGKEEP_STRIPE_SECRET_KEY'),webhookKey=defineSecret('SONGKEEP_STRIPE_WEBHOOK_SECRET'),emailKey=defineSecret('SONGKEEP_EMAIL_API_KEY'),lyricModelKey=defineSecret('SONGKEEP_LYRIC_MODEL_KEY');
 const actorOf=request=>({uid:request.auth?.uid,email:request.auth?.token.email,emailVerified:request.auth?.token.email_verified===true});
 const options={region:'us-central1',memory:'512MiB',timeoutSeconds:120,maxInstances:10,cors:true};
 async function safe(work) {try{return await work();}catch(error){if(error instanceof DomainError)throw new HttpsError(error.code,error.message);logger.error('SongKeep operation failed',{name:error.name,code:error.code});throw new HttpsError('internal','This action could not be completed. Please retry or contact SongKeep.');}}
@@ -40,3 +41,5 @@ exports.songkeepInvoiceMail=onSchedule({schedule:'every 15 minutes',region:'us-c
 exports.songkeepVerifyCreatorUpload=onObjectFinalized({region:'us-central1',memory:'256MiB',timeoutSeconds:120,retry:true},async event=>{if(!event.data.name?.includes('/creator-submissions/'))return;try{await makeStorageIntegrity(db,getStorage().bucket(event.data.bucket)).verify(event.data.name);}catch(error){if(!(error instanceof DomainError))throw error;logger.warn('Upload requires review',{path:event.data.name,reason:error.message});}});
 
 exports.songkeepIndividualCheckout=onCall({...options,secrets:[stripeKey]},request=>safe(()=>{const Stripe=require('stripe');return makeIndividualPaymentService(db,new Stripe(stripeKey.value()),lifecycle).checkout(actorOf(request),request.data||{});}));
+function lyricModelSecret(){let value='';try{value=(lyricModelKey.value()||'').trim();}catch{value=(process.env.SONGKEEP_LYRIC_MODEL_KEY||'').trim();}return value==='disabled'?'':value;}
+exports.songkeepSuggestVerses=onCall({...options,secrets:[lyricModelKey]},request=>safe(()=>suggestVerses({db,actor:actorOf(request),input:request.data||{},modelKey:lyricModelSecret,warn:message=>logger.warn(message)})));
