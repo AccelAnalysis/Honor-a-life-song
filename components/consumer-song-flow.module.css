@@ -127,6 +127,7 @@
 }
 .mode[aria-pressed="true"],
 .modeEmphasis[aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--azure); }
+.taste,
 .voice,
 .handoff,
 .note,

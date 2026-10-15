@@ -22,7 +22,7 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
             <h2>Explore</h2>
             <ul>
               <li><Link href="/">Home</Link></li>
-              <li><Link href="/create">Create a song</Link></li>
+              <li><Link href="/start">Get started</Link></li>
               <li><Link href="/try">Try a song</Link></li>
               <li><Link href="/how-it-works">How it works</Link></li>
               <li><Link href="/services">Services</Link></li>

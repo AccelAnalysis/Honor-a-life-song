@@ -40,7 +40,7 @@ export function PublicNavigation() {
     <nav className="publicNav" aria-label="Public navigation">
       <div className="publicNavDesktop">
         <TopLevelLinks pathname={pathname} />
-        <Link aria-current={pathname === "/create" ? "page" : undefined} className={pathname === "/create" ? "active" : undefined} href="/create">Create a song</Link>
+        <Link aria-current={pathname === "/start" ? "page" : undefined} className={pathname === "/start" ? "active" : undefined} href="/start">Get started</Link>
         <Link aria-current={pathname.startsWith("/try") ? "page" : undefined} className={pathname.startsWith("/try") ? "active" : undefined} href="/try">Try a song</Link>
         <Link className="button small secondary" href="/login">{user ? "My account" : "Sign in"}</Link>
       </div>
@@ -49,7 +49,7 @@ export function PublicNavigation() {
         <summary>Menu</summary>
         <div className="publicMobilePanel">
           <TopLevelLinks pathname={pathname} />
-          <Link aria-current={pathname === "/create" ? "page" : undefined} href="/create">Create a song</Link>
+          <Link aria-current={pathname === "/start" ? "page" : undefined} href="/start">Get started</Link>
           <Link aria-current={pathname.startsWith("/try") ? "page" : undefined} href="/try">Try a song</Link>
           <Link className="button small secondary" href="/login">{user ? "My account" : "Sign in"}</Link>
         </div>
