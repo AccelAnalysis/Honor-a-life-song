@@ -2,6 +2,7 @@
 const {FieldValue}=require('firebase-admin/firestore');
 const {randomUUID}=require('node:crypto');
 const {id,requireValue,sha256,DomainError,hasRequiredAssets}=require('./domain');
+const {queuePostPurchaseMessages}=require('./communication');
 const stamp=()=>FieldValue.serverTimestamp();
 // Individual products remain separate from the three organization experience offerings.
 function makeIndividualPaymentService(db,stripe,lifecycle){
@@ -49,12 +50,22 @@ function makeIndividualPaymentService(db,stripe,lifecycle){
       requireValue(snapshot.exists,'The paid purchase needs staff review.');const p=snapshot.data();
       if(prior.exists){requireValue(prior.data().purchasePath===ref.path&&prior.data().amountCents===session.amount_total,'The payment was already reconciled elsewhere.');return {duplicate:true};}
       requireValue(p.checkout?.sessionId===session.id&&p.checkout?.amountCents===session.amount_total&&p.priceCents===session.amount_total&&['payment_pending','invoice_requested'].includes(p.status),'This payment does not match the recorded purchase.');
+      requireValue(p.checkout?.buyerEmail&&p.checkout?.accountUrl,'The paid purchase is missing its buyer destination.');
       let fulfillmentHold=false;
       try{await lifecycle.currentAccess(tx,{uid,email:p.checkout.buyerEmail,emailVerified:true},p.accessId);}catch(error){if(!(error instanceof DomainError))throw error;fulfillmentHold=true;}
+      const participantRef=db.doc(`organizations/${p.organizationId}/experiences/${p.experienceId}/participants/${p.participantId}`);
+      const participant=await tx.get(participantRef);
+      let deliveryEmail=null;
+      const consentId=participant.exists?participant.data().currentConsentId:null;
+      if(typeof consentId==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(consentId)){
+        const consent=await tx.get(participantRef.collection('consents').doc(consentId));
+        deliveryEmail=consent.exists?consent.data().participantDeliveryEmail:null;
+      }
       tx.create(evidence,{purchasePath:ref.path,userId:uid,organizationId:p.organizationId,experienceId:p.experienceId,amountCents:session.amount_total,currency:'USD',method:'stripe',reference,confirmedAt:stamp()});
       tx.update(ref,{status:'paid',paidAt:stamp(),checkout:null,paymentReference:reference,fulfillmentHold,updatedAt:stamp()});
       tx.create(db.doc(`users/${uid}/purchaseReceipts/${evidence.id}`),{requestId:ref.id,productName:p.productName,organizationId:p.organizationId,experienceId:p.experienceId,amountCents:session.amount_total,currency:'USD',reference,createdAt:stamp()});
       if(fulfillmentHold)tx.set(db.doc(`billingExceptions/purchase-${ref.id}`),{userId:uid,requestId:ref.id,organizationId:p.organizationId,reason:'Payment confirmed after permissions changed. Review refund or permitted fulfillment; do not release material.',status:'needs_review',createdAt:stamp()});
+      queuePostPurchaseMessages(tx,db,{userId:uid,requestId:ref.id,receiptId:evidence.id,buyerEmail:p.checkout.buyerEmail,deliveryEmail,productName:p.productName,experienceTitle:p.experienceTitle,destinationUrl:p.checkout.accountUrl});
       return {paid:true,fulfillmentHold};
     });
   }

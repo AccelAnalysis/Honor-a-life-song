@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { MemoriesHub } from "@/components/memories-hub";
 
 export const metadata: Metadata = {
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function MemoriesPage() {
-  return <MemoriesHub />;
+  return <Suspense fallback={<main><p role="status">Opening SongKeep…</p></main>}><MemoriesHub /></Suspense>;
 }

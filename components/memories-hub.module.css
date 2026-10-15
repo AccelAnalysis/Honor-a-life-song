@@ -48,6 +48,20 @@
 .shell > footer { padding-top: 2rem; color: #777b8e; font-size: .7rem; text-align: center; }
 .signedOut { max-width: 42rem; margin: 6rem auto; padding: 1.5rem; text-align: center; }
 .signedOut h1 { margin-left: auto; margin-right: auto; }
+.purchaseStatus,
+.messageChoices { width: min(72rem, calc(100% - 2rem)); margin: 0 auto 1.2rem; padding: clamp(1.25rem, 3vw, 2rem); border: 1px solid #dfe3ec; border-radius: 20px; background: #fff; }
+.purchaseStatus h2,
+.messageChoices h2 { margin: 0 0 .7rem; font-size: clamp(1.6rem, 3vw, 2.2rem); letter-spacing: -.03em; }
+.purchaseStatus p,
+.messageChoices p { max-width: 68ch; color: #62667b; line-height: 1.6; }
+.purchaseStatus ol { margin: 1rem 0; padding-left: 1.2rem; color: #343854; line-height: 1.6; }
+.purchaseFocus { outline: 2px solid #1572c6; }
+.consentChoice { display: grid; grid-template-columns: 1.25rem minmax(0, 1fr); gap: .75rem; align-items: start; margin-top: .9rem; }
+.consentChoice input { width: 1.15rem; height: 1.15rem; margin-top: .2rem; }
+.consentChoice small,
+.phoneField small { display: block; margin-top: .35rem; color: #5c6074; font-size: .78rem; font-weight: 600; line-height: 1.5; }
+.phoneField { display: grid; gap: .45rem; margin-top: 1rem; font-size: .8rem; font-weight: 780; }
+.phoneField input { min-height: 3rem; border: 1px solid #d9dce7; border-radius: 12px; padding: 0 .9rem; font: inherit; }
 
 .primary:focus-visible,
 .productAction button:focus-visible,

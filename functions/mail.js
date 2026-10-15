@@ -28,4 +28,76 @@ function makeMailService(db,sendEmail) {
   async function run(){const pending=await db.collectionGroup('invoiceMessages').where('status','in',['queued','retry','sending']).limit(100).get();for(const m of pending.docs)await deliver(m.ref);return {examined:pending.size};}
   return {deliver,run};
 }
-module.exports={makeMailService,emailText,shouldDeliver};
+function channelActive(record){return Boolean(record&&record.consented===true&&!record.withdrawnAt);}
+function purchasedAgain(message,purchases){
+  const current=(purchases||[]).find(item=>item.id===message.requestId);
+  const currentAt=Date.parse(current?.paidAt||current?.createdAt||'')||0;
+  return (purchases||[]).some(item=>item.id!==message.requestId&&['paid','in_fulfillment','fulfilled'].includes(item.status)&&(Date.parse(item.paidAt||item.createdAt||'')||0)>currentAt);
+}
+function decidePurchaseDelivery(message,context){
+  const now=context.now||new Date();
+  if(message.channel==='sms'||message.kind==='sms_follow_up'){
+    if(!channelActive(context.preferences?.sms))return {action:'skip',reason:'sms_consent_required'};
+    // TODO: Twilio delivery and inbound STOP are not connected. Never send SMS from this runner.
+    return {action:'skip',reason:'sms_provider_not_configured'};
+  }
+  if(message.channel!=='email')return {action:'skip',reason:'unsupported_channel'};
+  if(!channelActive(context.preferences?.email))return {action:'skip',reason:'email_consent_required'};
+  if(!message.recipient)return {action:'skip',reason:'recipient_required'};
+  if(message.kind==='next_offer'){
+    const sendAfter=message.sendAfter?new Date(message.sendAfter):null;
+    if(sendAfter&&!Number.isNaN(sendAfter.valueOf())&&sendAfter>now)return {action:'wait',reason:'scheduled'};
+    if(purchasedAgain(message,context.purchases))return {action:'skip',reason:'repurchased'};
+    if(!String(context.postalAddress||'').trim())return {action:'wait',reason:'postal_address_required'};
+    if(!context.unsubscribeUrl)return {action:'wait',reason:'unsubscribe_required'};
+    if(!context.groupUrl)return {action:'wait',reason:'group_url_required'};
+  }
+  if(message.kind==='song_link'&&!message.destinationUrl)return {action:'wait',reason:'destination_required'};
+  if(!context.from)return {action:'wait',reason:'sender_required'};
+  return {action:'send'};
+}
+function purchaseEmailText(message,context){
+  if(message.kind==='next_offer'){
+    return {subject:'Another song or a group booking from SongKeep',text:[`Hello,`,`It has been a few days since ${message.productName||'your SongKeep song'}.`,'You can order another song, or plan a group booking.',`Another song: ${message.destinationUrl}`,`Group booking: ${context.groupUrl}`,'You are receiving this because you agreed to emails from SongKeep.',`Unsubscribe: ${context.unsubscribeUrl}`,'','SongKeep',context.postalAddress].join('\n\n')};
+  }
+  return {subject:'Your song link from SongKeep',text:['Hello,','Your payment is confirmed. This email is only about opening the song you purchased.',message.productName||'Your song',message.experienceTitle?`Experience: ${message.experienceTitle}`:'',`Open your song: ${message.destinationUrl}`,'SongKeep shows the latest status for this purchase in your account.',context.from?`Questions? ${context.from}`:''].filter(Boolean).join('\n\n')};
+}
+function makePurchaseMailService(db,sendEmail,{now=()=>new Date()}={}){
+  async function deliver(ref){
+    const token=crypto.randomUUID();
+    const claimed=await db.runTransaction(async tx=>{
+      const doc=await tx.get(ref);if(!doc.exists)return null;const stored=doc.data();
+      if(['sent','cancelled','failed','skipped'].includes(stored.status))return null;
+      if(stored.status==='sending'&&stored.leaseUntil?.toMillis()>Date.now())return null;
+      if(stored.retryAt?.toMillis()>Date.now())return null;
+      const [user,settings,purchases]=await Promise.all([tx.get(db.doc(`users/${stored.userId}`)),tx.get(db.doc('platformSettings/invoicing')),tx.get(db.collection(`users/${stored.userId}/purchaseRequests`))]);
+      const prefs=user.exists?user.data().communicationPreferences||{}:{};
+      const appUrl=String(settings.data()?.appUrl||'').replace(/\/$/,'');
+      const unsubscribeToken=prefs.email?.unsubscribeToken;
+      const deliveryContext={preferences:serializable(prefs),purchases:purchases.docs.map(item=>({id:item.id,...serializable(item.data())})),postalAddress:settings.data()?.address||'',unsubscribeUrl:appUrl&&unsubscribeToken?`${appUrl}/unsubscribe?token=${encodeURIComponent(unsubscribeToken)}`:'',groupUrl:appUrl?`${appUrl}/begin`:'',from:settings.data()?.email||'',now:now()};
+      const decision=decidePurchaseDelivery(serializable(stored),deliveryContext);
+      if(decision.action==='skip'){tx.update(ref,{status:'skipped',skipReason:decision.reason,skippedAt:FieldValue.serverTimestamp(),leaseUntil:null});return null;}
+      if(decision.action==='wait'){if(decision.reason!=='scheduled'&&(stored.status!=='held'||stored.lastError!==decision.reason))tx.update(ref,{status:'held',lastError:decision.reason,leaseUntil:null});return null;}
+      if(stored.channel==='sms'||(stored.attempts||0)>=5){tx.update(ref,{status:stored.channel==='sms'?'skipped':'failed',skipReason:stored.channel==='sms'?'sms_provider_not_configured':null,lastError:stored.channel==='sms'?null:'Delivery needs staff review.',leaseUntil:null});return null;}
+      tx.update(ref,{status:'sending',leaseToken:token,leaseUntil:new Date(Date.now()+120000),attempts:(stored.attempts||0)+1});
+      return {message:serializable(stored),...deliveryContext};
+    });
+    if(!claimed||claimed.message.channel==='sms')return;
+    try{
+      const rendered=purchaseEmailText(claimed.message,claimed);
+      const result=await sendEmail({to:claimed.message.recipient,from:claimed.from,...rendered,idempotencyKey:`songkeep-${sha256(ref.path)}`});
+      await db.runTransaction(async tx=>{const current=await tx.get(ref);if(current.data()?.leaseToken!==token)return;tx.update(ref,{status:'sent',providerMessageId:result.id,sentAt:FieldValue.serverTimestamp(),leaseUntil:null});});
+    }catch{
+      await db.runTransaction(async tx=>{const current=await tx.get(ref);if(current.data()?.leaseToken!==token||current.data()?.status==='cancelled')return;const attempts=current.data().attempts||1;tx.update(ref,{status:attempts>=5?'failed':'retry',retryAt:new Date(Date.now()+Math.min(3600000,60000*2**attempts)),leaseUntil:null,lastError:'Email delivery was not confirmed. Staff can review or retry.'});});
+    }
+  }
+  async function run(){
+    const pending=await db.collectionGroup('purchaseMessages').where('status','in',['queued','retry','sending','held','scheduled']).limit(100).get();
+    const rank={queued:0,retry:1,sending:2,held:3,scheduled:4};
+    const docs=[...pending.docs].sort((a,b)=>(rank[a.data().status]??9)-(rank[b.data().status]??9));
+    for(const item of docs)await deliver(item.ref);
+    return {examined:docs.length};
+  }
+  return {deliver,run};
+}
+module.exports={makeMailService,emailText,shouldDeliver,makePurchaseMailService,purchaseEmailText,decidePurchaseDelivery};

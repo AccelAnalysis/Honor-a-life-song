@@ -6,6 +6,8 @@ import type { User } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { useAuth } from "./auth-provider";
 import { contactName, organizationKinds } from "@/domain/account-onboarding";
+import { consentAlreadyRecorded, emailConsentCopy, normalizePhone, smsConsentCopy, type CommunicationPreferences } from "@/domain/communication-consent";
+import { saveCommunicationConsent } from "@/lib/firebase/communication-consent";
 import type { ExperienceOfferingId } from "@/domain/experience";
 import type { OrganizationKind } from "@/domain/types";
 import { createOrganizationWithPrimaryContact } from "@/lib/firebase/customer-lifecycle";
@@ -26,18 +28,22 @@ export function AccountRegistrationForm({ onComplete, accessOnly = false, offeri
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [names, setNames] = useState({ firstName: "", lastName: "" });
+  const [askConsent, setAskConsent] = useState(!user);
   const [profileLoading, setProfileLoading] = useState(Boolean(user));
   const formRef = useRef<HTMLFormElement>(null);
   const attempt = useRef<string | null>(null);
   const submitted = useRef(false);
   // Keep the same form mounted while Auth resolves. Passwords never leave this form or enter a draft.
   useEffect(() => {
-    if (!user || submitted.current) { setProfileLoading(false); return; }
+    if (!user || submitted.current) { setAskConsent(true); setProfileLoading(false); return; }
     let cancelled = false;
     setProfileLoading(true);
     getDoc(doc(getFirebaseFirestore(), "users", user.uid)).then(snapshot => {
-      if (!cancelled) setNames({ firstName: snapshot.data()?.firstName ?? "", lastName: snapshot.data()?.lastName ?? "" });
-    }).catch(() => undefined).finally(() => { if (!cancelled) setProfileLoading(false); });
+      if (cancelled) return;
+      const data = snapshot.data();
+      setNames({ firstName: data?.firstName ?? "", lastName: data?.lastName ?? "" });
+      setAskConsent(!consentAlreadyRecorded(data?.communicationPreferences as CommunicationPreferences | undefined));
+    }).catch(() => { if (!cancelled) setAskConsent(true); }).finally(() => { if (!cancelled) setProfileLoading(false); });
     return () => { cancelled = true; };
   }, [user]);
 
@@ -48,8 +54,16 @@ export function AccountRegistrationForm({ onComplete, accessOnly = false, offeri
     const value = (name: string) => String(values.get(name) ?? "").trim();
     const firstName = value("firstName"), lastName = value("lastName");
     const password = String(values.get("password") ?? "");
+    const emailConsent = values.get("emailConsent") === "on";
+    const smsConsent = values.get("smsConsent") === "on";
+    const mobilePhone = value("mobilePhone");
     if (!user && password !== String(values.get("confirmPassword") ?? "")) {
       setError("The passwords do not match."); formRef.current?.querySelector<HTMLInputElement>('[name="confirmPassword"]')?.focus(); return;
+    }
+    if (askConsent && smsConsent && !normalizePhone(mobilePhone)) {
+      setError("Add a mobile number to agree to text messages, or leave text messages unchecked.");
+      formRef.current?.querySelector<HTMLInputElement>('[name="mobilePhone"]')?.focus();
+      return;
     }
     setBusy(true); onBusyChange?.(true); submitted.current = true; setError(null);
     let signInReady = Boolean(user);
@@ -57,6 +71,14 @@ export function AccountRegistrationForm({ onComplete, accessOnly = false, offeri
       const displayName = contactName(firstName, lastName);
       const accountUser = user ?? await createAccount({ firstName, lastName, email: value("email"), password });
       signInReady = true;
+      if (askConsent) {
+        await saveCommunicationConsent({
+          source: "account_creation",
+          email: emailConsent,
+          sms: smsConsent,
+          ...(mobilePhone ? { phone: mobilePhone } : {})
+        });
+      }
       if (accessOnly) { await onComplete({ user: accountUser }); return; }
       attempt.current ??= crypto.randomUUID();
       const organizationId = await createOrganizationWithPrimaryContact({
@@ -97,6 +119,13 @@ export function AccountRegistrationForm({ onComplete, accessOnly = false, offeri
             <label><span>Phone number</span><input type="tel" name="contactPhone" maxLength={40} autoComplete="tel" /></label>
           </div>
         </details>
+      </fieldset> : null}
+      {askConsent ? <fieldset disabled={busy} className={styles.consentChoices}>
+        <legend>Messages from SongKeep</legend>
+        <small>Optional. You can create your account either way. Email and text messages are separate choices.</small>
+        <label className={styles.consentChoice}><input type="checkbox" name="emailConsent" /><span>Email<small>{emailConsentCopy.language}</small></span></label>
+        <label className={styles.consentChoice}><input type="checkbox" name="smsConsent" /><span>Text messages<small>{smsConsentCopy.language}</small></span></label>
+        <label><span>Mobile number <small>Needed only if you agree to text messages</small></span><input type="tel" name="mobilePhone" maxLength={40} autoComplete="tel" inputMode="tel" /></label>
       </fieldset> : null}
       {!user ? <fieldset disabled={busy}>
         <legend>Your sign-in</legend>
