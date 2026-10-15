@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { homeSections, howItWorksSteps, projectAgelessSections, publicNavigation } from "../lib/public-navigation";
 
@@ -70,5 +71,22 @@ describe("public navigation", () => {
       label: "Honor a Life Song Experience"
     }));
     expect(JSON.stringify(publicNavigation)).not.toContain("Purchase an individual song");
+  });
+
+  it("puts Pricing in the header and working links in the footer", () => {
+    expect(publicNavigation.find((item) => item.id === "pricing")).toEqual(expect.objectContaining({ label: "Pricing", href: "/pricing" }));
+    const shell = readFileSync("components/public-shell.tsx", "utf8");
+    const pricing = readFileSync("app/(public)/pricing/page.tsx", "utf8");
+    expect(pricing).toContain('<SongPlanCards source="pricing" />');
+    expect(pricing).not.toContain("guestDraftIsReady");
+    expect(pricing).not.toContain("CreatorAccessGate");
+    for (const href of ["/privacy", "/terms", "/accessibility", "/contact", "/about", "/begin", "/pricing", "/try"]) {
+      expect(shell).toContain(`href="${href}"`);
+    }
+    expect(shell).toContain("Privacy Policy");
+    expect(shell).toContain("Terms of Service");
+    expect(shell).not.toMatch(/Accel Analysis/i);
+    expect(readFileSync("app/(public)/privacy/page.tsx", "utf8")).toContain("Privacy Policy");
+    expect(readFileSync("app/(public)/terms/page.tsx", "utf8")).toContain("Terms of Service");
   });
 });

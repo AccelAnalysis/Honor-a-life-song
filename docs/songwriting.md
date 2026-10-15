@@ -1,6 +1,6 @@
 # Finish a song
 
-Visitors start at **Try a song** (`/try`) with no account. They can play preview songs, paste interview notes, arrange verses, and refine a lyric on that page. Account creation and the plan cards appear only after a draft exists. Prices are not on the page before that.
+Visitors start at **Try a song** (`/try`) with no account. They can play preview songs, paste interview notes, arrange verses, and refine a lyric on that page. Account creation and the plan cards appear only after a draft exists. Prices are not on `/try` before that. The header **Pricing** link opens `/pricing`, which shows the same Individual / Group cards without waiting for a draft.
 
 Signed-in platform admins and assigned creators still use Creator Studio at `/creator`. That path stays behind `CreatorAccessGate`.
 

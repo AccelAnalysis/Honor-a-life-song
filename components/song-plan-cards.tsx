@@ -13,7 +13,7 @@ function planBenefits(offering: ExperienceOffering): string[] {
   return [offering.creativeOutput, offering.storyCapture, offering.presentation, offering.postEvent];
 }
 
-export function SongPlanCards() {
+export function SongPlanCards({ source = "draft" }: { source?: "draft" | "pricing" }) {
   const [audience, setAudience] = useState<PlanAudience>("individual");
   const individual = audience === "individual";
 
@@ -21,7 +21,7 @@ export function SongPlanCards() {
     <div className={styles.heading}>
       <h2 id="song-plans-heading">Choose a plan</h2>
       <p>{individual
-        ? "A personal song from the notes you just shaped."
+        ? source === "pricing" ? "A personal song for one person." : "A personal song from the notes you just shaped."
         : "A song for a group, a concert, or an album."}</p>
       <div className={styles.switch} role="group" aria-label="Plan type">
         <button type="button" aria-pressed={individual} onClick={() => setAudience("individual")}>Individual</button>
