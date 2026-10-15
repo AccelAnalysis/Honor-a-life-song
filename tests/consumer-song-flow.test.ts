@@ -13,6 +13,7 @@ import {
   readConsumerSession,
   retreatConsumerFlow,
   setLineText,
+  startChoices,
   surpriseLines,
   walkConsumerFlow,
   type ConsumerDraft,
@@ -49,7 +50,9 @@ function readyDraft(overrides: Partial<ConsumerDraft> = {}): ConsumerDraft {
 describe("consumer song flow", () => {
   it("walks an individual song from welcome to delivery", () => {
     expect(walkConsumerFlow(readyDraft({ mode: "with-me" }))).toEqual([
+      "listen",
       "welcome",
+      "story",
       "occasion",
       "about",
       "sound",
@@ -61,7 +64,9 @@ describe("consumer song flow", () => {
       "delivery"
     ]);
     expect(walkConsumerFlow(readyDraft({ mode: "for-me" }))).toEqual([
+      "listen",
       "welcome",
+      "story",
       "occasion",
       "about",
       "sound",
@@ -72,7 +77,9 @@ describe("consumer song flow", () => {
       "delivery"
     ]);
     expect(walkConsumerFlow(readyDraft({ mode: "songwriter" }))).toEqual([
+      "listen",
       "welcome",
+      "story",
       "occasion",
       "about",
       "sound",
@@ -88,7 +95,7 @@ describe("consumer song flow", () => {
   it("keeps a group choice on the existing begin and services paths", () => {
     const draft = readyDraft({ recipient: "group" });
     expect(advanceConsumerFlow("welcome", draft)).toBe("welcome");
-    expect(walkConsumerFlow(draft)).toEqual(["welcome"]);
+    expect(walkConsumerFlow(draft)).toEqual(["listen", "welcome"]);
     expect(groupExperienceLinks.map((link) => link.href)).toEqual(["/begin", "/services"]);
   });
 
@@ -166,7 +173,7 @@ describe("consumer song flow", () => {
     expect(session.step).toBe("preview");
     expect(session.draft.subjectName).toBe("Ruth");
     expect(session.draft.lines[0].locked).toBe(true);
-    expect(readConsumerSession("{")).toEqual({ step: "welcome", draft: emptyConsumerDraft() });
+    expect(readConsumerSession("{")).toEqual({ step: "listen", draft: emptyConsumerDraft() });
     expect(readConsumerSession(JSON.stringify({ step: "community", draft: { planId: "signature" } })).draft.planId).toBeNull();
   });
 
@@ -183,13 +190,21 @@ describe("consumer song flow", () => {
     expect(source).toContain("Keep this line");
     expect(source).toContain("consumerPlanCards");
     expect(source).toContain("Tell us your story");
-    expect(source).toContain('href="/create"');
+    expect(source).toContain('"/create"');
     expect(source).toContain('href="/try"');
     const home = readFileSync("app/page.tsx", "utf8");
     const heroStart = home.indexOf("consumerHeroActions");
     const hero = home.slice(heroStart, home.indexOf("</div>", heroStart));
-    expect(hero.indexOf('href="/create"')).toBeGreaterThan(-1);
-    expect(hero.indexOf('href="/create"')).toBeLessThan(hero.indexOf('href="/services"'));
+    expect(hero.indexOf('href="/start"')).toBeGreaterThan(-1);
+    expect(hero.indexOf('href="/start"')).toBeLessThan(hero.indexOf('href="/services"'));
+    expect(startChoices.map((choice) => [choice.id, choice.href])).toEqual([
+      ["individual", "/create"],
+      ["groups", "/create-account?next=%2Fbegin"]
+    ]);
+    const startPage = readFileSync("app/start/page.tsx", "utf8");
+    expect(startPage).toContain("startChoices");
+    expect(startPage).not.toMatch(/\$\d|Tina|Micula/);
+    expect(readFileSync("app/(booking)/begin/page.tsx", "utf8")).toContain("BookingRoute");
     expect(readFileSync("components/consumer-song-flow.tsx", "utf8")).toContain("groupExperienceLinks");
     expect(readFileSync("app/(public)/services/page.tsx", "utf8")).toContain("experienceOfferings");
     expect(readFileSync("components/song-plan-cards.tsx", "utf8")).toContain('useState<PlanAudience>("individual")');

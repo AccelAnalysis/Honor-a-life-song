@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { AudioPlayer } from "@/components/brand";
+import { PreviewLibrary } from "@/components/preview-library";
 import {
   aboutQuestions,
   addOnsAreOffered,
@@ -283,7 +284,14 @@ export function ConsumerSongFlow() {
 
   return <div className={styles.page} data-step={step}>
     <p className={styles.kicker}>SongKeep</p>
-    {step !== "welcome" ? <button className={styles.back} type="button" onClick={goBack}>Back</button> : null}
+    {step !== "listen" ? <button className={styles.back} type="button" onClick={goBack}>Back</button> : null}
+
+    {step === "listen" ? <section className={styles.panel} aria-labelledby="create-heading">
+      <h1 id="create-heading" ref={headingRef} tabIndex={-1}>Hear a song</h1>
+      <p>Start with a sound. Your words come next. No account yet.</p>
+      <PreviewLibrary />
+      <div className={styles.actions}><button className={styles.primary} type="button" onClick={goNext}>Continue</button></div>
+    </section> : null}
 
     {step === "welcome" ? <section className={styles.panel} aria-labelledby="create-heading">
       <h1 id="create-heading" ref={headingRef} tabIndex={-1}>Your memories. Your words. Your song.</h1>
@@ -306,10 +314,24 @@ export function ConsumerSongFlow() {
           {groupExperienceLinks.map((link) => <Link className={styles.primary} key={link.href} href={link.href}>{link.label}</Link>)}
         </div>
       </div> : <div className={styles.actions}>
-        <button className={styles.primary} type="button" onClick={goNext} disabled={!isIndividualRecipient(draft.recipient)}>Get started</button>
+        <button className={styles.primary} type="button" onClick={goNext} disabled={!isIndividualRecipient(draft.recipient)}>Continue</button>
       </div>}
       <p className={styles.help}>No songwriting experience needed.</p>
       <p className={styles.help}><Link href="/try">Already have interview notes? Open the song sandbox.</Link></p>
+    </section> : null}
+
+    {step === "story" ? <section className={styles.panel} aria-labelledby="create-heading">
+      <h1 id="create-heading" ref={headingRef} tabIndex={-1}>Tell us one memory</h1>
+      <p>A sentence is enough. This is a taste of the song, not the finished lyric.</p>
+      <label>A favorite memory
+        <textarea value={draft.favoriteMemory} rows={4} onChange={(event) => patch({ favoriteMemory: event.target.value })} />
+      </label>
+      <StoryVoice value={draft.voiceStory} onChange={(voiceStory) => patch({ voiceStory })} />
+      {draft.favoriteMemory.trim() || draft.voiceStory.trim() ? <div className={styles.taste} aria-label="Draft taste">
+        <h2>A taste of the song</h2>
+        {chorusChoices(draft, 0).map((line) => <p key={line}>{line}</p>)}
+      </div> : null}
+      <div className={styles.actions}><button className={styles.primary} type="button" onClick={goNext} disabled={advanceConsumerFlow("story", draft) === "story"}>Continue</button></div>
     </section> : null}
 
     {step === "occasion" ? <section className={styles.panel} aria-labelledby="create-heading">

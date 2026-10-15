@@ -15,7 +15,7 @@ export default function HomePage() {
           <h1 id="consumer-hero-title">Every life has a story and every story has a song.</h1>
           <p className="consumerHeroLead">Turn the stories of your family, community, or team into original songs to share and keep.</p>
           <div className="consumerHeroActions">
-            <Link className="button primary" href="/create">Create a song</Link>
+            <Link className="button primary" href="/start">Get started</Link>
             <Link className="button secondary" href="/services">Choose an experience</Link>
             <Link className="button secondary" href="/how-it-works">How it works</Link>
           </div>
@@ -92,7 +92,7 @@ export default function HomePage() {
       </section>
 
       <section className="closingScene" id="request-a-song" aria-labelledby="closing-title">
-        <div><p className="eyebrow">SongKeep</p><h2 id="closing-title">Bring it to your community.</h2><p>Choose an experience for your group. We’ll help you make it unforgettable.</p><Link className="button" href="/begin">Get started</Link></div>
+        <div><p className="eyebrow">SongKeep</p><h2 id="closing-title">Bring it to your community.</h2><p>A song for one person, or a song for a group.</p><Link className="button" href="/start">Get started</Link></div>
       </section>
     </PublicShell>
   );

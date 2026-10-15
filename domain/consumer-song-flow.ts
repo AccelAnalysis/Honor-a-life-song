@@ -15,7 +15,9 @@ import { notesAreReadyForSuggestions, sketchVersesFromNotes } from "./songwritin
 export const consumerDraftStorageKey = "songkeep-consumer-draft";
 
 export const consumerFlowSteps = [
+  "listen",
   "welcome",
+  "story",
   "occasion",
   "about",
   "sound",
@@ -111,6 +113,25 @@ export type SongwriterTouchId = (typeof songwriterTouchChoices)[number]["id"];
 export const groupExperienceLinks = [
   { href: "/begin", label: "Plan a group experience" },
   { href: "/services", label: "See group services" }
+] as const;
+
+/**
+ * Get Started door. Individual begins the song with no account.
+ * Groups create an account, then use the existing begin flow. No prices on this door.
+ */
+export const startChoices = [
+  {
+    id: "individual",
+    label: "Individual",
+    detail: "Start the song now. An account waits until you want to save it.",
+    href: "/create"
+  },
+  {
+    id: "groups",
+    label: "Groups",
+    detail: "Create the group account first. Billing comes after the event is taking shape.",
+    href: "/create-account?next=%2Fbegin"
+  }
 ] as const;
 
 export type PreviewLine = {
@@ -210,7 +231,7 @@ export function emptyConsumerDraft(): ConsumerDraft {
 }
 
 export function emptyConsumerSession(): ConsumerSession {
-  return { step: "welcome", draft: emptyConsumerDraft() };
+  return { step: "listen", draft: emptyConsumerDraft() };
 }
 
 function clean(value: string) {
@@ -438,8 +459,12 @@ export function suggestLine(draft: ConsumerDraft, line: PreviewLine, salt: numbe
 
 export function canContinue(step: ConsumerFlowStep, draft: ConsumerDraft) {
   switch (step) {
+    case "listen":
+      return true;
     case "welcome":
       return isIndividualRecipient(draft.recipient);
+    case "story":
+      return hasStory(draft);
     case "occasion":
       return draft.occasion !== null;
     case "about":
@@ -467,7 +492,11 @@ export function canContinue(step: ConsumerFlowStep, draft: ConsumerDraft) {
 export function advanceConsumerFlow(step: ConsumerFlowStep, draft: ConsumerDraft): ConsumerFlowStep {
   if (!canContinue(step, draft)) return step;
   switch (step) {
+    case "listen":
+      return "welcome";
     case "welcome":
+      return "story";
+    case "story":
       return "occasion";
     case "occasion":
       return "about";
@@ -497,8 +526,12 @@ export function advanceConsumerFlow(step: ConsumerFlowStep, draft: ConsumerDraft
 
 export function retreatConsumerFlow(step: ConsumerFlowStep, draft: ConsumerDraft): ConsumerFlowStep {
   switch (step) {
-    case "occasion":
+    case "welcome":
+      return "listen";
+    case "story":
       return "welcome";
+    case "occasion":
+      return "story";
     case "about":
       return "occasion";
     case "sound":
@@ -519,13 +552,13 @@ export function retreatConsumerFlow(step: ConsumerFlowStep, draft: ConsumerDraft
     case "delivery":
       return "addons";
     default:
-      return "welcome";
+      return "listen";
   }
 }
 
 export function walkConsumerFlow(draft: ConsumerDraft): ConsumerFlowStep[] {
-  const seen: ConsumerFlowStep[] = ["welcome"];
-  let step: ConsumerFlowStep = "welcome";
+  const seen: ConsumerFlowStep[] = ["listen"];
+  let step: ConsumerFlowStep = "listen";
   for (let guard = 0; guard < consumerFlowSteps.length; guard += 1) {
     const next = advanceConsumerFlow(step, draft);
     if (next === step) break;
