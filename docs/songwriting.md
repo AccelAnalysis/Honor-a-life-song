@@ -1,11 +1,23 @@
 # Finish a song
 
-Creators and platform staff use Creator Studio to take one song from interview notes to a finished lyric. The public header links to `/creator/song`. Assigned creators also see **Finish a song** from their assignments page.
+Visitors start at **Try a song** (`/try`) with no account. They can play preview songs, paste interview notes, arrange verses, and refine a lyric on that page. Account creation is offered only after a draft exists. Pricing and billing are not part of that page.
+
+Signed-in platform admins and assigned creators still use Creator Studio at `/creator`. That path stays behind `CreatorAccessGate`.
+
+## Guest steps
+
+1. Open **Try a song**. Nothing asks for a sign-in.
+2. Play one or more previews.
+3. Paste interview notes and ask for verse ideas. On this public page the lines are arranged from the notes in the browser. No model key is involved.
+4. Edit the draft and refine it.
+5. When a draft is long enough to keep, create an account if you want SongKeep to hold it.
+
+## What a creator does
 
 ## What a creator does
 
 1. Sign in. Creator Studio opens only for a platform admin or an account with a creator assignment.
-2. Open **Finish a song** and start a song with a title and the interview notes.
+2. Open Creator Studio and start a song with a title and the interview notes. A player on that page plays the same previews visitors hear.
 3. Save the notes, then ask for verse ideas. Use a suggestion in the draft or leave it.
 4. Save the draft. Each save adds the next version and leaves earlier versions in place.
 5. Review the latest version, compare two versions, or refine the latest version into a new one.
@@ -18,6 +30,12 @@ Creators and platform staff use Creator Studio to take one song from interview n
 Firestore allows those reads and lyric writes for a platform admin or the assigned creator (`assignedUserId`). Clients cannot create or edit suggestion documents. There is no public read or write. Organization membership does not grant access.
 
 A signed-in creator owns the song they start. An admin may attach one of their assignments, and the song is still stored under the signed-in account that created it.
+
+## Previews
+
+The home page and the try page play more than one short preview. Three original sketches ship in `public/previews/` so listening works with no account and no Firebase.
+
+A signed-in admin, or a creator with an assignment, can add more from Creator Studio. Upload an audio file or paste an https link. Uploads go to Cloud Storage at `song-previews/{id}/` and a `songPreviews` document. Visitors can read a preview only after it is published. They cannot write previews. Storage still denies every other path.
 
 ## Suggestions and the static export
 

@@ -38,7 +38,15 @@ describe("songwriting flow", () => {
     expect(creative).not.toContain("allow read, write: if true");
     expect(readFileSync("components/workspace-route.tsx", "utf8")).toContain("<CreatorAccessGate>");
     expect(readFileSync("app/(lifecycle)/creator/deliverables/page.tsx", "utf8")).toContain("CreatorAccessGate");
-    expect(readFileSync("components/public-navigation.tsx", "utf8")).toContain('href="/creator/song"');
+    expect(readFileSync("components/public-navigation.tsx", "utf8")).toContain('href="/try"');
+    expect(readFileSync("components/public-navigation.tsx", "utf8")).not.toContain('href="/creator/song"');
+    const guest = readFileSync("components/guest-songwriting.tsx", "utf8");
+    expect(guest).toContain("Suggest verses");
+    expect(guest).toContain("Hear a preview");
+    expect(guest).toContain('href="/create-account?next=%2Ftry"');
+    expect(guest).not.toContain("/begin");
+    expect(guest).not.toContain("CreatorAccessGate");
+    expect(readFileSync("app/try/page.tsx", "utf8")).not.toContain("CreatorAccessGate");
     const client = [
       "components/songwriting-studio.tsx",
       "lib/firebase/songwriting.ts",

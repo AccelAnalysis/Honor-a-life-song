@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { PreviewLibrary } from "@/components/preview-library";
+import { PreviewPublisher } from "@/components/preview-publisher";
 import { SongwritingEntry, SongwritingStudio } from "@/components/songwriting-studio";
 import { referenceCreatorContext } from "@/fixtures/reference-data";
 import {
@@ -165,7 +167,7 @@ export function CreatorWorkspace({ route }: CreatorWorkspaceProps) {
   const songwriting = showsSongwriting(route);
 
   return <div className={styles.creatorModule}>
-    {route.parent.id === "creator-home" && !route.child ? <SongwritingEntry /> : null}
+    {route.parent.id === "creator-home" && !route.child ? <><SongwritingEntry /><PreviewLibrary /><PreviewPublisher /></> : null}
     <ChildNavigation route={route} />
     <LyricsGrandchildNavigation route={route} />
     {songwriting

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "@/components/auth-provider";
 import { useCreatorAccess } from "@/components/creator-access-gate";
+import { PreviewLibrary } from "@/components/preview-library";
 import {
   canEditSong,
   notesAreReadyForSuggestions,
@@ -139,6 +140,7 @@ function SongLibrary({ onOpen }: { onOpen: (workId: string) => void }) {
   return <section className={styles.panel} aria-labelledby="song-library-heading">
     <p className={styles.kicker}>Songwriting</p>
     <h2 id="song-library-heading">Your songs</h2>
+    <PreviewLibrary compact />
     <p>Begin with the interview notes. You can shape every line before the song is finished.</p>
     {error ? <p className={styles.error} role="alert">{error}</p> : null}
     <form className={styles.form} onSubmit={start}>
@@ -230,6 +232,11 @@ function SongEditor({ route, userId, workId }: { route: CreatorRouteResolution; 
   ] as const;
 
   return <div className={styles.studio}>
+    <section className={styles.panel} aria-labelledby="creator-preview-heading">
+      <h2 id="creator-preview-heading">Hear a preview</h2>
+      <p>Play a song while you write. Lyrics are only part of the work.</p>
+      <PreviewLibrary compact />
+    </section>
     <div className={styles.songHead}>
       <div>
         <p className={styles.kicker}>Finish a song</p>

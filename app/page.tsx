@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MarketingImageSequence } from "@/components/marketing-image-sequence";
+import { PreviewLibrary } from "@/components/preview-library";
 import { SonicSignature } from "@/components/brand";
 import { PublicShell } from "@/components/public-shell";
 import styles from "./home-lifecycle.module.css";
@@ -14,7 +15,8 @@ export default function HomePage() {
           <h1 id="consumer-hero-title">Every life has a story and every story has a song.</h1>
           <p className="consumerHeroLead">Turn the stories of your family, community, or team into original songs to share and keep.</p>
           <div className="consumerHeroActions">
-            <Link className="button primary" href="/services">Choose an experience</Link>
+            <Link className="button primary" href="/try">Try a song</Link>
+            <Link className="button secondary" href="/services">Choose an experience</Link>
             <Link className="button secondary" href="/how-it-works">How it works</Link>
           </div>
           <SonicSignature inverse label="Hear SongKeep" />
@@ -46,6 +48,18 @@ export default function HomePage() {
           <article className="songCover"><div className="songCoverMeta"><small>Group event</small><h3>One shared song.</h3><p>Stories brought together.</p></div></article>
           <article className="songCover"><div className="songCoverMeta"><small>Legacy album</small><h3>A life in tracks.</h3><p>Story · album · approved release</p></div></article>
         </div>
+      </section>
+
+      <section className="visualSection" id="song-previews" aria-labelledby="preview-library-title">
+        <div className="visualIntro">
+          <div>
+            <p className="eyebrow">Listen</p>
+            <h2 id="preview-library-title">Hear a preview.</h2>
+          </div>
+          <p>Play more than one short song before you write your own.</p>
+        </div>
+        <PreviewLibrary />
+        <p><Link className="textLink" href="/try">Try a song from your notes →</Link></p>
       </section>
 
       <section className="storyProcess" id="home-how-it-works" aria-labelledby="process-title">

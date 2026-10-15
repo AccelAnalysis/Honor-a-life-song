@@ -640,6 +640,45 @@ service cloud.firestore {
       }
     }
 
+    match /songPreviews/{previewId} {
+      allow read: if resource.data.published == true;
+      allow read: if platformAdmin() || (signedIn() && resource.data.createdByUserId == request.auth.uid);
+      allow create: if signedIn()
+        && (platformAdmin() || assignedCreator(request.resource.data.assignmentId))
+        && request.resource.data.keys().hasOnly(['title', 'credit', 'kind', 'audioUrl', 'storagePath', 'assignmentId', 'published', 'status', 'createdByUserId', 'createdAt', 'updatedAt'])
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 120
+        && request.resource.data.credit == 'SongKeep preview'
+        && request.resource.data.assignmentId is string
+        && request.resource.data.createdByUserId == request.auth.uid
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time
+        && (
+          (request.resource.data.kind == 'link'
+            && request.resource.data.published == true
+            && request.resource.data.status == 'ready'
+            && request.resource.data.storagePath == ''
+            && request.resource.data.audioUrl is string
+            && request.resource.data.audioUrl.matches('https://.*')
+            && request.resource.data.audioUrl.size() <= 2000)
+          || (request.resource.data.kind == 'upload'
+            && request.resource.data.published == false
+            && request.resource.data.status == 'uploading'
+            && request.resource.data.audioUrl == ''
+            && request.resource.data.storagePath.matches('song-previews/' + previewId + '/preview[.][A-Za-z0-9]+'))
+        );
+      allow update: if signedIn()
+        && (platformAdmin() || resource.data.createdByUserId == request.auth.uid)
+        && resource.data.kind == 'upload'
+        && resource.data.status == 'uploading'
+        && request.resource.data.published == true
+        && request.resource.data.status == 'ready'
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['published', 'status', 'updatedAt']);
+      allow delete: if platformAdmin();
+    }
+
     match /billingExceptions/{exceptionId} { allow read: if platformAdmin(); }
     match /billingFollowUp/{taskId} { allow read: if platformAdmin(); }
     match /billingAudit/{auditId} { allow read: if platformAdmin(); }
