@@ -11,7 +11,7 @@ Signed-in platform admins and assigned creators still use Creator Studio at `/cr
 3. Paste interview notes and ask for verse ideas. On this public page the lines are arranged from the notes in the browser. No model key is involved.
 4. Edit the draft and refine it.
 5. When a draft is long enough to keep, create an account if you want SongKeep to hold it.
-6. The same moment shows the three SongKeep packages side by side: Single-Song Group Event ($200), Honor a Life Song Experience ($2,500), and SongKeep Legacy Album ($6,000). Each card lists the package benefits already stored on that offering and links to booking for that plan. Those names and prices come from `experienceOfferings`.
+6. The same moment shows plan cards. The switch opens on **Individual**: Cheers ($9.95), Spotlight ($19.95), and Encore ($29.95), with optional add-ons listed under the cards. **Group** keeps Single-Song Group Event ($200), Honor a Life Song Experience ($2,500), and SongKeep Legacy Album ($6,000). Prices stay off the page until this draft exists.
 
 ## What a creator does
 

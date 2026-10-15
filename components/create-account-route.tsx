@@ -10,6 +10,7 @@ import { AccountRegistrationForm, type AccountRegistrationResult } from "./accou
 import { safeReturnPath } from "@/lib/safe-return-path";
 import { getExperienceOffering } from "@/domain/experience";
 import { formatOfferingPrice } from "@/domain/booking";
+import { formatPlanPrice, getIndividualSongPlan } from "@/domain/individual-song-plans";
 import styles from "./create-account-route.module.css";
 
 export function CreateAccountRoute() {
@@ -22,9 +23,12 @@ export function CreateAccountRoute() {
   const nextUrl = next ? new URL(next, "https://songkeep.invalid") : null;
   const accessOnly = Boolean(nextUrl && ["/accept-invitation", "/claim", "/participate"].includes(nextUrl.pathname));
   const offering = getExperienceOffering(nextUrl?.searchParams.get("offering") ?? params.get("offering") ?? undefined);
+  const personalPlan = getIndividualSongPlan(params.get("plan"));
   const addGroup = params.get("addGroup") === "1";
+  const signInOnly = accessOnly || Boolean(personalPlan);
   useEffect(() => {
     if (status === "loading") return;
+    if (personalPlan && user && !registering) { router.replace(next ?? "/try"); return; }
     if (!user || registering || addGroup) { setChecking(false); return; }
     let cancelled = false;
     setChecking(true);
@@ -45,19 +49,23 @@ export function CreateAccountRoute() {
       setChecking(false);
     });
     return () => { cancelled = true; };
-  }, [user, status, registering, addGroup, accessOnly, next, router]);
+  }, [user, status, registering, addGroup, accessOnly, personalPlan, next, router]);
   async function complete({ organizationId }: AccountRegistrationResult) {
     if (nextUrl) {
       if (organizationId) nextUrl.searchParams.set(nextUrl.pathname === "/organization/invoices" ? "organization" : nextUrl.pathname.startsWith("/organization") ? "org" : "organizationId", organizationId);
       router.replace(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
     } else router.replace(organizationId ? `/organization?org=${encodeURIComponent(organizationId)}` : "/memories");
   }
-  const title = accessOnly
+  const title = personalPlan && !user
+    ? "Keep this song."
+    : accessOnly
     ? "Create your sign-in."
     : user
       ? addGroup ? "Add another organization." : "Finish setting up your organization."
       : "Who should SongKeep work with?";
-  const intro = accessOnly
+  const intro = personalPlan && !user
+    ? `Create your sign-in. SongKeep will hold this draft with ${personalPlan.name}.`
+    : accessOnly
     ? "Use the email address that received your invitation."
     : user
       ? addGroup
@@ -73,9 +81,9 @@ export function CreateAccountRoute() {
       <Link href="/" className={styles.formBrand} aria-label="SongKeep home"><SongKeepLockup variant="app" /></Link>
       <p className={styles.kicker}>Your account</p><h2 id="create-account-title">{title}</h2>
       <p className={styles.intro}>{intro}</p>
-      {offering ? <p className={styles.selectedOffer}><strong>{offering.name}</strong><span>{formatOfferingPrice(offering.priceCents)} · {offering.creativeOutput}</span><Link href="/services">Change experience</Link></p> : null}
+      {personalPlan ? <p className={styles.selectedOffer}><strong>{personalPlan.name}</strong><span>{formatPlanPrice(personalPlan.priceCents)}</span></p> : offering ? <p className={styles.selectedOffer}><strong>{offering.name}</strong><span>{formatOfferingPrice(offering.priceCents)} · {offering.creativeOutput}</span><Link href="/services">Change experience</Link></p> : null}
       {error ? <p role="alert">{error}</p> : null}
-      {checking && !registering ? <p role="status">Opening your account…</p> : <AccountRegistrationForm onBusyChange={setRegistering} onComplete={complete} accessOnly={accessOnly} offeringId={offering?.id} signInHref={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} />}
+      {checking && !registering ? <p role="status">Opening your account…</p> : <AccountRegistrationForm onBusyChange={setRegistering} onComplete={complete} accessOnly={signInOnly} offeringId={personalPlan ? undefined : offering?.id} signInHref={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} />}
     </div></section>
   </main>;
 }
