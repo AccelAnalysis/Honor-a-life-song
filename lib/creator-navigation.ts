@@ -80,18 +80,18 @@ const lyricGrandchildren: readonly CreatorWorkflowNode[] = [
     id: "lyrics-draft",
     label: "Draft",
     slug: "draft",
-    description: "The active human-authored lyric-development surface for the selected CreativeWork. Saving must create or update an authoritative LyricVersion without overwriting prior submitted or approved versions.",
+    description: "Write the working lyric and save it as the next version. Earlier versions stay in place.",
     boundaries: ["creative-work", "workflow", "audit"],
     exposure: "creator_internal",
     requiresCreativeWork: true,
-    action: { label: "Persist lyric version", service: "creative-work" }
+    action: { label: "Save draft", service: "creative-work" }
   },
   {
-    id: "lyrics-version-history",
-    label: "Version History",
-    slug: "version-history",
-    description: "Chronological/version-ordered LyricVersion history preserving version identity, author where supported, timestamp, workflow/review state, and relationships to approvals or feedback.",
-    boundaries: ["creative-work", "approvals", "audit"],
+    id: "lyrics-review",
+    label: "Review",
+    slug: "review",
+    description: "Read the current version and decide whether to refine it or mark the song finished.",
+    boundaries: ["creative-work", "workflow", "audit"],
     exposure: "creator_internal",
     requiresCreativeWork: true
   },
@@ -99,8 +99,27 @@ const lyricGrandchildren: readonly CreatorWorkflowNode[] = [
     id: "lyrics-comparison",
     label: "Comparison",
     slug: "comparison",
-    description: "Human review of applicable LyricVersion records side by side. This comparison surface does not generate rewrites or autonomously edit lyrics.",
+    description: "Read two saved versions side by side. This comparison does not rewrite the lyric.",
     boundaries: ["creative-work"],
+    exposure: "creator_internal",
+    requiresCreativeWork: true
+  },
+  {
+    id: "lyrics-refine",
+    label: "Refine",
+    slug: "refine",
+    description: "Shape a saved version into the next one without erasing the earlier draft.",
+    boundaries: ["creative-work", "workflow", "audit"],
+    exposure: "creator_internal",
+    requiresCreativeWork: true,
+    action: { label: "Save refined version", service: "creative-work" }
+  },
+  {
+    id: "lyrics-version-history",
+    label: "Version History",
+    slug: "version-history",
+    description: "Read every saved lyric version, oldest first.",
+    boundaries: ["creative-work", "approvals", "audit"],
     exposure: "creator_internal",
     requiresCreativeWork: true
   }

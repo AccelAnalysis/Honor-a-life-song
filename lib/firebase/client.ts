@@ -2,7 +2,7 @@ import { getApp, getApps, initializeApp, type FirebaseApp, type FirebaseOptions 
 import { connectAuthEmulator, getAuth, type Auth } from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore, type Firestore } from "firebase/firestore";
 import { connectFunctionsEmulator, getFunctions, type Functions } from "firebase/functions";
-import { getStorage, type FirebaseStorage } from "firebase/storage";
+import { connectStorageEmulator, getStorage, type FirebaseStorage } from "firebase/storage";
 
 let firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -57,4 +57,8 @@ export function getFirebaseFunctions(): Functions {
   if (emulatorsEnabled() && !connected.has(functions)) { connectFunctionsEmulator(functions, "127.0.0.1", 5001); connected.add(functions); }
   return functions;
 }
-export function getFirebaseStorage(): FirebaseStorage { return getStorage(getFirebaseClientApp()); }
+export function getFirebaseStorage(): FirebaseStorage {
+  const storage = getStorage(getFirebaseClientApp());
+  if (emulatorsEnabled() && !connected.has(storage)) { connectStorageEmulator(storage, "127.0.0.1", 9199); connected.add(storage); }
+  return storage;
+}

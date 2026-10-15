@@ -17,12 +17,36 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
           <SongKeepLockup variant="app" inverse />
           <span>Stories become songs worth keeping.</span>
         </div>
-        <div className="footerLinks" aria-label="Site information">
-          <span>Privacy</span>
-          <span>Terms</span>
-          <span>Accessibility</span>
-          <span>Contact</span>
+        <div className="footerColumns">
+          <nav aria-label="Explore">
+            <h2>Explore</h2>
+            <ul>
+              <li><Link href="/">Home</Link></li>
+              <li><Link href="/try">Try a song</Link></li>
+              <li><Link href="/how-it-works">How it works</Link></li>
+              <li><Link href="/services">Services</Link></li>
+              <li><Link href="/pricing">Pricing</Link></li>
+              <li><Link href="/begin">Plan an experience</Link></li>
+            </ul>
+          </nav>
+          <nav aria-label="SongKeep">
+            <h2>SongKeep</h2>
+            <ul>
+              <li><Link href="/about">About</Link></li>
+              <li><Link href="/contact">Contact</Link></li>
+              <li><Link href="/login">Sign in</Link></li>
+            </ul>
+          </nav>
+          <nav aria-label="Legal">
+            <h2>Legal</h2>
+            <ul>
+              <li><Link href="/privacy">Privacy Policy</Link></li>
+              <li><Link href="/terms">Terms of Service</Link></li>
+              <li><Link href="/accessibility">Accessibility</Link></li>
+            </ul>
+          </nav>
         </div>
+        <p className="footerNote">© 2026 SongKeep</p>
       </footer>
     </div>
   );

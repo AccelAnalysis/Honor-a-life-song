@@ -45,6 +45,24 @@ service firebase.storage {
       allow update, delete: if false;
     }
 
+    match /song-previews/{previewId}/{fileName} {
+      allow read: if firestore.exists(/databases/(default)/documents/songPreviews/$(previewId))
+        && firestore.get(/databases/(default)/documents/songPreviews/$(previewId)).data.published == true;
+      allow read: if platformAdmin()
+        || (signedIn()
+          && firestore.exists(/databases/(default)/documents/songPreviews/$(previewId))
+          && firestore.get(/databases/(default)/documents/songPreviews/$(previewId)).data.createdByUserId == request.auth.uid);
+      allow create: if signedIn()
+        && firestore.exists(/databases/(default)/documents/songPreviews/$(previewId))
+        && firestore.get(/databases/(default)/documents/songPreviews/$(previewId)).data.createdByUserId == request.auth.uid
+        && firestore.get(/databases/(default)/documents/songPreviews/$(previewId)).data.published == false
+        && firestore.get(/databases/(default)/documents/songPreviews/$(previewId)).data.storagePath == 'song-previews/' + previewId + '/' + fileName
+        && request.resource.size > 0
+        && request.resource.size <= 15 * 1024 * 1024
+        && request.resource.contentType.matches('audio/.*');
+      allow update, delete: if false;
+    }
+
     match /{allPaths=**} {
       allow read, write: if false;
     }

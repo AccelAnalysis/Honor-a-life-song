@@ -1,0 +1,5 @@
+.page { max-width: 1120px; margin: 0 auto; padding: clamp(36px, 6vw, 72px) clamp(18px, 4vw, 40px) 80px; }
+.intro { margin-bottom: 8px; }
+.kicker { margin: 0; text-transform: uppercase; letter-spacing: 0.13em; font-size: 0.69rem; font-weight: 850; color: #834ab4; }
+.intro h1 { margin: 0.15em 0 0.3em; color: #141648; font-size: clamp(2.6rem, 5vw, 4.4rem); line-height: 0.98; letter-spacing: -0.05em; }
+.intro p:not(.kicker) { margin: 0 0 8px; max-width: 42ch; color: #62657a; line-height: 1.6; }

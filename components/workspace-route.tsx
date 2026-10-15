@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { InvoiceSurface } from "@/components/invoice-surface";
-import { CreatorDeliverySurface } from "@/components/creator-delivery-surface";
 import { usePathname } from "next/navigation";
 import { AdminAccessGate } from "@/components/admin-access-gate";
+import { CreatorAccessGate } from "@/components/creator-access-gate";
 import { AdminWorkspace } from "@/components/admin-workspace";
 import { SongKeepLockup } from "@/components/brand";
 import { CreatorWorkspace } from "@/components/creator-workspace";
@@ -58,7 +58,6 @@ export function WorkspaceRoute() {
 
   const workspace = candidate as WorkspaceId;
   if (workspace === "admin" && parts[1] === "finance" && (!parts[2] || ["invoices", "payments", "refunds", "reconciliation"].includes(parts[2]))) return <AdminAccessGate><InvoiceSurface admin /></AdminAccessGate>;
-  if (workspace === "creator" && parts.length === 1) return <CreatorDeliverySurface />;
   const nav = getNavigation(workspace);
   const nestedParts = parts.slice(1);
   const adminRoute = workspace === "admin" ? resolveAdminRoute(nestedParts) : undefined;
@@ -135,7 +134,7 @@ export function WorkspaceRoute() {
         : workspace === "admin" && adminRoute
           ? <AdminAccessGate><AdminWorkspace route={adminRoute} /></AdminAccessGate>
           : workspace === "creator" && creatorRoute
-            ? <CreatorWorkspace route={creatorRoute} />
+            ? <CreatorAccessGate><CreatorWorkspace route={creatorRoute} /></CreatorAccessGate>
             : workspace === "customer" && customerRoute
               ? <CustomerWorkspace route={customerRoute} />
               : workspace === "facility" && facilityRoute

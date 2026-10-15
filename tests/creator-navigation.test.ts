@@ -34,7 +34,7 @@ describe("Creator / Production hierarchy", () => {
 
   it("models Lyrics as a genuine grandchild hierarchy", () => {
     const lyrics = creatorChildren.song.find((item) => item.id === "song-lyrics");
-    expect(lyrics?.grandchildren?.map((item) => item.label)).toEqual(["Draft", "Version History", "Comparison"]);
+    expect(lyrics?.grandchildren?.map((item) => item.label)).toEqual(["Draft", "Review", "Comparison", "Refine", "Version History"]);
   });
 
   it("does not invent Calendar or Messages child pages", () => {
@@ -75,6 +75,8 @@ describe("Creator / Production hierarchy", () => {
   it("includes nested and selected-context routes in static preview params", () => {
     const staticSlugs = getCreatorStaticRouteSlugs("reference-work").map((parts) => parts.join("/"));
     expect(staticSlugs).toContain("song/lyrics/draft");
+    expect(staticSlugs).toContain("song/lyrics/review");
+    expect(staticSlugs).toContain("song/lyrics/refine");
     expect(staticSlugs).toContain("creative-work/reference-work/song/lyrics/comparison");
     expect(staticSlugs).toContain("dashboard/assigned-work");
     expect(staticSlugs).toContain("calendar");

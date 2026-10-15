@@ -3,8 +3,8 @@ import { Suspense } from "react";
 import { BookingRoute } from "@/components/booking-route";
 
 export const metadata: Metadata = {
-  title: "Begin Your Experience | Honor a Life Song",
-  description: "Schedule, review, pay, and prepare for your Honor a Life Song experience."
+  title: "Begin your experience | SongKeep",
+  description: "Schedule, review, pay, and prepare for your SongKeep experience."
 };
 
 export default function BeginBookingPage() {

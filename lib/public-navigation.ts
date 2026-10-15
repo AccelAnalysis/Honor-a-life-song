@@ -287,6 +287,12 @@ export const publicNavigation: readonly PublicHierarchyItem[] = [
     href: "/services",
     description: "Compare experiences for facilities and community organizations.",
     children: serviceChildren
+  },
+  {
+    id: "pricing",
+    label: "Pricing",
+    href: "/pricing",
+    description: "Compare a personal song with a group experience."
   }
 ] as const;
 

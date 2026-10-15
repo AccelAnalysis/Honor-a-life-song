@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MarketingImageSequence } from "@/components/marketing-image-sequence";
+import { PreviewLibrary } from "@/components/preview-library";
 import { SonicSignature } from "@/components/brand";
 import { PublicShell } from "@/components/public-shell";
 import styles from "./home-lifecycle.module.css";
@@ -14,7 +15,8 @@ export default function HomePage() {
           <h1 id="consumer-hero-title">Every life has a story and every story has a song.</h1>
           <p className="consumerHeroLead">Turn the stories of your family, community, or team into original songs to share and keep.</p>
           <div className="consumerHeroActions">
-            <Link className="button primary" href="/services">Choose an experience</Link>
+            <Link className="button primary" href="/try">Try a song</Link>
+            <Link className="button secondary" href="/services">Choose an experience</Link>
             <Link className="button secondary" href="/how-it-works">How it works</Link>
           </div>
           <SonicSignature inverse label="Hear SongKeep" />
@@ -48,6 +50,18 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="visualSection" id="song-previews" aria-labelledby="preview-library-title">
+        <div className="visualIntro">
+          <div>
+            <p className="eyebrow">Listen</p>
+            <h2 id="preview-library-title">Hear a preview.</h2>
+          </div>
+          <p>Play more than one short song before you write your own.</p>
+        </div>
+        <PreviewLibrary />
+        <p><Link className="textLink" href="/try">Try a song from your notes →</Link></p>
+      </section>
+
       <section className="storyProcess" id="home-how-it-works" aria-labelledby="process-title">
         <div className="storyProcessInner">
           <div className="studioImage" role="img" aria-label="A close recording-studio view of a guitar and microphone"><span className="studioCredit">Photo: Saulo Leite / Pexels</span></div>
@@ -67,7 +81,7 @@ export default function HomePage() {
         <div className="visualIntro"><div><p className="eyebrow">Three ways to begin</p><h2 id="program-title">Choose your experience.</h2></div><Link className="textLink" href="/services">Compare all three →</Link></div>
         <div className={styles.offerRail}>
           <Link href="/begin?offering=single-song-group-event"><div><span>$200</span><h3>Group Event</h3><p>One shared story. One original song. One memorable presentation.</p></div></Link>
-          <Link href="/begin?offering=honor-a-life-song-experience"><div><span>$2,500</span><h3>Honor a Life Song</h3><p>Participant stories, up to 6 songs, and a follow-up concert.</p></div></Link>
+          <Link href="/begin?offering=honor-a-life-song-experience"><div><span>$2,500</span><h3>Honor a Life Song Experience</h3><p>Participant stories, up to 6 songs, and a follow-up concert.</p></div></Link>
           <Link href="/begin?offering=songkeep-legacy-album"><div><span>$6,000</span><h3>Legacy Album</h3><p>Up to 10 songs in a complete album, with a private reveal and release preparation.</p></div></Link>
         </div>
       </section>
