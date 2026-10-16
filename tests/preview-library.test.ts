@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { publicAssetPath } from "../lib/app-path";
 import { builtInPreviews, guestDraftIsReady, httpsAudioLink } from "../lib/preview-library";
 
 describe("preview library", () => {
@@ -13,6 +14,20 @@ describe("preview library", () => {
     expect(readFileSync("app/page.tsx", "utf8")).toContain("<PreviewLibrary />");
     expect(readFileSync("components/guest-songwriting.tsx", "utf8")).toContain("<PreviewLibrary />");
     expect(readFileSync("components/songwriting-studio.tsx", "utf8")).toContain("<PreviewLibrary");
+  });
+
+  it("loads built-in previews from the GitHub Pages base path", () => {
+    const previous = process.env.NEXT_PUBLIC_BASE_PATH;
+    process.env.NEXT_PUBLIC_BASE_PATH = "/Honor-a-life-song";
+    try {
+      expect(publicAssetPath(builtInPreviews[0].src)).toBe("/Honor-a-life-song/previews/porch-light.wav");
+      expect(publicAssetPath("https://cdn.example/song.mp3")).toBe("https://cdn.example/song.mp3");
+      expect(publicAssetPath("blob:https://accelanalysis.github.io/id")).toBe("blob:https://accelanalysis.github.io/id");
+    } finally {
+      if (previous === undefined) delete process.env.NEXT_PUBLIC_BASE_PATH;
+      else process.env.NEXT_PUBLIC_BASE_PATH = previous;
+    }
+    expect(readFileSync("components/brand/audio-player.tsx", "utf8")).toContain("publicAssetPath(src)");
   });
 
   it("accepts only https links for an added preview", () => {

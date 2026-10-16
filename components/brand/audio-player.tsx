@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { publicAssetPath } from "@/lib/app-path";
 import type { AudioContextVariant, AudioEntitlementModel, AudioPlayerState, TrackMetadataModel } from "@/lib/brand-sensory.types";
 import { audioRestrictionMessage, canPlayAudio } from "@/lib/media-presentation";
 import { TrackMetadata } from "./track-metadata";
@@ -34,7 +35,8 @@ export function AudioPlayer({
   onStateChange
 }: AudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [state, setState] = useState<AudioPlayerState>(src ? "idle" : "unavailable");
+  const playableSrc = src ? publicAssetPath(src) : undefined;
+  const [state, setState] = useState<AudioPlayerState>(playableSrc ? "idle" : "unavailable");
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const permitted = canPlayAudio(entitlement);
@@ -51,11 +53,11 @@ export function AudioPlayer({
 
   useEffect(() => {
     if (!permitted) transition("restricted");
-    else if (!src) transition("unavailable");
+    else if (!playableSrc) transition("unavailable");
     // onStateChange is intentionally not a dependency: consumers should not cause
     // player state resets by recreating a callback during render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [permitted, src]);
+  }, [permitted, playableSrc]);
 
   async function togglePlayback() {
     const audio = audioRef.current;
@@ -99,7 +101,7 @@ export function AudioPlayer({
     setCurrentTime(next);
   }
 
-  const disabled = !src || !permitted;
+  const disabled = !playableSrc || !permitted;
   const label = state === "playing" ? `Pause ${metadata.title}` : `Play ${metadata.title}`;
 
   return (
@@ -110,7 +112,7 @@ export function AudioPlayer({
     >
       <audio
         ref={audioRef}
-        src={permitted ? src : undefined}
+        src={permitted ? playableSrc : undefined}
         preload="metadata"
         onLoadedMetadata={(event) => {
           setDuration(event.currentTarget.duration);
